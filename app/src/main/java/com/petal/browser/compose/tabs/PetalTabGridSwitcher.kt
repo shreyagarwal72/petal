@@ -77,7 +77,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
 import com.petal.browser.ui.components.PetalConfirmSheetContent
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -203,6 +207,10 @@ fun PetalTabGridSwitcher(
     onCreateGroup: (PetalTabItem) -> Unit = {},
     onDuplicateTab: (PetalTabItem) -> Unit = {},
     onCloseOtherTabs: (PetalTabItem) -> Unit = {},
+    homeLiveLayer: GraphicsLayer? = null,
+    homeLiveLayerTabId: String? = null,
+    onHeroCloseStart: () -> Unit = {},
+    onHeroCloseEnd: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -488,7 +496,14 @@ fun PetalTabGridSwitcher(
 
     val reduceMotion = rememberReduceMotion()
     val isLowEnd = rememberLowEndDevice()
-    val hero = remember { TabHeroState(startVisible = backgroundSnapshot != null).also { it.image = backgroundSnapshot } }
+    val initialHeroImage = remember {
+        tabs.firstOrNull { it.isSelected }?.let { active ->
+            active.previewBitmap?.takeUnless { it.isRecycled }
+                ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(active.id, active.isIncognito)?.takeUnless { it.isRecycled }
+                ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(active.thumbnailKey, active.isIncognito)?.takeUnless { it.isRecycled }
+        }?.asImageBitmap() ?: backgroundSnapshot
+    }
+    val hero = remember { TabHeroState(startVisible = initialHeroImage != null).also { it.image = initialHeroImage } }
     var currentHeroJob by remember { mutableStateOf<Job?>(null) }
     var newTabButtonBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     val closingTabIds = remember { mutableStateListOf<String>() }
@@ -630,19 +645,24 @@ fun PetalTabGridSwitcher(
     }
 
     // ── Chrome-style hero transition (page <-> tile) ─────────────────────────────
-    // Seed the page snapshot immediately: the overlay is presented without the generic fade-in now, so
-    // the very first frame must already show the page (otherwise it flashes blank before the morph).
-    fun heroImageFor(tab: PetalTabItem?): androidx.compose.ui.graphics.ImageBitmap? {
-        val thumb = tab?.previewBitmap?.takeIf { !it.isRecycled }?.asImageBitmap()
-        return if (tab?.isSelected == true) (backgroundSnapshot ?: thumb) else (thumb ?: backgroundSnapshot)
+    // Hero and tile always share the tab's cached thumbnail bitmap (falling back to
+    // backgroundSnapshot only when no cached thumbnail exists).
+    fun cachedThumbFor(tab: PetalTabItem?): Bitmap? {
+        if (tab == null) return null
+        return tab.previewBitmap?.takeUnless { it.isRecycled }
+            ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tab.id, tab.isIncognito)?.takeUnless { it.isRecycled }
+            ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tab.thumbnailKey, tab.isIncognito)?.takeUnless { it.isRecycled }
     }
+
+    fun heroImageFor(tab: PetalTabItem?): androidx.compose.ui.graphics.ImageBitmap? =
+        cachedThumbFor(tab)?.asImageBitmap() ?: backgroundSnapshot
 
     // Open: the page shrinks into the selected tile.
     LaunchedEffect(Unit) {
         if (!hero.visible) return@LaunchedEffect
         val current = tabs.firstOrNull { it.isSelected }
         hero.tabId = current?.id
-        hero.image = backgroundSnapshot
+        hero.image = heroImageFor(current)
         // Wait (briefly) for the tile to be laid out so we know where to land.
         // Tile bounds normally land within 1-2 frames; never make the user wait half a second for them.
         kotlinx.coroutines.withTimeoutOrNull(150) {
@@ -661,39 +681,48 @@ fun PetalTabGridSwitcher(
         hero.visible = false
     }
 
-    // Select: the tapped tile expands to the full page, then the tab is shown.
+    // Select: selectTab runs right when the morph starts so the incoming page renders underneath
+    // while the opaque hero expands to fill the screen, staying opaque until the first frame is drawn.
     val heroSelect: (PetalTabItem) -> Unit = { tab ->
         currentHeroJob?.cancel()
         val image = heroImageFor(tab)
         if (image == null || tabCardBounds[tab.id] == null) {
+            onHeroCloseStart()
             onTabSelect(tab)
+            onHeroCloseEnd()
         } else {
             currentHeroJob = coroutineScope.launch {
+                onHeroCloseStart()
                 hero.busy = true
                 hero.tabId = tab.id
                 hero.image = image
                 hero.customOriginBounds = null
                 hero.customOriginRadius = null
                 hero.visible = true
-                if (!hero.visible || hero.progress.value >= 1f) {
+                if (hero.progress.value >= 1f) {
                     hero.progress.snapTo(1f)
                 }
-                com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
-                    if (reduceMotion) {
-                        hero.progress.snapTo(0f)
-                    } else {
-                        hero.progress.animateTo(0f, TabHeroState.spec())
-                    }
-                }
+                // Switch tabs immediately so Gecko / Home prepares its first frame during the morph.
                 onTabSelect(tab)
-                // Safety net: if the host did not tear this screen down, don't leave the overlay stuck.
-                kotlinx.coroutines.delay(700)
-                hero.dock()
+                try {
+                    com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
+                        if (reduceMotion) {
+                            hero.progress.snapTo(0f)
+                        } else {
+                            hero.progress.animateTo(0f, TabHeroState.spec())
+                        }
+                    }
+                } finally {
+                    // Keep hero.visible = true at progress = 0f (full screen, opaque) until the host
+                    // fades out the switcher layer once the incoming page's first frame is ready.
+                    hero.busy = false
+                    onHeroCloseEnd()
+                }
             }
         }
     }
 
-    // Predictive back: the tile grows with the gesture; commit expands fully, cancel docks it back.
+    // Predictive back: the tile grows with the gesture; commit expands fully while the page prepares underneath.
     val predictiveBackOn by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
     androidx.activity.compose.PredictiveBackHandler(
         enabled = tabs.isNotEmpty() && !hasSubOverlay
@@ -719,16 +748,20 @@ fun PetalTabGridSwitcher(
             }
             hero.busy = true
             currentHeroJob = coroutineScope.launch {
-                com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
-                    if (reduceMotion) {
-                        hero.progress.snapTo(0f)
-                    } else {
-                        hero.progress.animateTo(0f, TabHeroState.spec())
-                    }
-                }
+                onHeroCloseStart()
                 effectiveOnBack()
-                kotlinx.coroutines.delay(700)
-                hero.dock()
+                try {
+                    com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
+                        if (reduceMotion) {
+                            hero.progress.snapTo(0f)
+                        } else {
+                            hero.progress.animateTo(0f, TabHeroState.spec())
+                        }
+                    }
+                } finally {
+                    hero.busy = false
+                    onHeroCloseEnd()
+                }
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
             currentHeroJob = coroutineScope.launch {
@@ -1335,8 +1368,9 @@ fun PetalTabGridSwitcher(
                                                     val cardScale = TAB_CARD_MIN_SCALE + (1f - TAB_CARD_MIN_SCALE) * presence
                                                     scaleX = cardScale
                                                     scaleY = cardScale
-                                                    // Real tile fades in as the hero docks onto it.
-                                                    alpha = cardPresence.value * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
+                                                    // Real tile stays hidden under the opaque hero until the hero finishes docking,
+                                                    // then reveals identically with zero crossfade.
+                                                    alpha = if (hero.visible && hero.tabId == tab.id) 0f else cardPresence.value
                                                 }
                                                 .onGloballyPositioned { coordinates ->
                                                     tabCardBounds[tab.id] = coordinates.boundsInWindow()
@@ -1422,7 +1456,9 @@ fun PetalTabGridSwitcher(
                                                     onSelectForSelection = { enterSelection(tab) },
                                                     onTogglePin = { togglePinned(tab) },
                                                     onDuplicateTab = { onDuplicateTab(tab) },
-                                                    onCloseOtherTabs = { onCloseOtherTabs(tab) }
+                                                    onCloseOtherTabs = { onCloseOtherTabs(tab) },
+                                                    homeLiveLayer = homeLiveLayer,
+                                                    homeLiveLayerTabId = homeLiveLayerTabId
                                                 )
                                             }
                                         }
@@ -1499,8 +1535,9 @@ fun PetalTabGridSwitcher(
                                                     val cardScale = TAB_CARD_MIN_SCALE + (1f - TAB_CARD_MIN_SCALE) * presence
                                                     scaleX = cardScale
                                                     scaleY = cardScale
-                                                    // Real tile fades in as the hero docks onto it.
-                                                    alpha = cardPresence.value * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
+                                                    // Real tile stays hidden under the opaque hero until the hero finishes docking,
+                                                    // then reveals identically with zero crossfade.
+                                                    alpha = if (hero.visible && hero.tabId == tab.id) 0f else cardPresence.value
                                                 }
                                                 .onGloballyPositioned { coordinates ->
                                                     tabCardBounds[tab.id] = coordinates.boundsInWindow()
@@ -2281,7 +2318,10 @@ private fun rememberTabCardPresence(isClosing: Boolean, popIn: Boolean): State<F
 @Composable
 private fun rememberTabThumbnail(tab: PetalTabItem): State<android.graphics.Bitmap?> {
     val state = remember(tab.id, tab.thumbnailKey, tab.isIncognito) {
-        mutableStateOf(tab.previewBitmap?.takeUnless { it.isRecycled })
+        val seed = tab.previewBitmap?.takeUnless { it.isRecycled }
+            ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tab.id, tab.isIncognito)?.takeUnless { it.isRecycled }
+            ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tab.thumbnailKey, tab.isIncognito)?.takeUnless { it.isRecycled }
+        mutableStateOf(seed)
     }
     LaunchedEffect(tab.previewBitmap) {
         tab.previewBitmap?.takeUnless { it.isRecycled }?.let { state.value = it }
@@ -2330,7 +2370,9 @@ private fun PetalTabCard(
     onSelectForSelection: () -> Unit = {},
     onTogglePin: () -> Unit = {},
     onDuplicateTab: () -> Unit = {},
-    onCloseOtherTabs: () -> Unit = {}
+    onCloseOtherTabs: () -> Unit = {},
+    homeLiveLayer: GraphicsLayer? = null,
+    homeLiveLayerTabId: String? = null
 ) {
     val cachedPreview by rememberTabThumbnail(tab)
     val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
@@ -2486,27 +2528,47 @@ private fun PetalTabCard(
                 }
             }
 
-            // Tab WebView preview thumbnail
+            // Tab WebView / Home preview thumbnail
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
-                Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, animationSpec = PetalSpring.calm(), label = "tabPreviewLoad") { preview ->
-                    if (preview != null) {
-                        Image(
-                            bitmap = preview.asImageBitmap(),
-                            contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
-                            // Firefox/Fenix: fill the width and keep the TOP of the page, crop the bottom.
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                            alignment = Alignment.TopCenter,
-                            filterQuality = androidx.compose.ui.graphics.FilterQuality.Medium,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        PetalHomePreviewCard(tab = tab, accentColor = accentColor)
+                val preview = cachedPreview?.takeUnless { it.isRecycled }
+                val isHomeTile = tab.url == "Petal Home" || com.petal.browser.unit.PetalBrowserUtils.isHomePage(tab.url)
+                val liveLayerReady = isHomeTile &&
+                    tab.id == homeLiveLayerTabId &&
+                    homeLiveLayer != null &&
+                    !homeLiveLayer.isReleased &&
+                    homeLiveLayer.size.width > 0 &&
+                    homeLiveLayer.size.height > 0
+                if (liveLayerReady && homeLiveLayer != null) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val layerW = homeLiveLayer.size.width.toFloat().coerceAtLeast(1f)
+                        val layerH = homeLiveLayer.size.height.toFloat().coerceAtLeast(1f)
+                        val cropScale = maxOf(size.width / layerW, size.height / layerH)
+                        val offsetX = (size.width - layerW * cropScale) / 2f
+                        clipRect {
+                            scale(scaleX = cropScale, scaleY = cropScale, pivot = Offset.Zero) {
+                                androidx.compose.ui.graphics.drawscope.translate(left = offsetX / cropScale, top = 0f) {
+                                    drawLayer(homeLiveLayer)
+                                }
+                            }
+                        }
                     }
+                } else if (preview != null) {
+                    Image(
+                        bitmap = preview.asImageBitmap(),
+                        contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
+                        // Firefox/Fenix: fill the width and keep the TOP of the page, crop the bottom.
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        alignment = Alignment.TopCenter,
+                        filterQuality = androidx.compose.ui.graphics.FilterQuality.Medium,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    PetalHomePreviewCard(tab = tab, accentColor = accentColor)
                 }
             }
         }
@@ -2739,18 +2801,17 @@ private fun PetalTabListItem(
             .entrance(),
         selected = isSelectedForSelection || tab.isSelected || isDragging || isHoveredForMerge,
         leading = {
-                    Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, animationSpec = PetalSpring.quick(), label = "tabListThumbnail") { preview ->
-                        if (preview != null) {
-                            Image(
-                                bitmap = preview.asImageBitmap(),
-                                contentDescription = stringResource(R.string.ui_thumbnail),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                alignment = Alignment.TopCenter,
-                                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
-                            )
-                        } else {
-                            PetalGroupIconBadge(icon = Icons.Rounded.Public, size = 44.dp)
-                        }
+                    val preview = cachedPreview?.takeUnless { it.isRecycled }
+                    if (preview != null) {
+                        Image(
+                            bitmap = preview.asImageBitmap(),
+                            contentDescription = stringResource(R.string.ui_thumbnail),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            alignment = Alignment.TopCenter,
+                            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
+                        )
+                    } else {
+                        PetalGroupIconBadge(icon = Icons.Rounded.Public, size = 44.dp)
                     }
         },
         content = {

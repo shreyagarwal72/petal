@@ -44,13 +44,20 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import com.petal.browser.browser.PetalTabHistoryState
 import com.petal.browser.ui.components.PetalTabHistorySheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import kotlinx.coroutines.flow.first
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
 import com.petal.browser.predictive.PetalBackInput
@@ -192,31 +199,41 @@ fun PetalRootApp(
         activity?.findViewById<android.view.View>(android.R.id.content) ?: activity?.window?.decorView
     }
     var activeWebEngineView by remember { mutableStateOf<android.view.View?>(null) }
+    val homeGraphicsLayer = rememberGraphicsLayer()
+    var renderedHomeTabId by remember { mutableStateOf<String?>(null) }
+    var renderedWebTabId by remember { mutableStateOf<String?>(null) }
 
-    val tabSwitcherSnapshot = remember(isTabSwitcherOpen) {
-        if (isTabSwitcherOpen && rootView != null) {
-            PetalContentSnapshot.capture(rootView, forceFresh = true)
-            PetalContentSnapshot.current?.asImageBitmap()
-        } else null
-    }
+    val switcherHold = remember { TabSwitcherHold() }
 
-    // Take the page snapshot BEFORE the switcher opens. capture() above runs after the page is
-    // already hidden and falls back to a software draw that cannot see the GeckoView surface,
-    // which is why the page used to turn black the moment Tabs was tapped.
-    // When the active tab is a home surface, store the captured snapshot into TabThumbnailCache
-    // so home tabs display real thumbnails rather than placeholder cards.
+    // Prepare the content-area 0.68 thumbnail & fallback snapshot BEFORE the switcher mounts
+    // (never inside composition and never via blocking tap waits or software rootView draws).
     DisposableEffect(viewModel, rootView) {
         viewModel.beforeTabSwitcherOpen = {
+            val curTab = viewModel.activeTab.value
+            val isHomeTab = curTab != null && PetalBrowserUtils.isHomePage(curTab.content.url)
+            val cached = if (curTab != null) {
+                TabThumbnailCache.getMemoryOnly(curTab.id, curTab.content.private)?.takeUnless { it.isRecycled }
+            } else null
+            switcherHold.pendingSnapshot = cached?.asImageBitmap()
+                ?: PetalContentSnapshot.current?.asImageBitmap()
             rootView?.let { rv ->
-                PetalContentSnapshot.capturePreview(rv)
-                val curTab = viewModel.activeTab.value
-                if (curTab != null && PetalBrowserUtils.isHomePage(curTab.content.url)) {
-                    val bmp = PetalContentSnapshot.capture(rv, forceFresh = true)
-                    if (!bmp.isRecycled && bmp.width > 1 && bmp.height > 1) {
-                        val targetWidth = Math.min(bmp.width, 480)
-                        val targetHeight = Math.max(1, (bmp.height.toFloat() * targetWidth / bmp.width).toInt())
-                        val scaled = android.graphics.Bitmap.createScaledBitmap(bmp, targetWidth, targetHeight, true)
-                        TabThumbnailCache.put(curTab.id, scaled, curTab.content.private, allowUniform = true)
+                com.petal.browser.unit.TabThumbnailCapture.capture(
+                    rootView = rv,
+                    tabId = curTab?.id,
+                    isPrivate = curTab?.content?.private == true,
+                    isHome = isHomeTab
+                ) { bmp ->
+                    if (bmp != null && !bmp.isRecycled && switcherHold.snapshot == null) {
+                        switcherHold.snapshot = bmp.asImageBitmap()
+                    }
+                }
+                if (switcherHold.pendingSnapshot == null) {
+                    PetalContentSnapshot.capturePreviewAsync(rv) { bmp ->
+                        if (bmp != null && !bmp.isRecycled) {
+                            val img = bmp.asImageBitmap()
+                            if (switcherHold.pendingSnapshot == null) switcherHold.pendingSnapshot = img
+                            if (switcherHold.snapshot == null) switcherHold.snapshot = img
+                        }
                     }
                 }
             }
@@ -224,15 +241,14 @@ fun PetalRootApp(
         onDispose { viewModel.beforeTabSwitcherOpen = null }
     }
 
-    // Keep the switcher mounted briefly after it closes. It used to be removed the instant
-    // isTabSwitcherOpen went false, so the close morph ended on a hole (page surface and bars
-    // still coming back = black flash). Now the full-screen hero stays on top while the page
-    // returns underneath, then the whole layer fades out.
-    val switcherHold = remember { TabSwitcherHold() }
+    // Keep the opaque hero/switcher mounted until the close morph finishes AND the incoming page
+    // paints its first frame (Gecko firstContentfulPaint or Home first draw, capped at 250ms),
+    // then fade over 90ms so there is never a black flash or lingering spring fade.
     if (isTabSwitcherOpen != switcherHold.wasOpen) {
         switcherHold.wasOpen = isTabSwitcherOpen
         if (isTabSwitcherOpen) {
-            switcherHold.snapshot = tabSwitcherSnapshot
+            switcherHold.snapshot = switcherHold.pendingSnapshot
+            switcherHold.isHeroClosing = false
             switcherHold.generation++
         }
     }
@@ -243,10 +259,24 @@ fun PetalRootApp(
             switcherMounted = true
             switcherAlpha.snapTo(1f)
         } else if (switcherMounted) {
-            kotlinx.coroutines.delay(60)
-            switcherAlpha.animateTo(0f, PetalSpring.calm())
+            switcherAlpha.snapTo(1f)
+            snapshotFlow { switcherHold.isHeroClosing }.first { !it }
+            kotlinx.coroutines.withTimeoutOrNull(250L) {
+                snapshotFlow {
+                    val cur = viewModel.activeTab.value
+                    if (cur == null) {
+                        true
+                    } else if (PetalBrowserUtils.isHomePage(cur.content.url)) {
+                        renderedHomeTabId == cur.id
+                    } else {
+                        cur.content.firstContentfulPaint && renderedWebTabId == cur.id
+                    }
+                }.first { it }
+            }
+            switcherAlpha.animateTo(0f, tween(durationMillis = 90))
             switcherMounted = false
             switcherHold.snapshot = null
+            switcherHold.pendingSnapshot = null
         }
     }
 
@@ -722,9 +752,37 @@ fun PetalRootApp(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             if (isHome) {
+                LaunchedEffect(isHome, activeTab?.id) {
+                    val tab = activeTab
+                    if (isHome && tab != null) {
+                        withFrameNanos { }
+                        renderedHomeTabId = tab.id
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O &&
+                            homeGraphicsLayer.size.width > 0 &&
+                            homeGraphicsLayer.size.height > 0 &&
+                            TabThumbnailCache.getMemoryOnly(tab.id, tab.content.private) == null
+                        ) {
+                            try {
+                                val bmp = homeGraphicsLayer.toImageBitmap().asAndroidBitmap()
+                                com.petal.browser.unit.TabThumbnailCapture.storeCapturedBitmapAsync(
+                                    source = bmp,
+                                    tabId = tab.id,
+                                    isPrivate = tab.content.private,
+                                    isHome = true
+                                )
+                            } catch (_: Throwable) {}
+                        }
+                    }
+                }
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
+                        .drawWithContent {
+                            homeGraphicsLayer.record {
+                                this@drawWithContent.drawContent()
+                            }
+                            drawLayer(homeGraphicsLayer)
+                        }
                         .appleDuoFoldEffect(isWebsite = false)
                 ) {
                     if (isIncognito) {
@@ -828,6 +886,7 @@ fun PetalRootApp(
                     collapsedTopPadding = statusBarTopInset + desktopBarHeight,
                     collapsedBottomPadding = 0.dp,
                     onEngineViewReady = { activeWebEngineView = it },
+                    onFirstFrameDrawn = { renderedTabId -> renderedWebTabId = renderedTabId },
                     modifier = Modifier
                         .fillMaxSize()
                         .appleDuoFoldEffect(isWebsite = true)
@@ -1266,6 +1325,10 @@ fun PetalRootApp(
                         onOpenSettings = {
                             viewModel.openSettings(SettingsCategory.TABS)
                         },
+                        homeLiveLayer = homeGraphicsLayer,
+                        homeLiveLayerTabId = if (isHome) activeTab?.id else null,
+                        onHeroCloseStart = { switcherHold.isHeroClosing = true },
+                        onHeroCloseEnd = { switcherHold.isHeroClosing = false },
                         onBack = { viewModel.setTabSwitcherOpen(false) }
                     )
                 }
@@ -1739,7 +1802,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalExtensionsScreen(
-                    backgroundSnapshot = overlayPageSnapshot ?: tabSwitcherSnapshot,
+                    backgroundSnapshot = overlayPageSnapshot,
                     onDismiss = { viewModel.setExtensionsOpen(false) }
                 )
             }
@@ -1753,7 +1816,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalAccountScreen(
-                    backgroundSnapshot = overlayPageSnapshot ?: tabSwitcherSnapshot,
+                    backgroundSnapshot = overlayPageSnapshot,
                     onBack = { viewModel.setAccountSyncOpen(false) }
                 )
             }
@@ -1767,7 +1830,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 PetalDeleteScreen(
-                    backgroundSnapshot = overlayPageSnapshot ?: tabSwitcherSnapshot,
+                    backgroundSnapshot = overlayPageSnapshot,
                     onBackPress = { viewModel.setDeleteOpen(false) }
                 )
             }
@@ -1781,7 +1844,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 SafeLockerScreen(
-                    backgroundSnapshot = overlayPageSnapshot ?: tabSwitcherSnapshot,
+                    backgroundSnapshot = overlayPageSnapshot,
                     onBackPress = { viewModel.setSafeLockerOpen(false) }
                 )
             }
@@ -1913,7 +1976,9 @@ private class OverlaySnapshotHold {
 private class TabSwitcherHold {
     var wasOpen: Boolean = false
     var snapshot: androidx.compose.ui.graphics.ImageBitmap? = null
+    var pendingSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null
     var generation: Int = 0
+    var isHeroClosing by mutableStateOf(false)
 }
 
 

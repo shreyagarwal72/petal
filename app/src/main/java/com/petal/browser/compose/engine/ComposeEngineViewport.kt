@@ -95,6 +95,7 @@ fun ComposeEngineViewport(
     collapsedTopPadding: Dp = topPadding,
     collapsedBottomPadding: Dp = bottomPadding,
     onEngineViewReady: ((View) -> Unit)? = null,
+    onFirstFrameDrawn: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -384,15 +385,18 @@ fun ComposeEngineViewport(
                     engineView = engineView
                 )
             }
+            if (onFirstFrameDrawn != null) {
+                androidx.compose.runtime.withFrameNanos { }
+                onFirstFrameDrawn(tab.id)
+            }
         }
     }
 
     // Capture webpage thumbnail into TabThumbnailCache upon load completion.
+    // On homepage navigation keep the existing thumbnail intact until the unified capture refreshes it.
     LaunchedEffect(tab?.id, isLoading, tab?.content?.url) {
         if (tab == null || isLoading) return@LaunchedEffect
         if (PetalBrowserUtils.isHomePage(tab.content.url)) {
-            // The tab went back to the home page: its old website thumbnail is now wrong.
-            TabThumbnailCache.remove(tab.id)
             return@LaunchedEffect
         }
         if (tab.content.url.isNotBlank()) {
@@ -421,15 +425,12 @@ fun ComposeEngineViewport(
                     } else {
                         val root = (context as? android.app.Activity)?.findViewById<View>(android.R.id.content)
                             ?: (context as? android.app.Activity)?.window?.decorView
-                        if (root != null) {
-                            val bmp = com.petal.browser.predictive.PetalContentSnapshot.capture(root, forceFresh = true)
-                            if (!bmp.isRecycled && bmp.width > 1 && bmp.height > 1) {
-                                val targetWidth = Math.min(bmp.width, 480)
-                                val targetHeight = Math.max(1, (bmp.height.toFloat() * targetWidth / bmp.width).toInt())
-                                val scaled = Bitmap.createScaledBitmap(bmp, targetWidth, targetHeight, true)
-                                com.petal.browser.unit.TabThumbnailCache.put(id, scaled, current.content.private, allowUniform = true)
-                            }
-                        }
+                        com.petal.browser.unit.TabThumbnailCapture.capture(
+                            rootView = root,
+                            tabId = id,
+                            isPrivate = current.content.private,
+                            isHome = true
+                        )
                     }
                 }
             }

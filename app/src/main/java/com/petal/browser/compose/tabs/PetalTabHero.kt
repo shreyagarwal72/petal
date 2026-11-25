@@ -57,8 +57,8 @@ class TabHeroState(startVisible: Boolean) {
     var customOriginRadius by mutableStateOf<Float?>(null)
     var fillColor by mutableStateOf(Color.Unspecified)
 
-    /** Hero opacity: invisible while docked on the tile (the real tile shows), opaque once it has grown. */
-    fun heroAlpha(): Float = ((1f - progress.value) / 0.3f).coerceIn(0f, 1f)
+    /** Hero stays fully opaque throughout the morph so identical tile pixels take over seamlessly. */
+    fun heroAlpha(): Float = if (visible) 1f else 0f
 
     /** Reset to the idle, docked state. */
     suspend fun dock() {
