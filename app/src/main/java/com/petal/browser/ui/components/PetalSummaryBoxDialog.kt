@@ -295,7 +295,7 @@ fun PetalSummaryBoxDialog(
                     ) {
                         Icon(Icons.Rounded.HelpOutline, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.ui_ask_question), fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.ui_ask_question), style = PetalText.button)
                     }
                 }
             }

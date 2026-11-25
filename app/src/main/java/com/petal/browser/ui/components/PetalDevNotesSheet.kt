@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.theme.PetalText
 import androidx.preference.PreferenceManager
 import androidx.compose.ui.graphics.Color

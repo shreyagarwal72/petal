@@ -131,7 +131,7 @@ fun PetalLinkContextMenuDialog(
                                 } else {
                                     Text(
                                         text = title.take(1).uppercase().ifBlank { "L" },
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.cardTitle,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
