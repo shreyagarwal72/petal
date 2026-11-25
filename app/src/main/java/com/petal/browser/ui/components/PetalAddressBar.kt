@@ -82,8 +82,7 @@ fun PetalAddressBar(
     val isFloatingBar = chrome.isFloating
     val addressBarHeight = chrome.height
     val isPillCollapse = chrome.isPillCollapse
-    val collapsedFraction = chrome.collapsedFraction
-    val visuals = chrome.visuals
+    val collapseStyle = chrome.collapseStyle
     val containerShape = chrome.containerShape
     val isLiquidGlass = chrome.isLiquidGlass
     val glassBar = chrome.glassBar
@@ -94,17 +93,16 @@ fun PetalAddressBar(
     val statusBarTopInset = chrome.statusBarTopInset
     val navBarBottomInset = chrome.navBarBottomInset
     var barHeightPx by remember { mutableIntStateOf(0) }
-    val sideButtonAlpha = visuals.sideButtonAlpha
-    val sideButtonScale = visuals.sideButtonScale
-    val leftButtonOffset = visuals.leftButtonOffsetDp.dp
-    val rightButtonOffset = visuals.rightButtonOffsetDp.dp
-    val fullBarAlpha = visuals.fullBarAlpha
-    val pillAlpha = visuals.pillAlpha
-    val pillScale = visuals.pillScale
-    val pillTranslationY = visuals.pillTranslationDp.dp
-    val outerBgAlpha = visuals.outerBgAlpha
-    val animatedContainerColor = chrome.animatedContainerColor
-    val animatedElevation = chrome.animatedElevation
+    val barVisible by remember(collapseStyle, isPreview) {
+        derivedStateOf {
+            isPreview || BarCollapseMath.isBarVisible(collapseStyle, BarCollapseState.collapsedFraction)
+        }
+    }
+    val showPill by remember(collapseStyle, isPreview, isPillCollapse) {
+        derivedStateOf {
+            !isPreview && isPillCollapse && BarCollapseMath.isPillShown(collapseStyle, BarCollapseState.collapsedFraction)
+        }
+    }
 
     Box(
         modifier = modifier
@@ -112,16 +110,17 @@ fun PetalAddressBar(
             .onSizeChanged { barHeightPx = it.height }
             .graphicsLayer {
                 // HIDE (Full Slide): the whole bar slides off its own edge as the fraction grows.
-                translationY = (if (resolvedIsBottom) 1f else -1f) * barHeightPx * visuals.slideFraction
+                val f = if (isPreview) 0f else BarCollapseState.collapsedFraction
+                translationY = (if (resolvedIsBottom) 1f else -1f) * barHeightPx * BarCollapseMath.slideFraction(collapseStyle, f)
             },
         contentAlignment = Alignment.Center
     ) {
-        if (visuals.barVisible) {
+        if (barVisible) {
             Surface(
                 shape = containerShape,
-                color = animatedContainerColor,
-                tonalElevation = animatedElevation,
-                shadowElevation = animatedElevation,
+                color = containerColor,
+                tonalElevation = chrome.staticElevation,
+                shadowElevation = chrome.staticElevation,
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(
@@ -142,15 +141,16 @@ fun PetalAddressBar(
                         }
                     )
                     .then(
-                        if (isLiquidGlass && outerBgAlpha > 0.05f) {
+                        if (isLiquidGlass) {
                             Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
                         } else Modifier
                     )
                     .graphicsLayer {
-                        alpha = fullBarAlpha
-                        scaleX = visuals.fullBarScaleX
-                        scaleY = visuals.fullBarScaleY
-                        translationY = visuals.fullBarTranslationDp.dp.toPx()
+                        val f = if (isPreview) 0f else BarCollapseState.collapsedFraction
+                        alpha = BarCollapseMath.fullBarAlpha(collapseStyle, f)
+                        scaleX = BarCollapseMath.fullBarScaleX(collapseStyle, f)
+                        scaleY = BarCollapseMath.fullBarScaleY(collapseStyle, f)
+                        translationY = BarCollapseMath.fullBarTranslationDp(collapseStyle, f, resolvedIsBottom).dp.toPx()
                     }
             ) {
                 Box(
@@ -180,10 +180,12 @@ fun PetalAddressBar(
                                 com.petal.browser.browser.PetalTabHistoryState.requestOpen()
                             },
                             modifier = Modifier.graphicsLayer {
-                                alpha = sideButtonAlpha
-                                scaleX = sideButtonScale
-                                scaleY = sideButtonScale
-                                translationX = leftButtonOffset.toPx()
+                                val f = if (isPreview) 0f else BarCollapseState.collapsedFraction
+                                val s = BarCollapseMath.sideButtonScale(collapseStyle, f)
+                                alpha = BarCollapseMath.sideButtonAlpha(collapseStyle, f)
+                                scaleX = s
+                                scaleY = s
+                                translationX = BarCollapseMath.leftButtonOffsetDp(collapseStyle, f).dp.toPx()
                             }
                         )
 
@@ -223,10 +225,12 @@ fun PetalAddressBar(
                             onClick = if (isLoading) onStopClick else onReloadClick,
                             onLongClick = if (isLoading) null else onHardRefresh,
                             modifier = Modifier.graphicsLayer {
-                                alpha = sideButtonAlpha
-                                scaleX = sideButtonScale
-                                scaleY = sideButtonScale
-                                translationX = rightButtonOffset.toPx()
+                                val f = if (isPreview) 0f else BarCollapseState.collapsedFraction
+                                val s = BarCollapseMath.sideButtonScale(collapseStyle, f)
+                                alpha = BarCollapseMath.sideButtonAlpha(collapseStyle, f)
+                                scaleX = s
+                                scaleY = s
+                                translationX = BarCollapseMath.rightButtonOffsetDp(collapseStyle, f).dp.toPx()
                             }
                         )
 
@@ -236,10 +240,12 @@ fun PetalAddressBar(
                             contentDescription = stringResource(R.string.bar_share),
                             onClick = onShareClick,
                             modifier = Modifier.graphicsLayer {
-                                alpha = sideButtonAlpha
-                                scaleX = sideButtonScale
-                                scaleY = sideButtonScale
-                                translationX = rightButtonOffset.toPx()
+                                val f = if (isPreview) 0f else BarCollapseState.collapsedFraction
+                                val s = BarCollapseMath.sideButtonScale(collapseStyle, f)
+                                alpha = BarCollapseMath.sideButtonAlpha(collapseStyle, f)
+                                scaleX = s
+                                scaleY = s
+                                translationX = BarCollapseMath.rightButtonOffsetDp(collapseStyle, f).dp.toPx()
                             }
                         )
                     }
@@ -247,7 +253,7 @@ fun PetalAddressBar(
             }
         }
 
-        if (!isPreview && isPillCollapse && visuals.showPill) {
+        if (showPill) {
             PetalMinimizedPill(
                 domain = BarCollapseState.currentDomain,
                 isHttps = BarCollapseState.isHttps,
@@ -260,10 +266,12 @@ fun PetalAddressBar(
                     BarCollapseState.requestExpand()
                 },
                 modifier = Modifier.graphicsLayer {
-                    alpha = pillAlpha
-                    scaleX = pillScale
-                    scaleY = pillScale
-                    translationY = pillTranslationY.toPx()
+                    val f = BarCollapseState.collapsedFraction
+                    val s = BarCollapseMath.pillScale(collapseStyle, f)
+                    alpha = BarCollapseMath.pillAlpha(collapseStyle, f)
+                    scaleX = s
+                    scaleY = s
+                    translationY = BarCollapseMath.pillTranslationDp(collapseStyle, f, resolvedIsBottom).dp.toPx()
                 }
             )
         }

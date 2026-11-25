@@ -23,9 +23,14 @@ import java.lang.ref.WeakReference
 object PetalGeckoRuntime {
     private const val TAG = "PetalGeckoRuntime"
     private const val REQUEST_CODE_GECKO_ACTIVITY = 8600
+    const val PREF_GECKO_SCROLL_TUNING = "sp_gecko_scroll_tuning"
+    const val PREF_GECKO_RENDERING_TUNING = "sp_gecko_rendering_tuning"
 
     @Volatile
     private var runtime: GeckoRuntime? = null
+
+    @Volatile
+    private var isLowRamDeviceFlag: Boolean = false
 
     private var pendingActivityResult: GeckoResult<Intent>? = null
     private var foregroundActivity: WeakReference<Activity>? = null
@@ -83,6 +88,7 @@ object PetalGeckoRuntime {
 
         val am = appContext.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
         val isLowRamDevice = am?.isLowRamDevice ?: false
+        isLowRamDeviceFlag = isLowRamDevice
 
         val isDebug = try {
             (appContext.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
@@ -262,6 +268,7 @@ object PetalGeckoRuntime {
         }
 
         runtime = newRuntime
+        applyScrollAndRenderingPrefs(sp)
         Log.i(TAG, "Initialized GeckoRuntime with standard tracking protection and high-performance pipeline")
         return newRuntime
     }
@@ -317,7 +324,7 @@ object PetalGeckoRuntime {
             "sp_private_dns_custom_url", "sp_nextdns_profile_id", "sp_privacy_profile", "sp_security_slider",
             "sp_https_only", "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode",
             "sp_trim_referrers", "sp_webauthn_enabled", "sp_fingerprint_protection", "sp_dnt_gpc",
-            "sp_cookie_banner_auto_reject"
+            "sp_cookie_banner_auto_reject", PREF_GECKO_SCROLL_TUNING, PREF_GECKO_RENDERING_TUNING
         )
         val sb = StringBuilder()
         for (k in keys) sb.append(k).append('=').append(sp.all[k]).append(';')
@@ -403,6 +410,9 @@ object PetalGeckoRuntime {
                 // 4b. Privacy toggles applied live through Gecko prefs (no restart needed)
                 applyLivePrivacyPrefs(sp)
 
+                // 4c. Scroll & rendering tuning prefs (low-RAM aware, flag-gated)
+                applyScrollAndRenderingPrefs(sp)
+
                 // 5. Safe Browsing Malware & Phishing Shield
                 rt.settings.contentBlocking.setSafeBrowsing(ContentBlocking.SafeBrowsing.DEFAULT)
 
@@ -442,15 +452,42 @@ object PetalGeckoRuntime {
     private fun setGeckoPref(name: String, value: Any) {
         try {
             val cls = Class.forName("org.mozilla.geckoview.GeckoPreferenceController")
-            val valueType = when (value) {
-                is Boolean -> java.lang.Boolean::class.java
-                is Int -> java.lang.Integer::class.java
-                else -> String::class.java
+            val (valueType, coercedValue) = when (value) {
+                is Boolean -> java.lang.Boolean::class.java to value
+                is Int -> java.lang.Integer::class.java to value
+                // GeckoPreferenceController.setGeckoPref stores float/string prefs via String overloads.
+                else -> String::class.java to value.toString()
             }
             val m = cls.getMethod("setGeckoPref", String::class.java, valueType, Int::class.javaPrimitiveType)
-            m.invoke(null, name, value, 1 /* PREF_BRANCH_USER */)
+            m.invoke(null, name, coercedValue, 1 /* PREF_BRANCH_USER */)
         } catch (t: Throwable) {
             Log.d(TAG, "setGeckoPref($name) unavailable: ${t.message}")
+        }
+    }
+
+    /**
+     * Applies APZ/scroll and WebRender/decode tuning prefs via [setGeckoPref], each behind an
+     * explicit preference flag and scaled using [isLowRamDeviceFlag].
+     */
+    private fun applyScrollAndRenderingPrefs(sp: SharedPreferences) {
+        val lowRam = isLowRamDeviceFlag
+        if (sp.getBoolean(PREF_GECKO_SCROLL_TUNING, true)) {
+            setGeckoPref("general.smoothScroll", true)
+            // Keep APZ displayport margins alive across brief pauses; shorter on low-RAM to bound tile memory.
+            setGeckoPref("apz.displayport_expiry_ms", if (lowRam) 4000 else 15000)
+            // Pre-render vertical displayport ahead of scroll velocity; conservative on low-RAM devices.
+            setGeckoPref("apz.y_skate_size_multiplier", if (lowRam) 2.5f else 3.5f)
+            setGeckoPref("apz.y_stationary_size_multiplier", if (lowRam) 1.5f else 2.5f)
+            setGeckoPref("layout.css.scroll-behavior.spring-constant", 250.0f)
+        }
+        if (sp.getBoolean(PREF_GECKO_RENDERING_TUNING, true)) {
+            setGeckoPref("gfx.webrender.all", true)
+            // Avoid runtime shader-compile hitches on standard devices; skip pre-cache on low-RAM to save RAM/disk.
+            setGeckoPref("gfx.webrender.precache-shaders", !lowRam)
+            setGeckoPref("gfx.webrender.max-partial-present-rects", if (lowRam) 0 else 1)
+            // Cap per-slice image decoding and JS GC high-water mark so image/feed scrolls stay smooth.
+            setGeckoPref("image.mem.decode_bytes_at_a_time", if (lowRam) 16384 else 65536)
+            setGeckoPref("javascript.options.mem.high_water_mark", if (lowRam) 64 else 128)
         }
     }
 

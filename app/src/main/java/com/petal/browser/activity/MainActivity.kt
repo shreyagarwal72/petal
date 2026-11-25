@@ -591,17 +591,14 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun settlePillFraction(target: Float) {
         val current = com.petal.browser.ui.components.BarCollapseState.collapsedFraction
         pillMorphAnimator?.cancel()
-        if (kotlin.math.abs(current - target) < 0.001f) {
+        if (kotlin.math.abs(current - target) < 0.001f || com.petal.browser.motion.MotionGate.isReduceMotion(this)) {
             com.petal.browser.ui.components.BarCollapseState.setFraction(target)
             return
         }
-        // Collapsing from fully open: resize the page first (bars still fully visible on top),
-        // then fade the bars once Gecko has painted the freed area. No black block, no jump.
-        val startsCollapse = target > current && current <= 0.001f
-        if (startsCollapse) com.petal.browser.ui.components.BarCollapseState.beginViewportCollapse()
+        // Gecko uses dynamic toolbar + clipping + translation (no viewport resize on flip),
+        // so bars animate immediately with zero startDelay.
         pillMorphAnimator = android.animation.ValueAnimator.ofFloat(current, target).apply {
-            duration = 320L
-            startDelay = if (startsCollapse) 110L else 0L
+            duration = 220L
             interpolator = android.view.animation.PathInterpolator(0.2f, 0f, 0f, 1f)
             addUpdateListener { anim ->
                 val f = anim.animatedValue as Float
@@ -609,15 +606,6 @@ class MainActivity : FragmentActivity(), BrowserController {
             }
             start()
         }
-    }
-
-    fun onScrollOffsetDelta(deltaY: Float) {
-        if (!sp.getBoolean("sp_hide_bars_on_scroll", true)) return
-        val density = resources.displayMetrics.density
-        val step = deltaY / (120f * density)
-        val current = com.petal.browser.ui.components.BarCollapseState.collapsedFraction
-        val next = (current + step).coerceIn(0f, 1f)
-        com.petal.browser.ui.components.BarCollapseState.setFraction(next)
     }
 
     fun animateAddressBarCollapse(collapse: Boolean) {

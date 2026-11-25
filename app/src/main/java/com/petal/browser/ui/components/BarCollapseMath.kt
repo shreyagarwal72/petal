@@ -70,4 +70,56 @@ object BarCollapseMath {
             }
         }
     }
+
+    @JvmStatic fun isBarVisible(style: BarCollapseStyle, collapsedFraction: Float): Boolean {
+        val f = collapsedFraction.coerceIn(0f, 1f)
+        return when (style) {
+            BarCollapseStyle.HIDE -> f < HIDDEN_AT
+            BarCollapseStyle.PILL -> ((0.45f - f) / 0.45f).coerceIn(0f, 1f) > 0.01f
+        }
+    }
+
+    @JvmStatic fun isPillShown(style: BarCollapseStyle, collapsedFraction: Float): Boolean {
+        if (style != BarCollapseStyle.PILL) return false
+        val f = collapsedFraction.coerceIn(0f, 1f)
+        return ((f - 0.40f) / 0.60f).coerceIn(0f, 1f) > 0.005f
+    }
+
+    @JvmStatic fun slideFraction(style: BarCollapseStyle, collapsedFraction: Float): Float =
+        if (style == BarCollapseStyle.HIDE) collapsedFraction.coerceIn(0f, 1f) else 0f
+
+    @JvmStatic fun fullBarAlpha(style: BarCollapseStyle, collapsedFraction: Float): Float =
+        if (style == BarCollapseStyle.HIDE) 1f else ((0.45f - collapsedFraction.coerceIn(0f, 1f)) / 0.45f).coerceIn(0f, 1f)
+
+    @JvmStatic fun fullBarScaleX(style: BarCollapseStyle, collapsedFraction: Float): Float =
+        if (style == BarCollapseStyle.HIDE) 1f else 0.94f + 0.06f * (1f - collapsedFraction.coerceIn(0f, 1f))
+
+    @JvmStatic fun fullBarScaleY(style: BarCollapseStyle, collapsedFraction: Float): Float =
+        if (style == BarCollapseStyle.HIDE) 1f else 0.90f + 0.10f * (1f - collapsedFraction.coerceIn(0f, 1f))
+
+    @JvmStatic fun fullBarTranslationDp(style: BarCollapseStyle, collapsedFraction: Float, isBottom: Boolean): Float =
+        if (style == BarCollapseStyle.HIDE) 0f else 10f * (if (isBottom) 1f else -1f) * collapsedFraction.coerceIn(0f, 1f)
+
+    @JvmStatic fun sideButtonAlpha(style: BarCollapseStyle, collapsedFraction: Float): Float =
+        if (style == BarCollapseStyle.HIDE) 1f else (1f - collapsedFraction.coerceIn(0f, 1f) * 2.2f).coerceIn(0f, 1f)
+
+    @JvmStatic fun sideButtonScale(style: BarCollapseStyle, collapsedFraction: Float): Float {
+        val a = sideButtonAlpha(style, collapsedFraction)
+        return if (style == BarCollapseStyle.HIDE) 1f else 0.80f + 0.20f * a
+    }
+
+    @JvmStatic fun leftButtonOffsetDp(style: BarCollapseStyle, collapsedFraction: Float): Float =
+        if (style == BarCollapseStyle.HIDE) 0f else -12f * collapsedFraction.coerceIn(0f, 1f)
+
+    @JvmStatic fun rightButtonOffsetDp(style: BarCollapseStyle, collapsedFraction: Float): Float =
+        if (style == BarCollapseStyle.HIDE) 0f else 12f * collapsedFraction.coerceIn(0f, 1f)
+
+    @JvmStatic fun pillAlpha(style: BarCollapseStyle, collapsedFraction: Float): Float =
+        if (style == BarCollapseStyle.HIDE) 0f else ((collapsedFraction.coerceIn(0f, 1f) - 0.40f) / 0.60f).coerceIn(0f, 1f)
+
+    @JvmStatic fun pillScale(style: BarCollapseStyle, collapsedFraction: Float): Float =
+        if (style == BarCollapseStyle.HIDE) 1f else 0.88f + 0.12f * pillAlpha(style, collapsedFraction)
+
+    @JvmStatic fun pillTranslationDp(style: BarCollapseStyle, collapsedFraction: Float, isBottom: Boolean): Float =
+        if (style == BarCollapseStyle.HIDE) 0f else -10f * (if (isBottom) 1f else -1f) * (1f - pillAlpha(style, collapsedFraction))
 }

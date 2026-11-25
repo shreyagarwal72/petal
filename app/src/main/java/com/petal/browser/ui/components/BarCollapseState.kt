@@ -1,16 +1,93 @@
 package com.petal.browser.ui.components
 
+import android.os.SystemClock
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 
 /**
+ * Signal-driven settle tracker for real Gecko viewport size changes (e.g. orientation, desktop tab
+ * bar toggle, or fallback resize). Never extends its window on continuous user scrolling: once a
+ * layout pass has been observed, it finishes on Gecko scroll-end or after [POST_LAYOUT_FALLBACK_MS]
+ * from the layout pass, with [HARD_CAP_MS] strictly as a safety net against lost callbacks.
+ */
+class ViewportSettleTracker(private val nowMs: () -> Long = { SystemClock.uptimeMillis() }) {
+
+    companion object {
+        const val POST_LAYOUT_FALLBACK_MS = 80L
+        const val HARD_CAP_MS = 800L
+    }
+
+    @Volatile private var active = false
+    @Volatile private var startMs = 0L
+    @Volatile private var layoutAppliedMs = 0L
+    @Volatile private var sawLayout = false
+    @Volatile private var sawScrollEnd = false
+
+    fun beginSettle() {
+        val now = nowMs()
+        startMs = now
+        layoutAppliedMs = 0L
+        sawLayout = false
+        sawScrollEnd = false
+        active = true
+    }
+
+    fun onLayoutApplied() {
+        if (!active) return
+        sawLayout = true
+        if (sawScrollEnd) {
+            active = false
+            return
+        }
+        layoutAppliedMs = nowMs()
+    }
+
+    fun onGeckoScrollEnd() {
+        if (!active) return
+        sawScrollEnd = true
+        if (sawLayout) {
+            active = false
+        }
+    }
+
+    fun onGeckoScroll() {
+        if (!active) return
+        if (sawLayout && nowMs() - layoutAppliedMs >= POST_LAYOUT_FALLBACK_MS) {
+            active = false
+        }
+    }
+
+    fun isSettling(): Boolean {
+        if (!active) return false
+        val now = nowMs()
+        if (now - startMs >= HARD_CAP_MS) {
+            active = false
+            return false
+        }
+        if (sawLayout && (sawScrollEnd || now - layoutAppliedMs >= POST_LAYOUT_FALLBACK_MS)) {
+            active = false
+            return false
+        }
+        return true
+    }
+
+    fun reset() {
+        active = false
+        startMs = 0L
+        layoutAppliedMs = 0L
+        sawLayout = false
+        sawScrollEnd = false
+    }
+}
+
+/**
  * Shared state tracking the scroll minimization and morph of the Petal toolbar.
  *
  * [collapsedFraction] ranges from 0f (fully expanded bar) to 1f (compact minimized pill).
- * [MainActivity] drives the value during scroll animations; Compose bar composables observe it
- * to morph their shape, dimensions, and contents smoothly without jerky re-layouts.
+ * [MainActivity] drives the value during scroll animations; Compose bar composables read it
+ * inside draw/graphicsLayer phases so animations never recompose the bar tree per frame.
  */
 object BarCollapseState {
 
@@ -22,81 +99,57 @@ object BarCollapseState {
         private set
 
     /**
-     * True while the web page is laid out for MINIMIZED bars (edge to edge). The page viewport is
-     * resized only when this flips, never per animation frame: a Gecko resize is expensive and
-     * leaves an unpainted block where the bar was while it catches up. The remaining distance is
-     * covered by a translation that [ComposeEngineViewport] animates from [collapsedFraction].
+     * Kept for callers querying collapsed layout intent. Under dynamic-toolbar mode, Gecko's
+     * static padding does not change on collapse/expand flips; only translation and
+     * vertical clipping animate.
      */
     var viewportCollapsed by mutableStateOf(false)
         private set
+
+    /**
+     * True only while the web page is actively scrolling/flinging. Flips once at scroll start
+     * and once when scroll settles, allowing background/glass effects to stay static mid-scroll.
+     */
+    var isPageScrolling by mutableStateOf(false)
 
     /** The one decision-maker for scroll-driven collapse / expand. See [BarScrollDecider]. */
     @JvmField
     val scrollDecider = BarScrollDecider()
 
-    /**
-     * True while the Compose viewport owns scroll-driven bar changes, so the legacy
-     * PetalTabViewController scroll dispatcher must not make a second, competing decision.
-     */
+    @JvmField
+    val settleTracker = ViewportSettleTracker()
+
     @Volatile
     @JvmField
     var composeViewportOwnsScroll: Boolean = false
 
-    /**
-     * Uptime (ms) of the last time the page viewport was resized by a bar collapse/expand.
-     * Kept for diagnostics only; suppression is driven by the settle state below, not by this.
-     */
     @Volatile
     var lastViewportFlipUptimeMs: Long = 0L
         private set
 
-    // ── Gecko viewport settle ────────────────────────────────────────────────
-    // Resizing the viewport makes Gecko reflow and shift its scroll offset, which comes back as
-    // scroll callbacks that look like user input. Instead of a fixed clock, input stays suppressed
-    // until (1) the view reported its new layout and (2) Gecko has been quiet for SETTLE_QUIET_MS
-    // after its last layout or scroll callback. SETTLE_HARD_CAP_MS only stops a lost callback from
-    // suppressing scrolling forever.
-    private const val SETTLE_QUIET_MS = 220L
-    private const val SETTLE_HARD_CAP_MS = 1500L
-    @Volatile private var settleActive = false
-    @Volatile private var settleStartMs = 0L
-    @Volatile private var settleLastActivityMs = 0L
-    @Volatile private var settleSawLayout = false
-
-    private fun markViewportFlip(newValue: Boolean) {
-        if (newValue != viewportCollapsed) {
-            val now = android.os.SystemClock.uptimeMillis()
-            lastViewportFlipUptimeMs = now
-            settleStartMs = now
-            settleLastActivityMs = now
-            settleSawLayout = false
-            settleActive = true
-        }
+    @JvmStatic
+    fun onViewportResizeRequested() {
+        lastViewportFlipUptimeMs = SystemClock.uptimeMillis()
+        settleTracker.beginSettle()
     }
 
-    /** The page view finished a layout pass (or no layout change was needed) after a viewport flip. */
     @JvmStatic
     fun onViewportLayoutApplied() {
-        if (!settleActive) return
-        settleSawLayout = true
-        settleLastActivityMs = android.os.SystemClock.uptimeMillis()
+        settleTracker.onLayoutApplied()
     }
 
-    /** Gecko reported a scroll offset while settling: it is still reacting to the resize. */
     @JvmStatic
-    fun onGeckoScrollWhileSettling() {
-        if (settleActive) settleLastActivityMs = android.os.SystemClock.uptimeMillis()
+    fun onGeckoScrollEnd() {
+        settleTracker.onGeckoScrollEnd()
     }
 
     @JvmStatic
-    fun isViewportSettling(): Boolean {
-        if (!settleActive) return false
-        val now = android.os.SystemClock.uptimeMillis()
-        if (now - settleStartMs >= SETTLE_HARD_CAP_MS) { settleActive = false; return false }
-        if (!settleSawLayout) return true
-        if (now - settleLastActivityMs >= SETTLE_QUIET_MS) { settleActive = false; return false }
-        return true
+    fun onGeckoScrollWhileSettling() {
+        settleTracker.onGeckoScroll()
     }
+
+    @JvmStatic
+    fun isViewportSettling(): Boolean = settleTracker.isSettling()
 
     /** Extracted domain of the active web page (e.g. "google.com", "wikipedia.org"). */
     var currentDomain by mutableStateOf("")
@@ -131,13 +184,8 @@ object BarCollapseState {
     @JvmStatic
     fun updateCollapsed(collapsed: Boolean) {
         isCollapsed = collapsed
-        markViewportFlip(collapsed)
         viewportCollapsed = collapsed
-        if (!collapsed) {
-            collapsedFraction = 0f
-        } else {
-            collapsedFraction = 1f
-        }
+        collapsedFraction = if (collapsed) 1f else 0f
     }
 
     @JvmStatic
@@ -145,18 +193,19 @@ object BarCollapseState {
         val clamped = fraction.coerceIn(0f, 1f)
         collapsedFraction = clamped
         isCollapsed = clamped >= 0.5f
-        markViewportFlip(clamped > 0.001f)
         viewportCollapsed = clamped > 0.001f
     }
 
-    /**
-     * Grow the page into the space of the bars BEFORE they start to fade, so Gecko has painted the
-     * new area by the time the bar stops covering it.
-     */
     @JvmStatic
     fun beginViewportCollapse() {
-        markViewportFlip(true)
         viewportCollapsed = true
+    }
+
+    @JvmStatic
+    fun resetScrollSession() {
+        isPageScrolling = false
+        settleTracker.reset()
+        scrollDecider.reset()
     }
 
     @JvmStatic
