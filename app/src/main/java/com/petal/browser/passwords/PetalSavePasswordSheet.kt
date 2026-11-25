@@ -284,7 +284,7 @@ private fun SavePasswordSheetContent(
 
                         IconButton(
                             onClick = {
-                                if (!isMorphing && !isClosing) {
+                                if (!isClosing) {
                                     isClosing = true
                                     onDismiss()
                                 }
@@ -370,11 +370,11 @@ private fun SavePasswordSheetContent(
                         // Secondary action: "Never for this site"
                         com.petal.browser.ui.kit.FilledTonalButton(
                             onClick = {
-                                if (!isMorphing && !isClosing) {
+                                if (!isClosing) {
                                     onNever()
                                 }
                             },
-                            enabled = !isMorphing && !isClosing,
+                            enabled = !isClosing,
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier
                                 .weight(1f)

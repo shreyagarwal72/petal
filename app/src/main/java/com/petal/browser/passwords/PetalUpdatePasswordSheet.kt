@@ -274,7 +274,7 @@ private fun UpdatePasswordSheetContent(
 
                         IconButton(
                             onClick = {
-                                if (!isMorphing && !isClosing) {
+                                if (!isClosing) {
                                     isClosing = true
                                     onDismiss()
                                 }
@@ -334,12 +334,12 @@ private fun UpdatePasswordSheetContent(
                     ) {
                         com.petal.browser.ui.kit.FilledTonalButton(
                             onClick = {
-                                if (!isMorphing && !isClosing) {
+                                if (!isClosing) {
                                     isClosing = true
                                     onDismiss()
                                 }
                             },
-                            enabled = !isMorphing && !isClosing,
+                            enabled = !isClosing,
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier
                                 .weight(1f)
