@@ -88,6 +88,7 @@ class GlassBackdrop internal constructor(private val source: View) {
 
     /** Records the source again, then every bar sampling it. */
     internal fun refresh() {
+        if (GeckoGlassBackend.isScrolling) return
         if (!recordSource()) return
         for (bar in bars) {
             // A minimized (INVISIBLE) bar draws nothing; skip it until it is shown again.
@@ -299,6 +300,7 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
 
     /** Re-records the bar and its slab from the latest backdrop and geometry. */
     internal fun record() {
+        if (GeckoGlassBackend.isScrolling) return
         if (backdrop.isRecordingBackdrop) return
         val look = look ?: return
         val outline = outline ?: return

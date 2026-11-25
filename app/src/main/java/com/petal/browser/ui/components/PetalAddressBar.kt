@@ -130,7 +130,13 @@ fun PetalAddressBar(
                     )
                     .then(
                         if (isLiquidGlass) {
-                            Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
+                            Modifier.liquidGlass(
+                                shape = containerShape,
+                                tint = baseGlassColor,
+                                bar = glassBar,
+                                scrollSolidFallback = true,
+                                alphaProvider = { chrome.currentVisuals().fullBarAlpha }
+                            )
                         } else Modifier
                     )
                     .graphicsLayer {

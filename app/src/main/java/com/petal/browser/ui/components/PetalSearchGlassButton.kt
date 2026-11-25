@@ -44,7 +44,8 @@ internal fun PetalSearchGlassButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = 64.dp,
-    enabled: Boolean = true
+    enabled: Boolean = true,
+    collapseAlphaProvider: () -> Float = { 1f }
 ) {
     val scheme = MaterialTheme.colorScheme
     val context = LocalContext.current
@@ -66,7 +67,13 @@ internal fun PetalSearchGlassButton(
             .size(size)
             .then(if (!glassActive) Modifier.shadow(1.dp, CircleShape, clip = false) else Modifier)
             .clip(CircleShape)
-            .liquidGlass(CircleShape, scheme.surfaceContainerHigh, glassBar)
+            .liquidGlass(
+                shape = CircleShape,
+                tint = scheme.surfaceContainerHigh,
+                bar = glassBar,
+                scrollSolidFallback = true,
+                alphaProvider = collapseAlphaProvider
+            )
             .bouncyClickable(
                 scaleDown = 0.86f,
                 enabled = enabled,

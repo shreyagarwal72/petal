@@ -48,12 +48,13 @@ class BarChrome(
     val containerColor: Color,
     val statusBarTopInset: Dp,
     val navBarBottomInset: Dp,
-    val glassSource: android.view.View? = null
+    val glassSource: android.view.View? = null,
+    val collapsedFractionProvider: () -> Float = { if (isPreview) 0f else BarCollapseState.collapsedFraction }
 ) {
     fun currentVisuals(): BarCollapseMath.Visuals =
         BarCollapseMath.compute(
             collapseStyle,
-            if (isPreview) 0f else BarCollapseState.collapsedFraction,
+            collapsedFractionProvider(),
             isBottom
         )
 
@@ -115,6 +116,9 @@ fun rememberBarChrome(
     val statusTop = if (isPreview || suppressStatusBarTopInset) 0.dp
     else WindowInsets.statusBars.union(WindowInsets.displayCutout).asPaddingValues().calculateTopPadding()
     val navBottom = if (isPreview) 0.dp else WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val collapsedFractionProvider = remember(isPreview) {
+        if (isPreview) ({ 0f }) else ({ BarCollapseState.collapsedFraction })
+    }
 
     return BarChrome(
         height = height,
@@ -131,6 +135,7 @@ fun rememberBarChrome(
         containerColor = containerColor,
         statusBarTopInset = statusTop,
         navBarBottomInset = navBottom,
-        glassSource = glassSource
+        glassSource = glassSource,
+        collapsedFractionProvider = collapsedFractionProvider
     )
 }

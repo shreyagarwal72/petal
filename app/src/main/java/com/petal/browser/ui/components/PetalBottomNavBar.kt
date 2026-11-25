@@ -259,16 +259,37 @@ fun PetalBottomNavBar(
         with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
     } else 0.dp
 
-    // Derived boolean flips only when visibility crosses threshold — scrolling never recomposes the nav.
-    val navInteractive by remember(isBottomAddressBar) {
+    // Derived booleans flip only when visibility crosses threshold — scrolling never recomposes the nav.
+    val collapseFractionProvider: () -> Float = remember { { BarCollapseState.collapsedFraction } }
+    val collapseAlphaProvider: () -> Float = remember(barSettings.collapseStyle, isBottomAddressBar) {
+        {
+            BarCollapseMath.compute(
+                barSettings.collapseStyle,
+                collapseFractionProvider(),
+                isBottomAddressBar
+            ).navAlpha
+        }
+    }
+    val navInteractive by remember(barSettings.collapseStyle, isBottomAddressBar) {
         derivedStateOf {
             BarCollapseMath.compute(
                 barSettings.collapseStyle,
-                BarCollapseState.collapsedFraction,
+                collapseFractionProvider(),
                 isBottomAddressBar
             ).navVisible
         }
     }
+    val navMounted by remember(barSettings.collapseStyle, isBottomAddressBar) {
+        derivedStateOf {
+            val v = BarCollapseMath.compute(
+                barSettings.collapseStyle,
+                collapseFractionProvider(),
+                isBottomAddressBar
+            )
+            v.navVisible && v.navAlpha >= 0.05f
+        }
+    }
+    if (!navMounted) return
     val showLabels = barSettings.showNavLabels
 
     if (effectiveFloating) {
@@ -279,13 +300,16 @@ fun PetalBottomNavBar(
                 .graphicsLayer {
                     val v = BarCollapseMath.compute(
                         barSettings.collapseStyle,
-                        BarCollapseState.collapsedFraction,
+                        collapseFractionProvider(),
                         isBottomAddressBar
                     )
                     translationY = size.height * v.slideFraction + v.navTranslationDp.dp.toPx()
                     scaleX = v.navScale
                     scaleY = v.navScale
                     alpha = v.navAlpha
+                    if (v.navAlpha < 0.999f) {
+                        compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                    }
                 }
                 .fillMaxWidth()
                 .navigationBarsPadding()
@@ -346,6 +370,7 @@ fun PetalBottomNavBar(
                         includeAi = onHomePage,
                         enabled = navInteractive,
                         showLabels = showLabels,
+                        collapseAlphaProvider = collapseAlphaProvider,
                         onSearchClick = launchSearch
                     )
                 }
@@ -368,6 +393,7 @@ fun PetalBottomNavBar(
                     glassSource = resolvedGlassSource,
                     onClick = launchSearch,
                     enabled = navInteractive,
+                    collapseAlphaProvider = collapseAlphaProvider,
                     modifier = Modifier.onGloballyPositioned { searchButtonBounds[0] = it.boundsInWindow() }.graphicsLayer {
                         val p = searchLaunch.value
                         val sc = 1f + 0.22f * p
@@ -386,13 +412,17 @@ fun PetalBottomNavBar(
                 .graphicsLayer {
                     val v = BarCollapseMath.compute(
                         barSettings.collapseStyle,
-                        BarCollapseState.collapsedFraction,
+                        collapseFractionProvider(),
                         isBottomAddressBar
                     )
+                    val combinedAlpha = (1f - searchLaunch.value) * v.navAlpha
                     translationY = searchLaunch.value * 22.dp.toPx() + size.height * v.slideFraction + v.navTranslationDp.dp.toPx()
                     scaleX = v.navScale
                     scaleY = v.navScale
-                    alpha = (1f - searchLaunch.value) * v.navAlpha
+                    alpha = combinedAlpha
+                    if (combinedAlpha < 0.999f) {
+                        compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen
+                    }
                 }
                 .fillMaxWidth(),
             contentAlignment = Alignment.BottomCenter
@@ -422,7 +452,14 @@ fun PetalBottomNavBar(
                     .height(64.dp + flatNavInset)
                     .then(
                         if (isLiquidGlass) {
-                            Modifier.liquidGlass(navBarShape, baseContainer, glassBar, progressiveEdge = 1)
+                            Modifier.liquidGlass(
+                                shape = navBarShape,
+                                tint = baseContainer,
+                                bar = glassBar,
+                                progressiveEdge = 1,
+                                scrollSolidFallback = true,
+                                alphaProvider = { (1f - searchLaunch.value) * collapseAlphaProvider() }
+                            )
                         } else Modifier
                     )
             ) {

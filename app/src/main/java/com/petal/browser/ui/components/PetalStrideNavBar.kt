@@ -110,6 +110,7 @@ internal fun PetalStrideNavBar(
     includeAi: Boolean = true,
     enabled: Boolean = true,
     showLabels: Boolean = true,
+    collapseAlphaProvider: () -> Float = { 1f },
     onSearchClick: () -> Unit = {}
 ) {
     val NavOrder = when {
@@ -159,7 +160,14 @@ internal fun PetalStrideNavBar(
             .graphicsLayer { translationX = dragOffsetPx }
             .then(if (!isLiquidGlassActive) Modifier.shadow(1.dp, pill, clip = false) else Modifier)
             .then(if (isLiquidGlassActive) Modifier.glassPressScale(glassPress, 16f) else Modifier)
-            .liquidGlass(pill, scheme.surfaceContainerHigh, glassBar, pressFx = false)
+            .liquidGlass(
+                shape = pill,
+                tint = scheme.surfaceContainerHigh,
+                bar = glassBar,
+                pressFx = false,
+                scrollSolidFallback = true,
+                alphaProvider = collapseAlphaProvider
+            )
             .then(if (isLiquidGlassActive) Modifier.glassPressOverlay(glassPress, pill) else Modifier)
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
@@ -208,7 +216,14 @@ internal fun PetalStrideNavBar(
         }
         Row(
             modifier = Modifier
-                .glassTile(slab, pill, scheme.primary, glassBar, if (isLiquidGlassActive) glassPress else null)
+                .glassTile(
+                    target = slab,
+                    shape = pill,
+                    tint = scheme.primary,
+                    bar = glassBar,
+                    press = if (isLiquidGlassActive) glassPress else null,
+                    alphaProvider = collapseAlphaProvider
+                )
                 .padding(horizontal = rowPadH, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(itemGap)

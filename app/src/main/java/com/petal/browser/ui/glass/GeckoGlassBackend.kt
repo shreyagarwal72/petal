@@ -1,13 +1,21 @@
 package com.petal.browser.ui.glass
 
+import android.app.ActivityManager
 import android.content.Context
+import android.content.SharedPreferences
 import android.graphics.SurfaceTexture
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.preference.PreferenceManager
 import org.mozilla.geckoview.GeckoView
 
@@ -20,18 +28,115 @@ import org.mozilla.geckoview.GeckoView
  */
 object GeckoGlassBackend {
 
+    const val SCROLL_IDLE_DELAY_MS = 300L
+    private const val MIN_BAR_GLASS_RAM_BYTES = 5_200L * 1024L * 1024L
+
+    private val mainHandler by lazy { Handler(Looper.getMainLooper()) }
+
+    /** Compose-observable scroll active flag so bar glass falls back to solid M3 during scroll/fling. */
+    var isScrolling by mutableStateOf(false)
+        private set
+
+    @Volatile
+    var isFlinging: Boolean = false
+        private set
+
+    @Volatile
+    private var isScrollingVolatile: Boolean = false
+
+    @Volatile
+    private var lastScrollUptimeMs: Long = 0L
+
+    @Volatile
+    private var idleCheckScheduled: Boolean = false
+
+    @Volatile
+    var onScrollIdleCallback: (() -> Unit)? = null
+
+    private val scrollIdleRunnable = object : Runnable {
+        override fun run() {
+            val now = SystemClock.uptimeMillis()
+            val elapsed = now - lastScrollUptimeMs
+            if (elapsed >= SCROLL_IDLE_DELAY_MS) {
+                idleCheckScheduled = false
+                isScrollingVolatile = false
+                isFlinging = false
+                isScrolling = false
+                onScrollIdleCallback?.invoke()
+            } else {
+                mainHandler.postDelayed(this, SCROLL_IDLE_DELAY_MS - elapsed)
+            }
+        }
+    }
+
+    /** Marks page scroll/fling activity and schedules glass/edge restore ~300 ms after idle. */
+    @JvmStatic
+    fun notifyScrollActivity(flinging: Boolean = false) {
+        lastScrollUptimeMs = SystemClock.uptimeMillis()
+        if (flinging) isFlinging = true
+        if (isScrollingVolatile && idleCheckScheduled) return
+        isScrollingVolatile = true
+        val activateOnMain = Runnable {
+            isScrolling = true
+            if (!idleCheckScheduled) {
+                idleCheckScheduled = true
+                mainHandler.postDelayed(scrollIdleRunnable, SCROLL_IDLE_DELAY_MS)
+            }
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            activateOnMain.run()
+        } else {
+            mainHandler.post(activateOnMain)
+        }
+    }
+
+    @JvmStatic
+    fun isScrollingOrFlinging(): Boolean = isScrollingVolatile || isFlinging
+
+    /**
+     * Live page-sampling glass for the address bar and bottom nav defaults to OFF on devices
+     * below a capable performance class (low-RAM devices, <=4 CPU cores, <6 GB RAM, or API <31
+     * media performance class), while still honoring explicit user toggles.
+     */
+    @JvmStatic
+    fun defaultBarGlassEnabled(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
+        if (com.petal.browser.motion.MotionGate.isLowEndDevice(context)) return false
+        try {
+            val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            if (am != null) {
+                val memInfo = ActivityManager.MemoryInfo()
+                am.getMemoryInfo(memInfo)
+                if (memInfo.totalMem in 1L until MIN_BAR_GLASS_RAM_BYTES) return false
+            }
+            if (Build.VERSION.MEDIA_PERFORMANCE_CLASS in 1 until Build.VERSION_CODES.S) {
+                return false
+            }
+        } catch (_: Throwable) {}
+        return true
+    }
+
+    @JvmStatic
+    fun isAddressBarGlassEnabled(sp: SharedPreferences, context: Context): Boolean =
+        sp.getBoolean("sp_liquid_glass_address_bar", defaultBarGlassEnabled(context))
+
+    @JvmStatic
+    fun isBottomNavGlassEnabled(sp: SharedPreferences, context: Context): Boolean =
+        sp.getBoolean("sp_liquid_glass_bottom_nav", defaultBarGlassEnabled(context))
+
     @JvmStatic
     fun shouldSamplePage(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return false
+        if (isScrollingOrFlinging() || com.petal.browser.ui.components.BarCollapseState.isCollapsed) return false
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         if (!com.petal.browser.ui.containment.isLiquidGlassMaster(sp)) return false
-        val addressGlass = sp.getBoolean("sp_liquid_glass_address_bar", true)
-        val bottomGlass = sp.getBoolean("sp_liquid_glass_bottom_nav", true)
-        return addressGlass || bottomGlass
+        return isAddressBarGlassEnabled(sp, context) || isBottomNavGlassEnabled(sp, context)
     }
 
     @JvmStatic
     fun applyBackend(geckoView: GeckoView, context: Context) {
+        // Never rebuild the SurfaceView/TextureView while a scroll or fling is in flight.
+        if (isScrollingOrFlinging()) return
         // Match official Mozilla GeckoView standard: default to BACKEND_SURFACE_VIEW
         // for optimal hardware composition and reliable web page rendering.
         // Switch to BACKEND_TEXTURE_VIEW only when Liquid Glass requires sampling the page.

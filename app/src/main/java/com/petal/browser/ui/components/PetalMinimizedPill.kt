@@ -202,7 +202,7 @@ fun PetalMinimizedPill(
                     .clip(pillShape)
                     .then(
                         if (isGlass) {
-                            Modifier.liquidGlass(pillShape, baseGlassColor, resolvedGlassBar, pressFx = true)
+                            Modifier.liquidGlass(pillShape, baseGlassColor, resolvedGlassBar, pressFx = true, scrollSolidFallback = true)
                         } else Modifier
                     )
             ) {

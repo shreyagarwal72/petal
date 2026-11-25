@@ -61,7 +61,7 @@ object BarCollapseMath {
                 val fullAlpha = ((PILL_HANDOFF - f) / PILL_HANDOFF).coerceIn(0f, 1f)
                 val pillAlpha = ((f - PILL_HANDOFF) / (1f - PILL_HANDOFF)).coerceIn(0f, 1f)
                 val dir = if (isBottom) 1f else -1f
-                val barVis = fullAlpha > 0.005f
+                val barVis = fullAlpha >= 0.05f
                 Visuals(
                     fullBarAlpha = fullAlpha,
                     fullBarScaleX = 0.94f + 0.06f * fullAlpha,

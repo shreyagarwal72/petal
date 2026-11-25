@@ -35,4 +35,43 @@ class BarCollapseMathTest {
         assertFalse(midPill.barVisible)
         assertTrue(midPill.showPill)
     }
+
+    @Test fun pill_skipsVisibilityBelow005Alpha() {
+        // Near PILL_HANDOFF where fullAlpha drops below 0.05f, both barVisible and navVisible are false.
+        val justBelow = BarCollapseMath.compute(BarCollapseStyle.PILL, 0.405f, isBottom = false)
+        assertTrue(justBelow.fullBarAlpha < 0.05f)
+        assertFalse(justBelow.barVisible)
+        assertFalse(justBelow.navVisible)
+    }
+
+    @Test fun viewportSettleOnlyActiveInLegacyPaddingMode() {
+        BarCollapseState.uptimeMillisProvider = { 5000L }
+        try {
+            BarCollapseState.legacyPaddingViewport = false
+            BarCollapseState.updateCollapsed(false)
+            BarCollapseState.beginViewportCollapse()
+            assertFalse(BarCollapseState.isViewportSettling())
+
+            BarCollapseState.legacyPaddingViewport = true
+            BarCollapseState.updateCollapsed(false)
+            BarCollapseState.beginViewportCollapse()
+            assertTrue(BarCollapseState.isViewportSettling())
+        } finally {
+            BarCollapseState.legacyPaddingViewport = false
+            BarCollapseState.updateCollapsed(false)
+            BarCollapseState.uptimeMillisProvider = { android.os.SystemClock.uptimeMillis() }
+        }
+    }
+
+    @Test fun scrollDeciderDetectsFlingCandidateAfterTouchRelease() {
+        var now = 1000L
+        val decider = BarScrollDecider(nowMs = { now })
+        decider.touchTrackingAvailable = true
+        decider.onTouch(true)
+        assertFalse(decider.isFlingCandidate())
+        decider.onTouch(false)
+        assertTrue(decider.isFlingCandidate())
+        now += BarScrollDecider.FLING_WINDOW_MS + 10L
+        assertFalse(decider.isFlingCandidate())
+    }
 }

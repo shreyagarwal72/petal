@@ -38,6 +38,12 @@ class BarScrollDecider(private val nowMs: () -> Long = { SystemClock.uptimeMilli
     @Volatile private var touching = false
     @Volatile private var lastTouchEndMs = 0L
 
+    val isTouching: Boolean
+        get() = touching
+
+    fun isFlingCandidate(): Boolean =
+        touchTrackingAvailable && !touching && lastTouchEndMs > 0L && (nowMs() - lastTouchEndMs) < FLING_WINDOW_MS
+
     /** Set once a touch listener is installed. Without one every offset change is trusted. */
     @Volatile var touchTrackingAvailable = false
 

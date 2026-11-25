@@ -232,8 +232,15 @@ fun PetalMergedBar(
                         }
                     )
                     .then(
-                        if (isLiquidGlass) Modifier.liquidGlass(containerShape, baseGlassColor, glassBar)
-                        else Modifier
+                        if (isLiquidGlass) {
+                            Modifier.liquidGlass(
+                                shape = containerShape,
+                                tint = baseGlassColor,
+                                bar = glassBar,
+                                scrollSolidFallback = true,
+                                alphaProvider = { chrome.currentVisuals().fullBarAlpha }
+                            )
+                        } else Modifier
                     )
                     .graphicsLayer {
                         val v = chrome.currentVisuals()
@@ -323,7 +330,7 @@ fun PetalMergedBar(
                                     .graphicsLayer {
                                         val v = chrome.currentVisuals()
                                         val collapseProg = if (chrome.isPillCollapse) {
-                                            BarCollapseState.collapsedFraction.coerceIn(0f, 1f)
+                                            chrome.collapsedFractionProvider().coerceIn(0f, 1f)
                                         } else 0f
                                         alpha = v.sideButtonAlpha
                                         scaleX = v.sideButtonScale

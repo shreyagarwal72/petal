@@ -22,10 +22,19 @@ object BarCollapseState {
         private set
 
     /**
-     * True while the web page is laid out for MINIMIZED bars (edge to edge). The page viewport is
-     * resized only when this flips, never per animation frame: a Gecko resize is expensive and
-     * leaves an unpainted block where the bar was while it catches up. The remaining distance is
-     * covered by a translation that [ComposeEngineViewport] animates from [collapsedFraction].
+     * Fallback preference: when true, restores the old padding-based viewport resize path instead of
+     * GeckoView's dynamic toolbar + vertical clipping API. Kept behind a hidden fallback pref until
+     * fixed-position bottom elements (e.g. YouTube bottom nav) are verified on device.
+     */
+    const val PREF_LEGACY_PADDING_VIEWPORT = "sp_legacy_padding_viewport"
+
+    @Volatile
+    @JvmField
+    var legacyPaddingViewport: Boolean = false
+
+    /**
+     * True while the web page is laid out for MINIMIZED bars (edge to edge) in the legacy
+     * padding-based viewport mode.
      */
     var viewportCollapsed by mutableStateOf(false)
         private set
@@ -50,12 +59,11 @@ object BarCollapseState {
     var lastViewportFlipUptimeMs: Long = 0L
         private set
 
-    // ── Gecko viewport settle ────────────────────────────────────────────────
-    // Resizing the viewport makes Gecko reflow and shift its scroll offset, which comes back as
-    // scroll callbacks that look like user input. Instead of a fixed clock, input stays suppressed
-    // until (1) the view reported its new layout and (2) Gecko has been quiet for SETTLE_QUIET_MS
-    // after its last layout or scroll callback. SETTLE_HARD_CAP_MS only stops a lost callback from
-    // suppressing scrolling forever.
+    // ── Gecko viewport settle (legacy padding fallback only) ─────────────────
+    // When legacyPaddingViewport is false, GeckoView's dynamic toolbar + vertical clipping never
+    // reflows the page, so settle suppression is bypassed. When legacyPaddingViewport is true,
+    // input stays suppressed until (1) the view reported its new layout and (2) Gecko has been
+    // quiet for SETTLE_QUIET_MS after its last layout or scroll callback.
     private const val SETTLE_QUIET_MS = 220L
     private const val SETTLE_HARD_CAP_MS = 1500L
     @Volatile private var settleActive = false
@@ -63,9 +71,17 @@ object BarCollapseState {
     @Volatile private var settleLastActivityMs = 0L
     @Volatile private var settleSawLayout = false
 
+    @JvmField
+    @Volatile
+    var uptimeMillisProvider: () -> Long = { android.os.SystemClock.uptimeMillis() }
+
     private fun markViewportFlip(newValue: Boolean) {
+        if (!legacyPaddingViewport) {
+            settleActive = false
+            return
+        }
         if (newValue != viewportCollapsed) {
-            val now = android.os.SystemClock.uptimeMillis()
+            val now = uptimeMillisProvider()
             lastViewportFlipUptimeMs = now
             settleStartMs = now
             settleLastActivityMs = now
@@ -77,21 +93,23 @@ object BarCollapseState {
     /** The page view finished a layout pass (or no layout change was needed) after a viewport flip. */
     @JvmStatic
     fun onViewportLayoutApplied() {
-        if (!settleActive) return
+        if (!legacyPaddingViewport || !settleActive) return
         settleSawLayout = true
-        settleLastActivityMs = android.os.SystemClock.uptimeMillis()
+        settleLastActivityMs = uptimeMillisProvider()
     }
 
     /** Gecko reported a scroll offset while settling: it is still reacting to the resize. */
     @JvmStatic
     fun onGeckoScrollWhileSettling() {
-        if (settleActive) settleLastActivityMs = android.os.SystemClock.uptimeMillis()
+        if (legacyPaddingViewport && settleActive) {
+            settleLastActivityMs = uptimeMillisProvider()
+        }
     }
 
     @JvmStatic
     fun isViewportSettling(): Boolean {
-        if (!settleActive) return false
-        val now = android.os.SystemClock.uptimeMillis()
+        if (!legacyPaddingViewport || !settleActive) return false
+        val now = uptimeMillisProvider()
         if (now - settleStartMs >= SETTLE_HARD_CAP_MS) { settleActive = false; return false }
         if (!settleSawLayout) return true
         if (now - settleLastActivityMs >= SETTLE_QUIET_MS) { settleActive = false; return false }

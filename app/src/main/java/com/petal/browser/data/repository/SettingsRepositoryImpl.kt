@@ -194,11 +194,11 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val liquidGlassBottomNav: Flow<Boolean> = preferenceFlow("sp_liquid_glass_bottom_nav") {
-        sp.getBoolean("sp_liquid_glass_bottom_nav", true)
+        com.petal.browser.ui.glass.GeckoGlassBackend.isBottomNavGlassEnabled(sp, application)
     }
 
     override val liquidGlassAddressBar: Flow<Boolean> = preferenceFlow("sp_liquid_glass_address_bar") {
-        sp.getBoolean("sp_liquid_glass_address_bar", true)
+        com.petal.browser.ui.glass.GeckoGlassBackend.isAddressBarGlassEnabled(sp, application)
     }
 
     override val liquidGlassOverflowBlurBg: Flow<Boolean> = preferenceFlow("sp_overflow_menu_blur_bg") {

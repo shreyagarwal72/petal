@@ -597,7 +597,7 @@ class MainActivity : FragmentActivity(), BrowserController {
         }
         // Collapsing from fully open: resize the page first (bars still fully visible on top),
         // then fade the bars once Gecko has painted the freed area. No black block, no jump.
-        val startsCollapse = target > current && current <= 0.001f
+        val startsCollapse = target > current && current <= 0.001f && com.petal.browser.ui.components.BarCollapseState.legacyPaddingViewport
         if (startsCollapse) com.petal.browser.ui.components.BarCollapseState.beginViewportCollapse()
         pillMorphAnimator = android.animation.ValueAnimator.ofFloat(current, target).apply {
             duration = 320L

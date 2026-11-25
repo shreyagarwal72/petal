@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,11 +22,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.delay
+import kotlin.math.roundToInt
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
@@ -121,9 +126,13 @@ fun ComposeEngineViewport(
         }
     }
 
-    // Hide the loader when the page finished loading (the Mozilla feature also does this on tab changes).
+    // Hide the loader immediately when the page finishes loading, regardless of the 5s watchdog.
     LaunchedEffect(isLoading) {
-        if (!isLoading) swipeLayout.isRefreshing = false
+        if (!isLoading) {
+            swipeLayout.forceStopRefresh()
+            refreshBarState.isRefreshing = false
+            refreshBarState.pullProgress = 0f
+        }
     }
 
     // Safety net, same as PetalTabViewController: the feature only hides the spinner when the tab's
@@ -131,7 +140,11 @@ fun ComposeEngineViewport(
     LaunchedEffect(refreshBarState.isRefreshing) {
         if (refreshBarState.isRefreshing) {
             kotlinx.coroutines.delay(5_000L)
-            if (swipeLayout.isRefreshing && !currentIsLoading) swipeLayout.isRefreshing = false
+            if (!currentIsLoading && (swipeLayout.isRefreshing || refreshBarState.isRefreshing)) {
+                swipeLayout.forceStopRefresh()
+                refreshBarState.isRefreshing = false
+                refreshBarState.pullProgress = 0f
+            }
         }
     }
 
@@ -216,9 +229,13 @@ fun ComposeEngineViewport(
                     }
                     false
                 }
-                // Tells the settle logic the viewport resize really reached the view.
+                // Tells the legacy padding settle logic the viewport resize really reached the view.
                 gv.addOnLayoutChangeListener { _, left, top, right, bottom, oldLeft, oldTop, oldRight, oldBottom ->
-                    if ((bottom - top) != (oldBottom - oldTop) || (right - left) != (oldRight - oldLeft)) BarCollapseState.onViewportLayoutApplied()
+                    if (BarCollapseState.legacyPaddingViewport &&
+                        ((bottom - top) != (oldBottom - oldTop) || (right - left) != (oldRight - oldLeft))
+                    ) {
+                        BarCollapseState.onViewportLayoutApplied()
+                    }
                 }
             }
         }
@@ -228,35 +245,107 @@ fun ComposeEngineViewport(
         onEngineViewReady?.invoke(engineView.asView())
     }
 
-    // The page viewport is resized ONCE per collapse/expand (BarCollapseState.viewportCollapsed),
-    // never per animation frame: resizing Gecko every frame reflowed the page (content jumped) and
-    // left an unpainted black block where the bar had been. The visual slide between the two
-    // layouts is a plain translation of the view, so the page still follows the bars smoothly.
+    // Resample page edge colors when scroll stops cleanly and track the legacy padding fallback pref.
+    var legacyPaddingViewport by remember {
+        mutableStateOf(
+            androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                .getBoolean(BarCollapseState.PREF_LEGACY_PADDING_VIEWPORT, false)
+        )
+    }
+    DisposableEffect(context) {
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        BarCollapseState.legacyPaddingViewport = legacyPaddingViewport
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+            if (key == BarCollapseState.PREF_LEGACY_PADDING_VIEWPORT) {
+                val enabled = prefs.getBoolean(BarCollapseState.PREF_LEGACY_PADDING_VIEWPORT, false)
+                BarCollapseState.legacyPaddingViewport = enabled
+                legacyPaddingViewport = enabled
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        GeckoGlassBackend.onScrollIdleCallback = { PageEdgeColors.requestResample() }
+        onDispose {
+            sp.unregisterOnSharedPreferenceChangeListener(listener)
+            GeckoGlassBackend.onScrollIdleCallback = null
+        }
+    }
+
+    // Re-apply the GeckoView backend only when glass preferences change, never mid-scroll or inside AndroidView update.
+    com.petal.browser.ui.glass.LocalPetalGlassRevision.current
+    val barGlassEnabled = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_address_bar") ||
+        com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav")
+    LaunchedEffect(engineView, barGlassEnabled) {
+        findGeckoView(engineView.asView())?.let { gv ->
+            try {
+                GeckoGlassBackend.applyBackend(gv, context)
+            } catch (_: Throwable) {}
+        }
+    }
+
+    // Drive collapse using GeckoView's dynamic toolbar API (setDynamicToolbarMaxHeight + setVerticalClipping)
+    // so collapsing the bars never resizes View padding or reflows page content.
+    // The old padding-resize path remains available behind BarCollapseState.PREF_LEGACY_PADDING_VIEWPORT.
     val fullTopPx = with(density) { topPadding.roundToPx() }
     // Keep the Firefox-style spinner below the bars (the page itself starts at topPadding).
     SideEffect { swipeLayout.extraTopInsetPx = fullTopPx }
     val fullBottomPx = with(density) { bottomPadding.roundToPx() }
     val minTopPx = with(density) { collapsedTopPadding.roundToPx() }
     val minBottomPx = with(density) { collapsedBottomPadding.roundToPx() }
-    LaunchedEffect(engineView, swipeLayout, fullTopPx, fullBottomPx, minTopPx, minBottomPx) {
-        snapshotFlow { BarCollapseState.viewportCollapsed to BarCollapseState.collapsedFraction }
-            .collect { (collapsedLayout, f) ->
-                val top = if (collapsedLayout) minTopPx else fullTopPx
-                val bottom = if (collapsedLayout) minBottomPx else fullBottomPx
-                val v = engineView.asView()
-                if (v.paddingTop != top || v.paddingBottom != bottom) v.setPadding(0, top, 0, bottom)
-                else BarCollapseState.onViewportLayoutApplied()
-                val shift = if (collapsedLayout) (fullTopPx - minTopPx).coerceAtLeast(0) * (1f - f) else 0f
-                if (swipeLayout.translationY != shift) swipeLayout.translationY = shift
-            }
-    }
+    val dynamicTopPx = (fullTopPx - minTopPx).coerceAtLeast(0)
+    val dynamicBottomPx = (fullBottomPx - minBottomPx).coerceAtLeast(0)
+    val dynamicToolbarMaxPx = dynamicTopPx + dynamicBottomPx
+    val lastDynamicMaxHeight = remember { intArrayOf(Int.MIN_VALUE) }
+    val lastVerticalClipping = remember { intArrayOf(Int.MIN_VALUE) }
 
-    // Keep GeckoView dynamic toolbar offset at 0 since ComposeEngineViewport already manages view padding directly.
-    // Non-zero dynamic toolbar heights cause GeckoView to double-offset fixed-position elements (e.g. YouTube bottom nav).
-    LaunchedEffect(engineView) {
-        try { engineView.setDynamicToolbarMaxHeight(0) } catch (_: Throwable) {}
-        findGeckoView(engineView.asView())?.let { gv ->
-            try { gv.setDynamicToolbarMaxHeight(0) } catch (_: Throwable) {}
+    LaunchedEffect(
+        engineView,
+        swipeLayout,
+        fullTopPx,
+        fullBottomPx,
+        minTopPx,
+        minBottomPx,
+        legacyPaddingViewport
+    ) {
+        val v = engineView.asView()
+        if (legacyPaddingViewport) {
+            if (lastDynamicMaxHeight[0] != 0) {
+                lastDynamicMaxHeight[0] = 0
+                try { engineView.setDynamicToolbarMaxHeight(0) } catch (_: Throwable) {}
+            }
+            if (lastVerticalClipping[0] != 0) {
+                lastVerticalClipping[0] = 0
+                try { engineView.setVerticalClipping(0) } catch (_: Throwable) {}
+            }
+            if (v.translationY != 0f) v.translationY = 0f
+            snapshotFlow { BarCollapseState.viewportCollapsed to BarCollapseState.collapsedFraction }
+                .collect { (collapsedLayout, f) ->
+                    val top = if (collapsedLayout) minTopPx else fullTopPx
+                    val bottom = if (collapsedLayout) minBottomPx else fullBottomPx
+                    if (v.paddingTop != top || v.paddingBottom != bottom) v.setPadding(0, top, 0, bottom)
+                    else BarCollapseState.onViewportLayoutApplied()
+                    val shift = if (collapsedLayout) (fullTopPx - minTopPx).coerceAtLeast(0) * (1f - f) else 0f
+                    if (swipeLayout.translationY != shift) swipeLayout.translationY = shift
+                }
+        } else {
+            if (v.paddingTop != minTopPx || v.paddingBottom != minBottomPx) {
+                v.setPadding(0, minTopPx, 0, minBottomPx)
+            }
+            if (swipeLayout.translationY != 0f) swipeLayout.translationY = 0f
+            if (lastDynamicMaxHeight[0] != dynamicToolbarMaxPx) {
+                lastDynamicMaxHeight[0] = dynamicToolbarMaxPx
+                try { engineView.setDynamicToolbarMaxHeight(dynamicToolbarMaxPx) } catch (_: Throwable) {}
+            }
+            snapshotFlow { BarCollapseState.collapsedFraction }
+                .collect { f ->
+                    val remaining = (1f - f).coerceIn(0f, 1f)
+                    val topShift = dynamicTopPx * remaining
+                    if (v.translationY != topShift) v.translationY = topShift
+                    val clipPx = -((dynamicToolbarMaxPx * remaining).roundToInt().coerceIn(0, dynamicToolbarMaxPx))
+                    if (lastVerticalClipping[0] != clipPx) {
+                        lastVerticalClipping[0] = clipPx
+                        try { engineView.setVerticalClipping(clipPx) } catch (_: Throwable) {}
+                    }
+                }
         }
     }
 
@@ -360,21 +449,34 @@ fun ComposeEngineViewport(
         // background (pure black on AMOLED), which read as a black bar around the glass. It now
         // takes the page's own edge colour, sampled from Gecko, so bars and page look continuous.
         val fallback = MaterialTheme.colorScheme.background
-        val topStrip by animateColorAsState(
-            if (PageEdgeColors.top == Color.Unspecified) fallback else PageEdgeColors.top, label = "pageEdgeTop")
-        val bottomStrip = Color.Transparent
-        val collapsedF = BarCollapseState.collapsedFraction
-        val topStripH = lerp(topPadding.value, collapsedTopPadding.value, collapsedF).dp
-        val bottomStripH = lerp(bottomPadding.value, collapsedBottomPadding.value, collapsedF).dp
-        Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(topStripH).background(topStrip))
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(bottomStripH).background(bottomStrip))
+        val topStripState = animateColorAsState(
+            if (PageEdgeColors.top == Color.Unspecified) fallback else PageEdgeColors.top, label = "pageEdgeTop"
+        )
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(topPadding)
+                .drawBehind {
+                    val h = lerp(topPadding.toPx(), collapsedTopPadding.toPx(), BarCollapseState.collapsedFraction)
+                    if (h > 0f) drawRect(color = topStripState.value, size = Size(size.width, h))
+                }
+        )
 
+        val darkThemeNow = isSystemInDarkTheme()
+        val themeBgArgb = fallback.toArgb()
         LaunchedEffect(engineView, tab?.id, tab?.content?.url, isLoading) {
             if (!isLoading) { PageEdgeColors.requestResample() }
+        }
+        LaunchedEffect(engineView, darkThemeNow, themeBgArgb) {
+            PageEdgeColors.requestResample()
         }
         LaunchedEffect(engineView) {
             PageEdgeColors.ticks.collectLatest {
                 delay(280L)
+                if (GeckoGlassBackend.isScrollingOrFlinging()) {
+                    snapshotFlow { GeckoGlassBackend.isScrollingOrFlinging() }.first { !it }
+                }
                 findGeckoView(engineView.asView())?.let { PageEdgeColors.sample(it) }
             }
         }
@@ -387,9 +489,9 @@ fun ComposeEngineViewport(
                 val collapsedLayout = BarCollapseState.viewportCollapsed
                 view.setPadding(
                     0,
-                    if (collapsedLayout) minTopPx else fullTopPx,
+                    if (BarCollapseState.legacyPaddingViewport && !collapsedLayout) fullTopPx else minTopPx,
                     0,
-                    if (collapsedLayout) minBottomPx else fullBottomPx
+                    if (BarCollapseState.legacyPaddingViewport && !collapsedLayout) fullBottomPx else minBottomPx
                 )
                 (view as? ViewGroup)?.clipToPadding = false
                 (view as? ViewGroup)?.clipChildren = false
@@ -408,15 +510,7 @@ fun ComposeEngineViewport(
                 swipeLayout.clipChildren = false
                 swipeLayout
             },
-            update = {
-                // Session binding is handled when the tab or engine session changes above.
-                // Avoid rebinding GeckoView on every progress/title recomposition.
-                findGeckoView(engineView.asView())?.let { gv ->
-                    try {
-                        GeckoGlassBackend.applyBackend(gv, context)
-                    } catch (_: Throwable) {}
-                }
-            },
+            update = {},
             modifier = Modifier
                 .fillMaxSize()
         )
@@ -583,14 +677,28 @@ private class PetalBarScrollDelegate(
     var actSupplier: () -> MainActivity?,
     private val context: Context,
 ) : GeckoSession.ScrollDelegate {
+
+    private val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+
+    @Volatile
+    private var hideBarsOnScroll: Boolean = sp.getBoolean("sp_hide_bars_on_scroll", true)
+
+    private val prefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+        if (key == "sp_hide_bars_on_scroll") {
+            hideBarsOnScroll = prefs.getBoolean("sp_hide_bars_on_scroll", true)
+        }
+    }
+
+    init {
+        sp.registerOnSharedPreferenceChangeListener(prefListener)
+    }
+
     override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
         try { chained?.onScrollChanged(session, scrollX, scrollY) } catch (_: Throwable) {}
-        val act = actSupplier() ?: return
-        PageEdgeColors.requestResample()
-        val enabled = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            .getBoolean("sp_hide_bars_on_scroll", true)
         val decider = BarCollapseState.scrollDecider
-        if (!enabled) {
+        GeckoGlassBackend.notifyScrollActivity(flinging = decider.isFlingCandidate())
+        val act = actSupplier() ?: return
+        if (!hideBarsOnScroll) {
             // Preference off: bars stay open. animateAddressBarCollapse(false) re-opens them if needed.
             decider.reset()
             if (act.isAddressBarCollapsed()) act.runOnUiThread { act.animateAddressBarCollapse(false) }
@@ -634,7 +742,7 @@ object PetalViewportThumbnailer {
 
 private fun captureGeckoViewPixels(gv: GeckoView?, callback: (Bitmap?) -> Unit) {
     val doCapture = {
-        if (gv == null || !gv.isAttachedToWindow || gv.width <= 0 || gv.height <= 0) {
+        if (gv == null || !gv.isAttachedToWindow || gv.width <= 0 || gv.height <= 0 || GeckoGlassBackend.isFlinging) {
             callback(null)
         } else if (!PetalViewportThumbnailer.canCapturePixelsNow()) {
             callback(null)
@@ -661,7 +769,7 @@ private fun captureGeckoViewPixels(gv: GeckoView?, callback: (Bitmap?) -> Unit) 
 }
 
 private fun captureGeckoThumbnail(context: android.content.Context, gv: GeckoView, tabId: String, isIncognito: Boolean) {
-    if (gv.width <= 0 || gv.height <= 0) return
+    if (gv.width <= 0 || gv.height <= 0 || GeckoGlassBackend.isFlinging) return
     // Same gate as Firefox's BrowserThumbnails: only the SELECTED tab, and only after first
     // contentful paint. Without it a tab switched away during the delay got the NEW tab's pixels
     // stored under its own id (wrong thumbnail) and half-painted white frames were kept.
@@ -721,6 +829,7 @@ object PageEdgeColors {
 
     internal fun sample(gv: GeckoView) {
         if (gv.width <= 0 || gv.height <= 0) return
+        if (GeckoGlassBackend.isScrollingOrFlinging()) return
         // capturePixels is not free: never more than once per 1.2 s.
         val now = android.os.SystemClock.uptimeMillis()
         if (now - lastSampleUptimeMs < 1200L) return

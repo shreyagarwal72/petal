@@ -134,9 +134,16 @@ fun isLiquidGlassMaster(sp: android.content.SharedPreferences): Boolean {
         sp.getString("sp_ui_experience", null) == com.petal.browser.ui.theme.layout.UiExperience.LIQUID_GLASS.key
 }
 
+private fun defaultGlassComponentValue(context: android.content.Context, componentKey: String): Boolean =
+    if (componentKey == "sp_liquid_glass_address_bar" || componentKey == "sp_liquid_glass_bottom_nav") {
+        com.petal.browser.ui.glass.GeckoGlassBackend.defaultBarGlassEnabled(context)
+    } else {
+        true
+    }
+
 fun isLiquidGlassDirect(context: android.content.Context, componentKey: String = "sp_liquid_glass_containments"): Boolean {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    return isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, true)
+    return isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, defaultGlassComponentValue(context, componentKey))
 }
 
 /**
@@ -146,13 +153,14 @@ fun isLiquidGlassDirect(context: android.content.Context, componentKey: String =
 fun isLiquidGlassEnabled(componentKey: String = "sp_liquid_glass_containments"): Boolean {
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    var enabled by remember(sp, componentKey) {
-        mutableStateOf(isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, true))
+    val def = remember(context, componentKey) { defaultGlassComponentValue(context, componentKey) }
+    var enabled by remember(sp, componentKey, def) {
+        mutableStateOf(isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, def))
     }
-    DisposableEffect(sp, componentKey) {
+    DisposableEffect(sp, componentKey, def) {
         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "sp_ui_experience" || key == "sp_liquid_glass_unlocked" || key == "sp_liquid_glass_enabled" || key == componentKey) {
-                enabled = isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, true)
+                enabled = isLiquidGlassMaster(sp) && sp.getBoolean(componentKey, def)
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
