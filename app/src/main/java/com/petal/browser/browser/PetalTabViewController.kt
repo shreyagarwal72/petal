@@ -2648,7 +2648,8 @@ private class ExternalSchemeNavigationDelegate(
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
             val httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
             val host = try { android.net.Uri.parse(uri).host } catch (_: Throwable) { null }
-            if (httpsOnly && !host.isNullOrBlank() && !com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(context, host)) {
+            val isPrivate = isIncognitoSupplier()
+            if (httpsOnly && !host.isNullOrBlank() && !com.petal.browser.privacy.PetalHttpsOnlyWhitelist.isBypassed(context, host, isPrivate = isPrivate)) {
                 if (error.category == org.mozilla.geckoview.WebRequestError.ERROR_CATEGORY_SECURITY ||
                     error.category == org.mozilla.geckoview.WebRequestError.ERROR_CATEGORY_NETWORK) {
                     val act = resolveActivity() as? com.petal.browser.activity.MainActivity
@@ -2659,7 +2660,7 @@ private class ExternalSchemeNavigationDelegate(
                             com.petal.browser.view.PetalToast.LENGTH_LONG,
                             "Load via HTTP",
                             {
-                                com.petal.browser.privacy.PetalHttpsOnlyWhitelist.addBypass(act, host)
+                                com.petal.browser.privacy.PetalHttpsOnlyWhitelist.addBypass(act, host, isPrivate = isPrivate)
                                 val httpUrl = "http://" + uri.substring(8)
                                 act.showAlbum(act.currentAlbumController, httpUrl)
                             }
