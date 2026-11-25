@@ -185,6 +185,7 @@ fun PetalFilePickerScreen(
     mimeTypes: Array<String> = emptyArray(),
     allowFolderSelection: Boolean = false,
     allowMultiple: Boolean = false,
+    backgroundSnapshot: ImageBitmap? = null,
     onDismissRequest: () -> Unit,
     onFileSelected: (File) -> Unit,
     onMultipleFilesSelected: ((List<File>) -> Unit)? = null,
@@ -231,7 +232,7 @@ fun PetalFilePickerScreen(
         enabled = true,
         onBack = onDismissRequest
     ) {
-        PetalScreenWrapper {
+        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
           CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // With storage access the background lives inside the glass header layout (so the header

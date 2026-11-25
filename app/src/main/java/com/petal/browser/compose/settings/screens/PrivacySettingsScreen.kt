@@ -211,17 +211,6 @@ fun PrivacySettingsScreenContent(
         PetalAdBlockEngine.getTotalBlockedCount()
     }
 
-    if (showAdBlockSettings) {
-        PetalAdBlockSettingsScreen(
-            onNavigateBack = {
-                showAdBlockSettings = false
-                whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
-            },
-            modifier = modifier
-        )
-        return
-    }
-
     if (showWhitelistDialog) {
         PetalAlertDialog(
             onDismissRequest = { showWhitelistDialog = false },
@@ -305,14 +294,31 @@ fun PrivacySettingsScreenContent(
 
     CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
         val passwordsActivity = context as? ComponentActivity
-        // The Password Manager is a real sub-page: this page stays composed (and blurred / dimmed by the
-        // sub-page's own back gesture) behind it, instead of a bare overlay with nothing behind it.
+        val hasAdBlockSub = showAdBlockSettings
+        val hasPasswordsSub = showPasswordsScreen && passwordsActivity != null
+        // AdBlock Settings and Password Manager are real sub-pages: this page stays composed
+        // (and blurred / dimmed by the sub-page's own back gesture) behind them.
         com.petal.browser.predictive.PetalSubPageHost(
-            visible = showPasswordsScreen && passwordsActivity != null,
-            onBack = { showPasswordsScreen = false },
+            visible = hasAdBlockSub || hasPasswordsSub,
+            onBack = {
+                if (hasAdBlockSub) {
+                    showAdBlockSettings = false
+                    whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
+                } else {
+                    showPasswordsScreen = false
+                }
+            },
             modifier = modifier,
             subPage = {
-                if (passwordsActivity != null) {
+                if (hasAdBlockSub) {
+                    PetalAdBlockSettingsScreen(
+                        onNavigateBack = {
+                            showAdBlockSettings = false
+                            whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (hasPasswordsSub && passwordsActivity != null) {
                     PetalPasswordsScreen(
                         activity = passwordsActivity,
                         onNavigateBack = { showPasswordsScreen = false },

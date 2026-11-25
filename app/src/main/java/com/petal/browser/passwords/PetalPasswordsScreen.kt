@@ -99,7 +99,9 @@ fun PetalPasswordsScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     modifier: Modifier = Modifier,
     /** True when a host page (PetalSubPageHost) already owns the back gesture and surface wrapper. */
-    embedded: Boolean = false
+    embedded: Boolean = false,
+    /** True when hosted as the root of PetalPasswordsActivity so Android handles cross-activity back. */
+    isStandaloneActivity: Boolean = false
 ) {
     val context = LocalContext.current
     val haptic = remember { PetalHapticEngine.getInstance(context) }
@@ -289,7 +291,7 @@ fun PetalPasswordsScreen(
     }
 
     com.petal.browser.predictive.PetalPredictiveShell(
-        wrap = !embedded,
+        wrap = !embedded && !isStandaloneActivity,
         enabled = !hasSubOverlay,
         onBack = onNavigateBack,
         backgroundSnapshot = backgroundSnapshot

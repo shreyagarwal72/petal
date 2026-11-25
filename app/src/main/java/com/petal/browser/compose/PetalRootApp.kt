@@ -1780,6 +1780,7 @@ fun PetalRootApp(
                 modifier = Modifier.fillMaxSize().zIndex(8f)
             ) {
                 SafeLockerScreen(
+                    backgroundSnapshot = overlayPageSnapshot ?: tabSwitcherSnapshot,
                     onBackPress = { viewModel.setSafeLockerOpen(false) }
                 )
             }

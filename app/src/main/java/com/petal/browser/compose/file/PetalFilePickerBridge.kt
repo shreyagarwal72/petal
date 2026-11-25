@@ -22,6 +22,7 @@ import android.webkit.WebChromeClient
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -77,6 +78,12 @@ object PetalFilePickerBridge {
                 )
 
                 setContent {
+                    val snapshotBitmap = remember {
+                        com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap()
+                    }
+                    DisposableEffect(Unit) {
+                        onDispose { com.petal.browser.predictive.PetalContentSnapshot.clear() }
+                    }
                     val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                     var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
                     var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
@@ -109,6 +116,7 @@ object PetalFilePickerBridge {
                             mimeTypes = mimeTypes,
                             allowFolderSelection = allowFolderSelection,
                             allowMultiple = allowMultiple,
+                            backgroundSnapshot = snapshotBitmap,
                             onDismissRequest = {
                                 if (!isHandled) {
                                     isHandled = true
@@ -181,6 +189,9 @@ object PetalFilePickerBridge {
 
             // Non-browser callers (or modal dialog callers) get a full-screen host dialog.
             // This prevents wiping MainActivity's contentFrame / destroying active bottom sheets.
+            activity.window?.decorView?.rootView?.let {
+                com.petal.browser.predictive.PetalContentSnapshot.capture(it)
+            }
             val dialog = Dialog(activity)
             activeDialog = dialog
             dialog.setContentView(composeView)

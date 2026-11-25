@@ -29,7 +29,8 @@ class PetalPasswordsActivity : FragmentActivity() {
             PetalExpressiveTheme {
                 PetalPasswordsScreen(
                     activity = this,
-                    onNavigateBack = { finish() }
+                    onNavigateBack = { finish() },
+                    isStandaloneActivity = true
                 )
             }
         }
