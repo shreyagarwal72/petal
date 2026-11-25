@@ -1,6 +1,7 @@
 package com.petal.browser.compose.tabs
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
@@ -208,12 +209,11 @@ fun PetalTabGlanceSheet(
                                     Spacer(Modifier.width(12.dp))
                                     Text(
                                         text = ws.name,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.weight(1f)
                                     )
-                                    if (isCurrent) Text("Current", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    if (isCurrent) Text("Current", style = PetalText.badge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -226,7 +226,7 @@ fun PetalTabGlanceSheet(
                                     onMoveToGroup(tab, null)
                                     showGroupPicker = false
                                 }) {
-                                    Text("Remove from group", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.error)
+                                    Text("Remove from group", style = PetalText.button, color = MaterialTheme.colorScheme.error)
                                 }
                             }
                             availableGroups.forEach { grp ->
@@ -240,8 +240,7 @@ fun PetalTabGlanceSheet(
                                     Spacer(Modifier.width(12.dp))
                                     Text(
                                         text = grp.title,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal,
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
@@ -366,8 +365,8 @@ private fun GlanceInfoCard(rows: List<Pair<String, String>>) {
                     .petalSheetSurface(shape, MaterialTheme.colorScheme.surfaceContainerHighest, sheen = 0.25f)
                     .padding(horizontal = 18.dp, vertical = 12.dp)
             ) {
-                Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text(value, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                Text(label, style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(value, style = PetalText.listItemTitle, color = MaterialTheme.colorScheme.onSurface)
             }
         }
     }

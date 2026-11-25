@@ -62,10 +62,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
@@ -114,7 +113,7 @@ fun ExpressiveHeader(
     // Optional real-glass backdrop (must be a sibling of the screen background, see PetalLiquidGlass.kt)
     backdrop: com.petal.browser.ui.containment.PetalBackdrop? = null,
     maxTitleLines: Int = 2,
-    maxSubtitleLines: Int = 2,
+    maxSubtitleLines: Int = Int.MAX_VALUE,
     isRootHeader: Boolean = false,
     targetTitle: String? = null,
     targetSubtitle: String? = null,
@@ -328,6 +327,7 @@ fun ExpressiveHeader(
                                     title = title,
                                     subtitle = subtitle,
                                     hasBack = onBack != null,
+                                    maxTitleLines = maxTitleLines,
                                     maxSubtitleLines = maxSubtitleLines,
                                     glass = useLastWaveGlass
                                 )
@@ -348,6 +348,7 @@ fun ExpressiveHeader(
                                     title = effectiveTargetTitle,
                                     subtitle = effectiveTargetSubtitle,
                                     hasBack = false,
+                                    maxTitleLines = maxTitleLines,
                                     maxSubtitleLines = maxSubtitleLines,
                                     glass = useLastWaveGlass
                                 )
@@ -384,6 +385,7 @@ fun ExpressiveHeader(
                                 title = currentTitle,
                                 subtitle = currentSubtitle.takeIf { it.isNotBlank() },
                                 hasBack = onBack != null,
+                                maxTitleLines = maxTitleLines,
                                 maxSubtitleLines = maxSubtitleLines,
                                 glass = useLastWaveGlass
                             )
@@ -466,57 +468,37 @@ private fun HeaderTitleBlock(
     title: String,
     subtitle: String?,
     hasBack: Boolean,
-    maxSubtitleLines: Int = 2,
+    maxTitleLines: Int = 2,
+    maxSubtitleLines: Int = Int.MAX_VALUE,
     glass: Boolean = false
 ) {
     Column(modifier = Modifier.fillMaxWidth().clipToBounds()) {
-        val titleFontSize = remember(title, hasBack) {
-            when {
-                hasBack && title.length > 22 -> 14.sp
-                hasBack && title.length > 18 -> 15.sp
-                hasBack && title.length > 14 -> 16.5.sp
-                hasBack -> 18.sp
-                title.length > 22 -> 17.5.sp
-                title.length > 18 -> 19.5.sp
-                title.length > 14 -> 22.sp
-                else -> 26.sp
-            }
+        val baseTitleStyle = when {
+            hasBack && title.length > 22 -> MaterialTheme.typography.titleMedium
+            title.length > 22 -> MaterialTheme.typography.titleLarge
+            else -> PetalText.pageTitle
         }
+        val titleStyle = baseTitleStyle.copy(
+            fontWeight = if (glass) FontWeight.Bold else FontWeight.ExtraBold,
+            letterSpacing = if (glass) MaterialTheme.typography.titleLarge.letterSpacing else baseTitleStyle.letterSpacing
+        )
 
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontSize = titleFontSize,
-                lineHeight = (titleFontSize.value + 4).sp,
-                // Glass title: crisper and tighter, lets the blurred page carry the personality.
-                letterSpacing = if (glass) (-0.4).sp else MaterialTheme.typography.titleLarge.letterSpacing
-            ),
-            color = LocalHeaderGlassStyle.current?.content ?: MaterialTheme.colorScheme.onSurface,
-            fontWeight = if (glass) FontWeight.Bold else FontWeight.ExtraBold,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
+            style = titleStyle,
+            color = LocalHeaderGlassStyle.current?.content ?: Color.Unspecified,
+            maxLines = maxTitleLines,
+            softWrap = maxTitleLines > 1,
             modifier = Modifier.fillMaxWidth()
         )
 
         if (!subtitle.isNullOrBlank()) {
-            val subtitleFontSize = remember(subtitle) {
-                when {
-                    subtitle.length > 32 -> 11.5.sp
-                    subtitle.length > 24 -> 12.sp
-                    else -> 13.sp
-                }
-            }
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodySmall.copy(
-                    fontSize = subtitleFontSize,
-                    lineHeight = (subtitleFontSize.value + 4).sp
-                ),
-                color = LocalHeaderGlassStyle.current?.contentMuted ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                style = PetalText.pageSubtitle,
+                color = LocalHeaderGlassStyle.current?.contentMuted ?: Color.Unspecified,
                 maxLines = maxSubtitleLines,
-                softWrap = maxSubtitleLines > 1,
-                overflow = TextOverflow.Ellipsis,
+                softWrap = true,
                 modifier = Modifier.fillMaxWidth()
             )
         }

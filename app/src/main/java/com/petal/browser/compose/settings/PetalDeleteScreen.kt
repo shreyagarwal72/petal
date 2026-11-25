@@ -9,6 +9,7 @@
 package com.petal.browser.compose.settings
 
 import android.content.SharedPreferences
+import com.petal.browser.ui.theme.PetalText
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
@@ -43,7 +44,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -72,15 +72,12 @@ object PetalDeleteBridge {
                 val context = LocalContext.current
                 val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
 
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = remember(fontName) {
-                    AppFont.fromName(fontName)
-                }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
@@ -88,7 +85,7 @@ object PetalDeleteBridge {
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    appFont = appFont,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -134,13 +131,13 @@ fun PetalDeleteScreen(
             title = {
                 Text(
                     text = stringResource(R.string.ui_clear_selected_browsing_data),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    style = PetalText.dialogTitle
                 )
             },
             text = {
                 Text(
                     text = stringResource(R.string.ui_this_action_will_permanently_delete),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = PetalText.dialogBody
                 )
             },
             confirmButton = {
@@ -184,7 +181,7 @@ fun PetalDeleteScreen(
             ) {
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "delete_page") },
+                pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "delete_page", modifier = Modifier.fillMaxSize()) },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(
                         modifier = headerModifier,
@@ -216,12 +213,12 @@ fun PetalDeleteScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = stringResource(R.string.ui_clear_browsing_data),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                                    style = PetalText.cardTitle
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = stringResource(R.string.ui_choose_items_to_erase_settings),
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = PetalText.cardBody,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -382,7 +379,7 @@ fun PetalDeleteScreen(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = stringResource(R.string.ui_clear_selected_data),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                style = PetalText.button
                             )
                         }
                     }

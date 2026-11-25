@@ -25,9 +25,9 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import androidx.preference.PreferenceManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
@@ -70,7 +70,7 @@ fun PetalDevNotesSheet(
             ) {
                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(18.dp))
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.ui_save_notes), fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.ui_save_notes), style = PetalText.button)
             }
         }
     ) {
@@ -86,7 +86,7 @@ fun PetalDevNotesSheet(
             ) {
                 Text(
                     text = domain.ifEmpty { "Global Notes" },
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 

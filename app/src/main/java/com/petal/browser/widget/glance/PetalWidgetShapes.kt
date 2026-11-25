@@ -48,7 +48,8 @@ internal object PetalWidgetShapes {
     ): Bitmap {
         val density = context.resources.displayMetrics.density.coerceIn(1f, 3f)
         val px = (sizeDp * density).roundToInt().coerceIn(16, 256)
-        val key = "${shape.id}|$px|$color|$glyph|$glyphColor|${(rim * 100).roundToInt()}|${rotationDeg.roundToInt()}"
+        val rev = com.petal.browser.ui.theme.PetalThemePrefs.revision
+        val key = "$rev|${shape.id}|$px|$color|$glyph|$glyphColor|${(rim * 100).roundToInt()}|${rotationDeg.roundToInt()}"
         synchronized(cache) { cache[key]?.let { if (!it.isRecycled) return it } }
 
         val bmp = draw(context, shape, px, color, glyph, glyphColor, rim, rotationDeg)
@@ -111,11 +112,7 @@ internal object PetalWidgetShapes {
                 this.color = glyphColor
                 textSize = px * (if (glyph.length > 1) 0.40f else 0.52f)
                 textAlign = Paint.Align.CENTER
-                typeface = try {
-                    PetalFontHelper.getAppTypeface(context)
-                } catch (_: Throwable) {
-                    android.graphics.Typeface.DEFAULT_BOLD
-                }
+                typeface = PetalFontHelper.getAppTypeface(context, weight = 700)
             }
             val fm = text.fontMetrics
             canvas.drawText(glyph, px / 2f, px / 2f - (fm.ascent + fm.descent) / 2f, text)

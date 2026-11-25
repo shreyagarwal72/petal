@@ -27,8 +27,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.petal.browser.ui.theme.PetalText
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.net.InetAddress
@@ -93,7 +93,7 @@ fun PetalNetworkInspectorDialog(
                             Spacer(modifier = Modifier.width(10.dp))
                             Text(
                                 text = stringResource(R.string.ui_network_inspector),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.dialogTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -132,12 +132,12 @@ private fun NetworkInfoRow(label: String, value: String) {
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall,
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium.copy(
+            style = PetalText.cardBody.copy(
                 fontFamily = FontFamily.Monospace,
                 fontWeight = FontWeight.Medium
             ),

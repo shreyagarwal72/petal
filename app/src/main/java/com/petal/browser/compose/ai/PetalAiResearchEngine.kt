@@ -12,6 +12,12 @@ import java.net.URI
 import java.util.Locale
 import java.util.concurrent.TimeUnit
 
+/**
+ * Explicit allowlist of Groq models that support image (vision) inputs.
+ * Text-only Groq models (including openai/gpt-oss-120b) must NOT be listed here.
+ */
+internal val GROQ_VISION_MODELS: List<String> = emptyList()
+
 enum class AiProvider(
     val id: String,
     val displayName: String,
@@ -100,6 +106,25 @@ object PetalAiResearchEngine {
     const val KEY_AUTO_PAGE_CONTEXT = "sp_ai_auto_page_context"
     const val KEY_GENERATE_PAGE_SUGGESTIONS = "sp_ai_generate_page_suggestions"
     const val KEY_CLOUD_CONSENT_ACCEPTED = "sp_ai_cloud_consent_accepted"
+    private const val KEY_CUSTOM_VISION_PREFIX = "sp_ai_custom_vision_"
+
+    private val VISION_MODEL_TOKENS = listOf(
+        "gemini",
+        "gpt-4",
+        "vision",
+        "vl",
+        "llava",
+        "minicpm",
+        "smolvlm",
+        "gemma3",
+        "gemma-3",
+        "pixtral",
+        "moondream",
+        "qwen2.5-vl",
+        "llama3.2-vision",
+        "internvl",
+        "minicpm-v"
+    )
 
     fun getApiKey(context: Context, provider: AiProvider): String {
         return PetalAiKeyStorage.getKey(context, provider.id)
@@ -143,13 +168,21 @@ object PetalAiResearchEngine {
         val provider = getSelectedProvider(context)
         if (provider == AiProvider.LOCAL_ON_DEVICE) return true
         if (provider != AiProvider.CUSTOM) return false
-        val endpoint = getCustomEndpoint(context).lowercase()
-        return endpoint.contains("localhost") ||
-                endpoint.contains("127.0.0.1") ||
-                endpoint.contains("10.") ||
-                endpoint.contains("192.168.") ||
-                endpoint.contains(".local") ||
-                Regex("""^https?://172\.(1[6-9]|2[0-9]|3[0-1])\.""").containsMatchIn(endpoint)
+        return isCustomEndpointLocal(context)
+    }
+
+    fun isCustomEndpointLocal(context: Context): Boolean {
+        val endpoint = getCustomEndpoint(context).trim()
+        if (endpoint.isBlank()) return false
+        val host = try { URI(endpoint).host } catch (_: Exception) { null }
+        if (!host.isNullOrEmpty()) return isPrivateHost(host)
+        val lower = endpoint.lowercase(Locale.ROOT)
+        return lower.contains("localhost") ||
+                lower.contains("127.0.0.1") ||
+                lower.contains("10.") ||
+                lower.contains("192.168.") ||
+                lower.contains(".local") ||
+                Regex("""^https?://172\.(1[6-9]|2[0-9]|3[0-1])\.""").containsMatchIn(lower)
     }
 
     fun getFastModel(provider: AiProvider): String {
@@ -172,17 +205,69 @@ object PetalAiResearchEngine {
 
     fun isVisionSupported(model: String): Boolean {
         val m = model.lowercase(Locale.ROOT)
-        return m.contains("gemini") || m.contains("gpt-4") || m.contains("vision") ||
-                m.contains("vl") || m.contains("llava") || m.contains("minicpm")
+        return VISION_MODEL_TOKENS.any { m.contains(it) }
     }
 
     fun isVisionSupported(provider: AiProvider, model: String): Boolean {
         return when (provider) {
             AiProvider.GEMINI -> true
-            AiProvider.GROQ -> model.contains("vision") || model.contains("vl")
+            AiProvider.GROQ -> GROQ_VISION_MODELS.any { it.equals(model.trim(), ignoreCase = true) }
             AiProvider.CUSTOM -> isVisionSupported(model)
             AiProvider.LOCAL_ON_DEVICE -> false
         }
+    }
+
+    fun isVisionSupported(context: Context, provider: AiProvider, model: String): Boolean {
+        return when (provider) {
+            AiProvider.CUSTOM -> getCustomModelVisionOverride(context, model) ?: isVisionSupported(model)
+            else -> isVisionSupported(provider, model)
+        }
+    }
+
+    fun getCustomModelVisionOverride(context: Context, model: String): Boolean? {
+        val normalized = model.trim().lowercase(Locale.ROOT)
+        if (normalized.isEmpty()) return null
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val key = "$KEY_CUSTOM_VISION_PREFIX$normalized"
+        return if (sp.contains(key)) sp.getBoolean(key, false) else null
+    }
+
+    fun setCustomModelVisionOverride(context: Context, model: String, supported: Boolean?) {
+        val normalized = model.trim().lowercase(Locale.ROOT)
+        if (normalized.isEmpty()) return
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val key = "$KEY_CUSTOM_VISION_PREFIX$normalized"
+        val editor = sp.edit()
+        if (supported == null) {
+            editor.remove(key)
+        } else {
+            editor.putBoolean(key, supported)
+        }
+        editor.apply()
+    }
+
+    /**
+     * Resolves the model to use for [provider], accounting for [thinkHarder] and [requireVision].
+     * Returns null when [requireVision] is true and no vision-capable model is available for [provider].
+     */
+    fun resolveModelForRequest(
+        context: Context,
+        provider: AiProvider,
+        thinkHarder: Boolean,
+        requireVision: Boolean,
+        preferredModel: String? = null
+    ): String? {
+        val selected = preferredModel?.takeIf { it.isNotBlank() } ?: getSelectedModel(context, provider)
+        if (!requireVision) {
+            return if (thinkHarder) getStrongerModel(provider) else selected
+        }
+        if (thinkHarder) {
+            val stronger = getStrongerModel(provider)
+            if (isVisionSupported(context, provider, stronger)) {
+                return stronger
+            }
+        }
+        return if (isVisionSupported(context, provider, selected)) selected else null
     }
 
     fun getSelectedModel(context: Context, provider: AiProvider): String {

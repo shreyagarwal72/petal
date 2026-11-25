@@ -24,6 +24,7 @@
 package com.petal.browser.dialogs
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -187,12 +188,12 @@ private fun CustomRedirectsDialogContent(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.ui_privacy_redirects),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.dialogTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = stringResource(R.string.ui_automatically_route_tracking_links_to),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.dialogBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -211,7 +212,7 @@ private fun CustomRedirectsDialogContent(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_no_custom_redirects_configured_yet),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.emptyState,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -238,7 +239,7 @@ private fun CustomRedirectsDialogContent(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = redirect.source ?: "",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.listItemTitle,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -251,7 +252,7 @@ private fun CustomRedirectsDialogContent(
                                         Spacer(Modifier.width(4.dp))
                                         Text(
                                             text = redirect.target ?: "",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.listItemMeta,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -356,7 +357,7 @@ private fun CreateNewRedirectDialog(
             ) {
                 Text(
                     text = stringResource(R.string.ui_new_custom_redirect),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 

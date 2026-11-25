@@ -58,6 +58,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -141,7 +142,7 @@ fun PetalColorPickerDialog(
                     contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(title, style = MaterialTheme.typography.labelLarge, color = onPreview.copy(alpha = 0.75f))
+                        Text(title, style = PetalText.badge, color = onPreview.copy(alpha = 0.75f))
                         Text(
                             "#%06X".format(animatedColor.toArgb() and 0xFFFFFF),
                             style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Medium),
@@ -194,7 +195,7 @@ fun PetalColorPickerDialog(
                             .weight(1f)
                             .heightIn(min = 48.dp)
                     ) {
-                        Text("Cancel", fontWeight = FontWeight.SemiBold)
+                        Text("Cancel", style = PetalText.button)
                     }
 
                     Button(
@@ -208,7 +209,7 @@ fun PetalColorPickerDialog(
                             .weight(1f)
                             .heightIn(min = 48.dp)
                     ) {
-                        Text("OK", fontWeight = FontWeight.SemiBold)
+                        Text("OK", style = PetalText.button)
                     }
                 }
             }
@@ -235,7 +236,7 @@ private fun TabPills(selected: Int, onSelect: (Int) -> Unit, modifier: Modifier 
             Box(
                 Modifier.weight(1f).height(44.dp).clip(ExpressiveButtonShape).background(bg).clickable { onSelect(i) },
                 contentAlignment = Alignment.Center
-            ) { Text(t.label, color = fg, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)) }
+            ) { Text(t.label, color = fg, style = PetalText.tabLabel) }
         }
     }
 }
@@ -294,7 +295,7 @@ private fun LabeledColorSlider(
         Text(
             text = label,
             modifier = Modifier.size(28.dp),
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.rowTitle,
             color = MaterialTheme.colorScheme.onSurface
         )
         PetalSlider(
@@ -307,7 +308,7 @@ private fun LabeledColorSlider(
             text = valueText,
             modifier = Modifier.padding(start = 8.dp).size(width = 44.dp, height = 24.dp),
             textAlign = TextAlign.End,
-            style = MaterialTheme.typography.bodyMedium,
+            style = PetalText.value,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -364,7 +365,7 @@ private fun ImagePickPage(onPicked: (Color) -> Unit) {
     if (bmp == null) {
         Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text("Pick a photo, then tap any spot to use its colour.", textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                style = PetalText.emptyState, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Button(
                 onClick = { launcher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 shape = ExpressiveButtonShape

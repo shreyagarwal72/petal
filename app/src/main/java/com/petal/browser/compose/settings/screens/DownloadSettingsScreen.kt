@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.containment.PetalSettingsSection
 
@@ -32,7 +33,6 @@ import com.petal.browser.compose.settings.viewmodel.DownloadSettingsViewModel
 import com.petal.browser.download.PetalBatteryOptimization
 import com.petal.browser.download.PetalParallelFetchClient
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.unit.ExternalDownloadManagerHelper
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.graphicsLayer
@@ -53,12 +53,6 @@ fun DownloadSettingsScreen(
     val deleteDownloadFile by viewModel.deleteDownloadFile.collectAsStateWithLifecycle()
     val autoPreviewDownloadedImages by viewModel.autoPreviewDownloadedImages.collectAsStateWithLifecycle()
     val liveUpdates by viewModel.liveUpdates.collectAsStateWithLifecycle()
-    val islandMode by viewModel.islandMode.collectAsStateWithLifecycle()
-    val islandAnimationStyle by viewModel.islandAnimationStyle.collectAsStateWithLifecycle()
-    val islandAnimationSpeed by viewModel.islandAnimationSpeed.collectAsStateWithLifecycle()
-    val islandAnimationBounce by viewModel.islandAnimationBounce.collectAsStateWithLifecycle()
-    val islandWavyProgress by viewModel.islandWavyProgress.collectAsStateWithLifecycle()
-    val islandOverlay by viewModel.islandOverlay.collectAsStateWithLifecycle()
 
     DownloadSettingsScreenContent(
         downloadManagerMode = downloadManagerMode,
@@ -66,23 +60,11 @@ fun DownloadSettingsScreen(
         deleteFromStorage = deleteDownloadFile,
         autoPreviewDownloadedImages = autoPreviewDownloadedImages,
         liveUpdates = liveUpdates,
-        islandMode = islandMode,
-        islandAnimationStyle = islandAnimationStyle,
-        islandAnimationSpeed = islandAnimationSpeed,
-        islandAnimationBounce = islandAnimationBounce,
-        islandWavyProgress = islandWavyProgress,
-        islandOverlay = islandOverlay,
         onDownloadManagerModeChange = viewModel::setDownloadManagerMode,
         onConfirmFileDeleteChange = viewModel::setConfirmDownloadDelete,
         onDeleteFromStorageChange = viewModel::setDeleteDownloadFile,
         onAutoPreviewDownloadedImagesChange = viewModel::setAutoPreviewDownloadedImages,
         onLiveUpdatesChange = viewModel::setLiveUpdates,
-        onIslandModeChange = viewModel::setIslandMode,
-        onIslandAnimationStyleChange = viewModel::setIslandAnimationStyle,
-        onIslandAnimationSpeedChange = viewModel::setIslandAnimationSpeed,
-        onIslandAnimationBounceChange = viewModel::setIslandAnimationBounce,
-        onIslandWavyProgressChange = viewModel::setIslandWavyProgress,
-        onIslandOverlayChange = viewModel::setIslandOverlay,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier,
@@ -97,23 +79,11 @@ fun DownloadSettingsScreenContent(
     deleteFromStorage: Boolean,
     autoPreviewDownloadedImages: Boolean,
     liveUpdates: Boolean,
-    islandMode: String,
-    islandAnimationStyle: String,
-    islandAnimationSpeed: String,
-    islandAnimationBounce: String,
-    islandWavyProgress: Boolean,
-    islandOverlay: Boolean,
     onDownloadManagerModeChange: (String) -> Unit,
     onConfirmFileDeleteChange: (Boolean) -> Unit,
     onDeleteFromStorageChange: (Boolean) -> Unit,
     onAutoPreviewDownloadedImagesChange: (Boolean) -> Unit,
     onLiveUpdatesChange: (Boolean) -> Unit,
-    onIslandModeChange: (String) -> Unit,
-    onIslandAnimationStyleChange: (String) -> Unit,
-    onIslandAnimationSpeedChange: (String) -> Unit,
-    onIslandAnimationBounceChange: (String) -> Unit,
-    onIslandWavyProgressChange: (Boolean) -> Unit,
-    onIslandOverlayChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier,
@@ -136,7 +106,7 @@ fun DownloadSettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "download_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "download_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,
@@ -322,19 +292,19 @@ fun DownloadSettingsScreenContent(
                                 content = {
                                     Text(
                                         text = "Connections per download",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "Tap to change. More is faster on slow servers, but some hosts limit it (Petal backs off automatically). Applies to new downloads.",
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
                                 trailing = {
                                     Text(
                                         text = if (parallelEnabled) "$connections" else "Off",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.value,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
@@ -352,13 +322,13 @@ fun DownloadSettingsScreenContent(
                                 content = {
                                     Text(
                                         text = "Background downloads",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = if (batteryExempt) "Unrestricted: downloads keep running with the screen off."
                                         else "Restricted: Android may pause downloads when the screen locks. Tap to allow.",
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -388,11 +358,11 @@ fun DownloadSettingsScreenContent(
                                     )
                                 },
                                 content = {
-                                    Text("Simultaneous downloads", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                                    Text("Extra downloads wait in the queue. Tap to change.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Simultaneous downloads", style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                                    Text("Extra downloads wait in the queue. Tap to change.", style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 },
                                 trailing = {
-                                    Text("$maxConcurrent", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                    Text("$maxConcurrent", style = PetalText.value, color = MaterialTheme.colorScheme.primary)
                                 }
                             )
                             1 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -416,11 +386,11 @@ fun DownloadSettingsScreenContent(
                                     )
                                 },
                                 content = {
-                                    Text("Speed limit", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                                    Text("Caps total download speed. Tap to change. Applies to downloads Petal fetches itself.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Speed limit", style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                                    Text("Caps total download speed. Tap to change. Applies to downloads Petal fetches itself.", style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 },
                                 trailing = {
-                                    Text(if (speedLimit == 0) "Off" else if (speedLimit >= 1024) "${speedLimit / 1024} MB/s" else "$speedLimit KB/s", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                    Text(if (speedLimit == 0) "Off" else if (speedLimit >= 1024) "${speedLimit / 1024} MB/s" else "$speedLimit KB/s", style = PetalText.value, color = MaterialTheme.colorScheme.primary)
                                 }
                             )
                             3 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -452,7 +422,7 @@ fun DownloadSettingsScreenContent(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_choose_whether_downloads_are_handled),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -476,12 +446,12 @@ fun DownloadSettingsScreenContent(
                                     content = {
                                         Text(
                                             text = stringResource(R.string.ui_in_app_downloader_fast_multi),
-                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_native_petal_accelerated_downloader_wi),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     },
@@ -509,12 +479,12 @@ fun DownloadSettingsScreenContent(
                                     content = {
                                         Text(
                                             text = downloader.displayName,
-                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_installed_external_download_manager_wi),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     },
@@ -542,12 +512,12 @@ fun DownloadSettingsScreenContent(
                                     content = {
                                         Text(
                                             text = stringResource(R.string.ui_external_app_auto_chooser),
-                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_prompt_system_chooser_or_dispatch),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     },

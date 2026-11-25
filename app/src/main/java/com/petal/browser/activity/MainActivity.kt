@@ -477,19 +477,16 @@ class MainActivity : FragmentActivity(), BrowserController {
             val curTab = viewModel.activeTab.value
             if (curTab != null && com.petal.browser.unit.PetalBrowserUtils.isHomePage(curTab.content.url)) {
                 val root = findViewById<View>(android.R.id.content) ?: window.decorView
-                val bmp = com.petal.browser.predictive.PetalContentSnapshot.capture(root, forceFresh = true)
-                if (!bmp.isRecycled && bmp.width > 1 && bmp.height > 1) {
-                    val targetWidth = Math.min(bmp.width, 480)
-                    val targetHeight = Math.max(1, (bmp.height.toFloat() * targetWidth / bmp.width).toInt())
-                    val scaled = android.graphics.Bitmap.createScaledBitmap(bmp, targetWidth, targetHeight, true)
-                    com.petal.browser.unit.TabThumbnailCache.put(curTab.id, scaled, curTab.content.private, allowUniform = true)
-                }
+                com.petal.browser.unit.TabThumbnailCapture.capture(
+                    rootView = root,
+                    tabId = curTab.id,
+                    isPrivate = curTab.content.private,
+                    isHome = true
+                )
             } else {
                 (currentAlbumController as? com.petal.browser.browser.PetalTabViewController)?.updatePreviewCache(true)
+                com.petal.browser.compose.engine.PetalViewportThumbnailer.capture?.invoke()
             }
-        } catch (_: Throwable) {}
-        try {
-            com.petal.browser.compose.engine.PetalViewportThumbnailer.capture?.invoke()
         } catch (_: Throwable) {}
     }
     fun captureBrowserMainPreview() {
@@ -687,6 +684,23 @@ class MainActivity : FragmentActivity(), BrowserController {
         } else {
             val ctrl = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
             ctrl?.evaluateJavascript(script, callback)
+        }
+    }
+
+    /** Captures the visible GeckoView pixels of the active web page on the UI thread. */
+    fun captureActivePagePixels(callback: (android.graphics.Bitmap?) -> Unit) {
+        runOnUiThread {
+            val viewportCapture = com.petal.browser.compose.engine.PetalViewportThumbnailer.capturePagePixels
+            if (viewportCapture != null) {
+                viewportCapture(callback)
+                return@runOnUiThread
+            }
+            val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+            if (controller != null) {
+                controller.captureFullPageBitmap(callback)
+                return@runOnUiThread
+            }
+            callback(null)
         }
     }
 

@@ -164,10 +164,11 @@ object PetalLiquidGlassRenderer {
 
         val runtimeShader = android.graphics.RuntimeShader(shaderSource)
         val cornerPx = min(cornerRadiusDp * density, min(width, height) / 2f)
-        // Scale the lens to the widget: on a resized (tall/large) widget the fixed 20dp/70dp
-        // values bent the wallpaper into big ripples and an oval look.
-        val refractionHeightPx = min(config.refractionHeight * density, min(width, height) * 0.35f)
-        val refractionOffsetPx = -min(config.refractionOffset * density, refractionHeightPx * 1.5f)
+        // Same lens maths as Liquid Glass Widgets: height and strength are plain dp * density.
+        // The earlier clamps (35% of the widget, 1.5x height) cut the refraction to under half
+        // on a normal 60dp widget, so the glass looked flat.
+        val refractionHeightPx = config.refractionHeight * density
+        val refractionOffsetPx = -(config.refractionOffset * density)
         val blurRadiusPx = max(0f, config.blurRadius)
 
         // Set AGSL uniforms
@@ -176,7 +177,9 @@ object PetalLiquidGlassRenderer {
         runtimeShader.setFloatUniform("cornerRadii", cornerPx, cornerPx, cornerPx, cornerPx)
         runtimeShader.setFloatUniform("refractionHeight", refractionHeightPx)
         runtimeShader.setFloatUniform("refractionAmount", refractionOffsetPx)
-        runtimeShader.setFloatUniform("depthEffect", config.dispersion)
+        // Widgets bake with depthEffect = 0 (as Liquid Glass Widgets does). Any value above 0
+        // mixes a radial push into the edge normal and warps the whole widget into an oval ripple.
+        runtimeShader.setFloatUniform("depthEffect", 0f)
 
         var renderEffect = android.graphics.RenderEffect.createRuntimeShaderEffect(runtimeShader, "content")
         if (blurRadiusPx > 0.01f) {
@@ -225,7 +228,14 @@ object PetalLiquidGlassRenderer {
                 setSurface(imageReader.surface)
                 setContentRoot(rootNode)
             }
-            hardwareRenderer.createRenderRequest().syncAndDraw()
+            val request = hardwareRenderer.createRenderRequest()
+            // Block until the frame is presented so the image is ready (what the reference app does).
+            try {
+                request.javaClass.getMethod("setWaitForPresent", Boolean::class.javaPrimitiveType)
+                    .invoke(request, true)
+            } catch (_: Throwable) {
+            }
+            request.syncAndDraw()
 
             // The frame is not always ready right after syncAndDraw(). Returning null here made the
             // caller fall back to a plain blur, i.e. a flat widget with NO refraction.

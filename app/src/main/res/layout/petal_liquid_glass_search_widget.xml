@@ -36,19 +36,34 @@
             android:src="@drawable/widget_ic_search_sparkle"
             android:contentDescription="@string/ui_petal" />
 
-        <TextView
-            android:id="@+id/btn_search_bar"
+        <FrameLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="center_vertical"
             android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:text="@string/widget_search_hint"
-            android:textColor="#FFFFFF"
-            android:textSize="14sp"
-            android:fontFamily="sans-serif-medium"
-            android:singleLine="true" />
+            android:paddingEnd="8dp">
+
+            <TextView
+                android:id="@+id/btn_search_bar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center_vertical"
+                android:text="@string/widget_search_hint"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:singleLine="true" />
+
+            <ImageView
+                android:id="@+id/btn_search_bar_img"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|start"
+                android:adjustViewBounds="true"
+                android:scaleType="centerInside"
+                android:contentDescription="@string/widget_search_hint"
+                android:visibility="gone" />
+
+        </FrameLayout>
 
         <ImageView
             android:id="@+id/btn_voice_search"

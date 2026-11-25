@@ -247,7 +247,7 @@ object PetalBackMotion {
     }
 
     private fun aospBounce(i: PetalBackInput): Float {
-        if (!i.committing) return 1f
+        if (!i.committing || i.settleTime >= 1f) return 1f
         val floorKick = if (i.releaseProgress < 0.1f) 120f else 0f
         val kick = (abs(i.releaseVelocity) * 100f * 0.1f * 2f).coerceIn(floorKick, 1000f)
         if (kick <= 0f) return 1f
@@ -255,7 +255,8 @@ object PetalBackMotion {
         val omegaD = omega * sqrt(1f - 0.75f * 0.75f)
         val t = i.settleTime * PetalBackStyle.Aosp.commitDurationMs / 1000f
         val overlay = -(kick / omegaD) * exp(-0.75f * omega * t) * sin(omegaD * t)
-        return ((100f + overlay) / 100f).coerceIn(0.5f, 1f)
+        val settleTaper = (1f - ((i.settleTime - 0.85f) / 0.15f).coerceIn(0f, 1f))
+        return ((100f + overlay * settleTaper) / 100f).coerceIn(0.5f, 1f)
     }
 
     private fun aospYShift(i: PetalBackInput, scale: Float): Float {

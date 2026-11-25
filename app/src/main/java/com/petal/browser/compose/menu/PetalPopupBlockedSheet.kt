@@ -1,6 +1,7 @@
 package com.petal.browser.compose.menu
 
 import android.app.Dialog
+import com.petal.browser.ui.theme.PetalText
 import android.net.Uri
 import android.view.Gravity
 import android.view.ViewGroup
@@ -155,13 +156,12 @@ fun PetalPopupBlockedSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Pop-up blocked",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = domain ?: targetUrl,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -254,11 +254,8 @@ private fun PopupBlockedRow(
             Spacer(modifier = Modifier.width(14.dp))
             Text(
                 text = action.label,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
+                style = PetalText.rowTitle,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }
@@ -284,13 +281,12 @@ object PetalPopupBlockedBridge {
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
                         val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                        val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                         val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                         val isAmoled = sp.getBoolean("sp_amoled", false)
                         val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-                        val appFont = remember(fontName) { AppFont.fromName(fontName) }
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         val colorStyle = remember(styleName) {
                             try { ColorStyle.valueOf(styleName) } catch (_: Throwable) { ColorStyle.TONAL_SPOT }
                         }
@@ -298,7 +294,7 @@ object PetalPopupBlockedBridge {
                         PetalExpressiveTheme(
                             dynamicColor = dynamicColor,
                             useAmoled = isAmoled,
-                            appFont = appFont,
+                            fontState = fontState,
                             colorStyle = colorStyle,
                             paletteId = paletteId,
                         ) {

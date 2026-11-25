@@ -1,6 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.icons.imagetoolbox.AutoAwesome
@@ -100,7 +101,7 @@ fun AppearanceWidgetsPage(
         ) {
             Text(
                 "Customize colors, cookie shapes, shortcuts, corners and outline for each Petal widget.",
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             val widgetRows = listOf(

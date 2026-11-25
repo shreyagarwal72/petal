@@ -52,14 +52,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.R
 import com.petal.browser.account.PetalUserProfileManager
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
 import com.petal.browser.compose.ai.AiMessagePart
 import com.petal.browser.compose.ai.AiRole
 import com.petal.browser.compose.ai.PageContextData
+import com.petal.browser.compose.ai.PetalAiImageEncoder
 import com.petal.browser.compose.ai.PetalAiPageContextManager
 import com.petal.browser.compose.ai.PetalAiProviderFallback
 import com.petal.browser.compose.ai.PetalAiResearchEngine
@@ -74,7 +75,6 @@ import com.petal.browser.compose.settings.SettingsCategory
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalMaterialAlertDialog
 import com.petal.browser.view.PetalToast
-import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.launch
 
 /**
@@ -166,6 +166,8 @@ fun PetalAiChatSheet(
         onDispose {
             ttsEngine.shutdown()
             PetalOnDeviceLlmEngine.unload()
+            attachedImageBitmap = null
+            attachedImageBase64 = null
         }
     }
 
@@ -177,29 +179,19 @@ fun PetalAiChatSheet(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         if (uri != null) {
-            try {
-                val inputStream = context.contentResolver.openInputStream(uri)
-                val original = BitmapFactory.decodeStream(inputStream)
-                inputStream?.close()
-                if (original != null) {
-                    val maxDim = 1024
-                    val width = original.width
-                    val height = original.height
-                    val scaled = if (width > maxDim || height > maxDim) {
-                        val ratio = minOf(maxDim.toFloat() / width, maxDim.toFloat() / height)
-                        Bitmap.createScaledBitmap(original, (width * ratio).toInt(), (height * ratio).toInt(), true)
+            coroutineScope.launch {
+                try {
+                    val encoded = PetalAiImageEncoder.decodeAndEncodeUri(context, uri)
+                    if (encoded != null) {
+                        attachedImageBitmap = encoded.bitmap
+                        attachedImageBase64 = encoded.base64
+                        attachedImageMime = encoded.mimeType
                     } else {
-                        original
+                        PetalToast.show(context, "Failed to load image")
                     }
-                    attachedImageBitmap = scaled
-                    val baos = ByteArrayOutputStream()
-                    scaled.compress(Bitmap.CompressFormat.JPEG, 85, baos)
-                    val bytes = baos.toByteArray()
-                    attachedImageBase64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
-                    attachedImageMime = "image/jpeg"
+                } catch (_: Exception) {
+                    PetalToast.show(context, "Failed to load image")
                 }
-            } catch (_: Exception) {
-                PetalToast.show(context, "Failed to load image")
             }
         }
     }
@@ -345,7 +337,13 @@ fun PetalAiChatSheet(
     }
 
     val selectedProvider = PetalAiResearchEngine.getSelectedProvider(context)
-    val activeModel = if (thinkHarder) {
+    val hasImageContext = attachedImageBitmap != null || tabMessages.any { it.imagePart != null }
+    val activeModel = PetalAiResearchEngine.resolveModelForRequest(
+        context = context,
+        provider = selectedProvider,
+        thinkHarder = thinkHarder,
+        requireVision = hasImageContext
+    ) ?: if (thinkHarder) {
         PetalAiResearchEngine.getStrongerModel(selectedProvider)
     } else {
         PetalAiResearchEngine.getSelectedModel(context, selectedProvider)
@@ -446,9 +444,7 @@ fun PetalAiChatSheet(
                             Column {
                                 Text(
                                     text = stringResource(R.string.ui_petal_ai),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    style = PetalText.sheetTitle
                                 )
                                 val subtitle = if (thinkHarder) {
                                     "$activeModel • ${stringResource(R.string.ui_petal_ai_think_harder)}"
@@ -457,8 +453,8 @@ fun PetalAiChatSheet(
                                 }
                                 Text(
                                     text = subtitle,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (thinkHarder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = PetalText.caption,
+                                    color = if (thinkHarder) MaterialTheme.colorScheme.primary else Color.Unspecified,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -631,14 +627,13 @@ fun PetalAiChatSheet(
                         ) {
                             Text(
                                 text = greeting,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.pageTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 text = stringResource(R.string.ui_petal_ai_help_prompt),
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = PetalText.pageSubtitle,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
@@ -928,8 +923,7 @@ fun PetalAiChatSheet(
                                                     text = activeError.localizedMessage
                                                         ?: activeError.message
                                                         ?: stringResource(R.string.ui_petal_ai_no_key_warning),
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    fontWeight = FontWeight.Medium
+                                                    style = PetalText.cardBody
                                                 )
                                                 TextButton(
                                                     onClick = { openAiSettings() },
@@ -937,8 +931,7 @@ fun PetalAiChatSheet(
                                                 ) {
                                                     Text(
                                                         text = stringResource(R.string.ui_petal_ai_open_settings),
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        fontWeight = FontWeight.Bold,
+                                                        style = PetalText.button,
                                                         color = MaterialTheme.colorScheme.error
                                                     )
                                                 }
@@ -968,7 +961,7 @@ fun PetalAiChatSheet(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             stringResource(R.string.ui_petal_ai_private_tab_notice),
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -988,7 +981,7 @@ fun PetalAiChatSheet(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             stringResource(R.string.ui_petal_ai_password_page_notice),
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -1226,7 +1219,7 @@ fun PetalAiChatSheet(
                             }
 
                             // Vision unsupported warning notice
-                            if (attachedImageBitmap != null && !PetalAiResearchEngine.isVisionSupported(activeModel)) {
+                            if (attachedImageBitmap != null && !PetalAiResearchEngine.isVisionSupported(context, selectedProvider, activeModel)) {
                                 Text(
                                     text = stringResource(R.string.ui_petal_ai_vision_unsupported_model),
                                     style = MaterialTheme.typography.labelSmall,
@@ -1282,6 +1275,80 @@ fun PetalAiChatSheet(
                                         onClick = {
                                             showAttachMenu = false
                                             imagePickerLauncher.launch("image/*")
+                                        }
+                                    )
+
+                                    // Attach Page Screenshot
+                                    val canCaptureScreenshot = !isPrivate &&
+                                        pageContext?.hasPasswordInput != true &&
+                                        PetalAiPageContextManager.isEligibleUrl(activeUrl)
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                text = stringResource(R.string.ui_petal_ai_attach_page_screenshot),
+                                                color = if (canCaptureScreenshot) {
+                                                    MaterialTheme.colorScheme.onSurface
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                                }
+                                            )
+                                        },
+                                        leadingIcon = {
+                                            Icon(
+                                                Icons.Rounded.Screenshot,
+                                                contentDescription = null,
+                                                tint = if (canCaptureScreenshot) {
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                                                }
+                                            )
+                                        },
+                                        onClick = {
+                                            showAttachMenu = false
+                                            when {
+                                                isPrivate -> {
+                                                    PetalToast.show(context, context.getString(R.string.ui_petal_ai_screenshot_blocked_private))
+                                                }
+                                                pageContext?.hasPasswordInput == true -> {
+                                                    PetalToast.show(context, context.getString(R.string.ui_petal_ai_screenshot_blocked_password))
+                                                }
+                                                !PetalAiPageContextManager.isEligibleUrl(activeUrl) -> {
+                                                    PetalToast.show(context, context.getString(R.string.ui_petal_ai_screenshot_blocked_url))
+                                                }
+                                                else -> {
+                                                    val act = context as? com.petal.browser.activity.MainActivity
+                                                    if (act == null) {
+                                                        PetalToast.show(context, context.getString(R.string.ui_screenshot_failed))
+                                                    } else {
+                                                        act.captureActivePagePixels { rawBitmap ->
+                                                            if (rawBitmap == null) {
+                                                                PetalToast.show(context, context.getString(R.string.ui_screenshot_failed))
+                                                            } else {
+                                                                coroutineScope.launch {
+                                                                    try {
+                                                                        val encoded = PetalAiImageEncoder.encodeBitmap(
+                                                                            bitmap = rawBitmap,
+                                                                            recycleSource = true
+                                                                        )
+                                                                        if (encoded != null) {
+                                                                            attachedImageBitmap = encoded.bitmap
+                                                                            attachedImageBase64 = encoded.base64
+                                                                            attachedImageMime = encoded.mimeType
+                                                                        } else {
+                                                                            if (!rawBitmap.isRecycled) rawBitmap.recycle()
+                                                                            PetalToast.show(context, context.getString(R.string.ui_screenshot_failed))
+                                                                        }
+                                                                    } catch (_: Exception) {
+                                                                        if (!rawBitmap.isRecycled) rawBitmap.recycle()
+                                                                        PetalToast.show(context, context.getString(R.string.ui_screenshot_failed))
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     )
 
@@ -1491,7 +1558,7 @@ fun PetalAiChatSheet(
                     if (candidateTabs.isEmpty()) {
                         Text(
                             text = "No other eligible open tabs found.",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.dialogBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
@@ -1537,14 +1604,11 @@ fun PetalAiChatSheet(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = t.title.ifBlank { t.url },
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.Medium,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
+                                                style = PetalText.listItemTitle
                                             )
                                             Text(
                                                 text = t.url,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.listItemMeta,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
@@ -1594,7 +1658,7 @@ fun PetalAiChatSheet(
                             ) {
                                 Text(
                                     text = lang,
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = PetalText.listItemTitle,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                                 )
                             }
@@ -1637,7 +1701,7 @@ fun PetalAiChatSheet(
                             }) {
                                 Text(
                                     text = stringResource(R.string.ui_petal_ai_history_clear_all),
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = PetalText.button,
                                     color = MaterialTheme.colorScheme.error
                                 )
                             }
@@ -1670,7 +1734,7 @@ fun PetalAiChatSheet(
                             ) {
                                 Text(
                                     text = stringResource(R.string.ui_petal_ai_history_empty),
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = PetalText.emptyState,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -1693,18 +1757,12 @@ fun PetalAiChatSheet(
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
                                                     text = item.title,
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontWeight = FontWeight.Medium,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    style = PetalText.listItemTitle
                                                 )
                                                 val preview = item.messages.lastOrNull()?.text ?: ""
                                                 Text(
                                                     text = preview,
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    style = PetalText.listItemMeta
                                                 )
                                             }
                                             IconButton(
@@ -1775,9 +1833,7 @@ private fun SuggestionPromptRow(
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                style = PetalText.rowTitle
             )
         }
     }

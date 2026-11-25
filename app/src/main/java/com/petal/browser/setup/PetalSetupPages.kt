@@ -1,6 +1,7 @@
 package com.petal.browser.setup
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import android.Manifest
 import android.content.Intent
@@ -114,8 +115,7 @@ internal fun WelcomePage(language: String, onLanguage: (String) -> Unit) {
             Text(
                 stringResource(R.string.petal_setup_welcome_eyebrow),
                 Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.badge,
                 color = MaterialTheme.colorScheme.primary,
                 letterSpacing = 1.2.sp
             )
@@ -128,7 +128,7 @@ internal fun WelcomePage(language: String, onLanguage: (String) -> Unit) {
         )
         Text(
             stringResource(R.string.petal_setup_hero_subtitle),
-            style = MaterialTheme.typography.bodyLarge,
+            style = PetalText.pageSubtitle,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
@@ -159,8 +159,7 @@ private fun FeatureTile(modifier: Modifier, icon: androidx.compose.ui.graphics.v
             }
             Text(
                 label,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = PetalText.chip,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -232,11 +231,11 @@ private fun LanguageSheet(language: String, onLanguage: (String) -> Unit, onDism
     }
     PetalSheet(onDismissRequest = onDismiss) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp)) {
-            Text(stringResource(R.string.ui_app_language), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.ui_app_language), style = PetalText.sheetTitle)
             Spacer(Modifier.size(4.dp))
             Text(
                 stringResource(R.string.ui_choose_your_preferred_display_language),
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.pageSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.size(12.dp))
@@ -424,8 +423,7 @@ internal fun LookPage(
                         AddressBarSchematic(atBottom = bottom, selected = selected)
                         Text(
                             stringResource(label),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.tabLabel,
                             color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -520,10 +518,10 @@ internal fun PrivacyPage(sp: SharedPreferences, adBlock: Boolean, onAdBlock: (Bo
                     )
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.petal_setup_ad_block), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.petal_setup_ad_block), style = PetalText.cardTitle)
                     Text(
                         stringResource(R.string.petal_setup_ad_block_reason),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = if (adBlock) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -643,8 +641,7 @@ internal fun AccessPage(activity: ComponentActivity, sp: SharedPreferences, item
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
                     stringResource(R.string.petal_setup_access_progress, granted, items.size),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    style = PetalText.sectionHeader
                 )
                 LinearProgressIndicator(
                     progress = { if (items.isEmpty()) 0f else granted / items.size.toFloat() },
@@ -684,27 +681,27 @@ internal fun AccessPage(activity: ComponentActivity, sp: SharedPreferences, item
                     )
                     Column(Modifier.weight(1f)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(item.title), fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(stringResource(item.title), style = PetalText.rowTitle)
                             if (item.optional) {
                                 Surface(shape = RoundedCornerShape(6.dp), color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)) {
                                     Text(
                                         stringResource(R.string.petal_setup_optional),
                                         Modifier.padding(horizontal = 4.dp, vertical = 1.dp),
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = PetalText.badge,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
                             }
                         }
-                        Text(stringResource(item.reason), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        Text(stringResource(item.reason), style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     when {
                         isGranted -> Icon(Icons.Rounded.CheckCircle, stringResource(R.string.petal_setup_granted), tint = MaterialTheme.colorScheme.primary)
                         blocked -> FilledTonalButton(onClick = { openAppSettings() }, shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)) {
-                            Text(stringResource(R.string.petal_setup_open_settings), style = MaterialTheme.typography.labelSmall)
+                            Text(stringResource(R.string.petal_setup_open_settings), style = PetalText.button)
                         }
                         else -> Button(onClick = { request(item) }, shape = RoundedCornerShape(14.dp), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)) {
-                            Text(stringResource(R.string.ui_grant), style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.ui_grant), style = PetalText.button)
                         }
                     }
                 }
@@ -768,8 +765,8 @@ internal fun SearchPage(
                         )
                     }
                     Column(Modifier.weight(1f)) {
-                        Text(engine.name, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyLarge)
-                        Text(engine.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(engine.name, style = PetalText.rowTitle)
+                        Text(engine.description, style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     RadioButton(selected = selected, onClick = { onSelectEngine(engine.index) })
                 }
@@ -890,8 +887,7 @@ internal fun ReadyPage(activity: ComponentActivity, summary: SetupSummary) {
                     Icon(Icons.Rounded.EmojiEvents, null, tint = MaterialTheme.colorScheme.onTertiaryContainer)
                     Text(
                         stringResource(R.string.petal_setup_ready_xp, PetalSetupGate.WELCOME_XP.toInt()),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.cardTitle,
                         color = MaterialTheme.colorScheme.onTertiaryContainer
                     )
                 }
@@ -909,7 +905,7 @@ private fun SummaryChip(icon: androidx.compose.ui.graphics.vector.ImageVector, t
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Icon(icon, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-            Text(text, style = MaterialTheme.typography.labelLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(text, style = PetalText.chip, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

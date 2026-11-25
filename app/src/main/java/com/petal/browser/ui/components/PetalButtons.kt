@@ -38,9 +38,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalText
 import androidx.preference.PreferenceManager
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
@@ -161,7 +161,7 @@ fun PetalLiquidButton(
         ) {
             CompositionLocalProvider(
                 LocalContentColor provides (if (enabled) contentColor else contentColor.copy(alpha = 0.38f)),
-                LocalTextStyle provides MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                LocalTextStyle provides PetalText.button
             ) {
                 content()
             }

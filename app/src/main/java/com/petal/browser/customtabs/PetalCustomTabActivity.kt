@@ -1,6 +1,7 @@
 package com.petal.browser.customtabs
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
@@ -127,13 +128,12 @@ class PetalCustomTabActivity : ComponentActivity() {
 
         setContent {
             val sp = remember { PreferenceManager.getDefaultSharedPreferences(this@PetalCustomTabActivity) }
-            val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
             val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
             val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
             val isAmoled = sp.getBoolean("sp_amoled", false)
             val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-            val appFont = remember(fontName) { AppFont.fromName(fontName) }
+            val fontState = com.petal.browser.ui.theme.rememberFontState()
             val colorStyle = remember(styleName) {
                 try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
             }
@@ -141,7 +141,7 @@ class PetalCustomTabActivity : ComponentActivity() {
             PetalExpressiveTheme(
                 dynamicColor = dynamicColor,
                 useAmoled = isAmoled,
-                appFont = appFont,
+                fontState = fontState,
                 colorStyle = colorStyle,
                 paletteId = paletteId
             ) {
@@ -502,7 +502,7 @@ private fun CustomTabTopBar(
 
                         Text(
                             text = displayTitle,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -530,7 +530,7 @@ private fun CustomTabTopBar(
                             }
                             Text(
                                 text = displayHost,
-                                style = MaterialTheme.typography.labelSmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis

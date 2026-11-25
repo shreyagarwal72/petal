@@ -49,14 +49,13 @@ import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -307,7 +306,7 @@ fun PetalPermissionDialog(
                             )
                             Text(
                                 text = displayHost,
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.chip,
                                 color = scheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -323,19 +322,13 @@ fun PetalPermissionDialog(
                             withStyle(SpanStyle(color = accent.strong)) { append(displayHost) }
                             append(type.titleSuffix())
                         },
-                        style = MaterialTheme.typography.headlineSmall.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = 24.sp,
-                            lineHeight = 30.sp
-                        ),
-                        color = scheme.onSurface,
+                        style = PetalText.dialogTitle,
                         textAlign = TextAlign.Center
                     )
 
                     Text(
                         text = type.description,
-                        style = MaterialTheme.typography.bodyMedium.copy(fontSize = 14.sp, lineHeight = 20.sp),
-                        color = scheme.onSurfaceVariant,
+                        style = PetalText.dialogBody,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
@@ -378,13 +371,11 @@ fun PetalPermissionDialog(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Remember for this site",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                color = scheme.onSurface
+                                style = PetalText.rowTitle
                             )
                             Text(
                                 text = "Don't ask again on future visits",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = scheme.onSurfaceVariant
+                                style = PetalText.rowSubtitle
                             )
                         }
                         PetalSwitch(
@@ -418,7 +409,7 @@ fun PetalPermissionDialog(
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 text = "Don't allow",
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                                style = PetalText.button,
                                 maxLines = 1
                             )
                         }
@@ -440,7 +431,7 @@ fun PetalPermissionDialog(
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 text = "Allow",
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 15.sp),
+                                style = PetalText.button,
                                 maxLines = 1
                             )
                         }
@@ -472,7 +463,7 @@ internal fun PermissionActionButton(
     val content: @Composable RowScope.() -> Unit = {
         Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(8.dp))
-        Text(text, style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp), maxLines = 1)
+        Text(text, style = PetalText.button, maxLines = 1)
     }
     if (filled) {
         Button(

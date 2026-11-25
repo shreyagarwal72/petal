@@ -7,8 +7,6 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.browser.PetalAdBlockMode
-import com.petal.browser.live.LiveEventKind
-import com.petal.browser.live.PetalLiveActionBus
 
 /**
  * Quick Settings Toggle Tile for Petal Ad & Tracker Blocker.
@@ -39,12 +37,6 @@ class PetalAdBlockTileService : PetalTileBase() {
         val currentMode = PetalAdBlockEngine.getAdBlockMode(this)
         val next = cycleNextMode(currentMode)
         PetalAdBlockEngine.setAdBlockMode(this, next)
-        PetalLiveActionBus.postSimple(
-            kind = LiveEventKind.ADBLOCK_STATE,
-            key = "adblock_mode_change",
-            title = getString(R.string.quick_tile_adblock_label),
-            subtitle = next.title
-        )
         refreshTileState()
     }
 

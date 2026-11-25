@@ -60,6 +60,7 @@ import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.ui.theme.layout.petalFlingBehavior
@@ -100,17 +101,12 @@ object PetalAboutDeveloperBridge {
                 }
 
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val isAmoled = sp.getBoolean("sp_amoled", false)
                 val isExpressiveColors = sp.getBoolean("sp_expressive_colors", false)
                 val useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                val fontWidthVal = sp.getFloat("sp_font_width", 92f)
-                val fontWeightVal = sp.getInt("sp_font_weight", 750)
-                val fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
 
-                val appFont = try { AppFont.valueOf(fontName) } catch (_: Exception) { AppFont.PETAL }
                 val colorStyle = try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
 
                 composeView = ComposeView(activity).apply {
@@ -121,17 +117,15 @@ object PetalAboutDeveloperBridge {
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                     setContent {
                         val snapshotBitmap = remember { PetalContentSnapshot.current?.asImageBitmap() }
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
 
                         PetalExpressiveTheme(
                             dynamicColor = useDynamic,
                             useAmoled = isAmoled,
                             expressiveColors = isExpressiveColors,
-                            appFont = appFont,
+                            fontState = fontState,
                             colorStyle = colorStyle,
-                            paletteId = paletteId,
-                            fontWidth = fontWidthVal,
-                            fontWeight = fontWeightVal,
-                            fontRoundness = fontRoundnessVal
+                            paletteId = paletteId
                         ) {
                             PetalAboutDeveloperScreen(
                                 backgroundSnapshot = snapshotBitmap,
@@ -339,9 +333,9 @@ fun PetalAboutDeveloperScreen(
                 PetalGlassHeaderLayout(
                     modifier = Modifier.fillMaxSize(),
                     pageBackground = {
-                        M3ExpressiveVariableBackground(
+                        PetalPageBackground(
                             modifier = Modifier.fillMaxSize(),
-                            pageSeed = "about_developer_page"
+                            pageKey = "about_developer_page"
                         )
                     },
                     header = { headerModifier, headerBackdrop ->
@@ -554,13 +548,13 @@ fun PetalAboutDeveloperScreen(
                             ) {
                                 Text(
                                     text = stringResource(R.string.ui_petal_browser_open_source_project),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    style = PetalText.badge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     text = stringResource(R.string.ui_made_with_jetpack_compose_material),
-                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                    style = PetalText.caption,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
                                 )
@@ -595,17 +589,15 @@ fun PetalAboutDeveloperScreen(
             title = {
                 Text(
                     text = stringResource(R.string.about_build_info),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    style = PetalText.dialogTitle
                 )
             },
             text = {
                 SelectionContainer {
                     Text(
                         text = buildInfoText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 22.sp
+                        style = PetalText.dialogBody,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
@@ -639,17 +631,15 @@ fun PetalAboutDeveloperScreen(
             title = {
                 Text(
                     text = stringResource(R.string.about_third_party_notices),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold
+                    style = PetalText.dialogTitle
                 )
             },
             text = {
                 SelectionContainer {
                     Text(
                         text = noticesText,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 18.sp
+                        style = PetalText.dialogBody,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             },
@@ -705,12 +695,12 @@ fun DeveloperProfileGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.ui_vanshu_agarwal),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "@shreyagarwal72 • Lead Architect & Developer",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.primary
                         )
                     },
@@ -737,12 +727,12 @@ fun DeveloperProfileGroup(
                     content = {
                         Text(
                             text = "GitHub Profile",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Explore open source repositories, projects & activity",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -769,12 +759,12 @@ fun DeveloperProfileGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_developer_focus_title),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_developer_focus_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -821,12 +811,12 @@ fun AppInfoGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.app_name),
-                            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Version $versionName (Build $versionCode)",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -837,7 +827,7 @@ fun AppInfoGroup(
                         ) {
                             Text(
                                 text = if (com.petal.browser.BuildConfig.DEBUG) "Debug" else "Release",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.badge,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
@@ -858,12 +848,12 @@ fun AppInfoGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_check_updates),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_check_updates_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -890,12 +880,12 @@ fun AppInfoGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_build_info),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_build_info_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -922,12 +912,12 @@ fun AppInfoGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_gecko_engine_title),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_gecko_engine_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -954,12 +944,12 @@ fun AppInfoGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_ui_framework_title),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_ui_framework_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -986,12 +976,12 @@ fun AppInfoGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_privacy_title),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_privacy_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1032,12 +1022,12 @@ fun ProjectSourceGroup(
                     content = {
                         Text(
                             text = "Source Repository",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "shreyagarwal72/petal • Branch main",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1064,12 +1054,12 @@ fun ProjectSourceGroup(
                     content = {
                         Text(
                             text = "Issue Tracker",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Report bugs, request features & suggest enhancements",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1096,12 +1086,12 @@ fun ProjectSourceGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_feedback_bug_report),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_feedback_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1128,12 +1118,12 @@ fun ProjectSourceGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_fdroid_releases),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_fdroid_releases_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1160,12 +1150,12 @@ fun ProjectSourceGroup(
                     content = {
                         Text(
                             text = "License",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "GNU General Public License v3.0 (GPL-3.0)",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1243,12 +1233,12 @@ fun PetalWebsiteGroup(
             content = {
                 Text(
                     text = item.title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.rowTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = item.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -1342,12 +1332,12 @@ fun HelpLegalGroup(
             content = {
                 Text(
                     text = item.title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.rowTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = item.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -1388,12 +1378,12 @@ fun CommunityEcosystemGroup(
                     content = {
                         Text(
                             text = "Support Development",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Send direct payment support via Telegram to @hereyourchampion",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1420,12 +1410,12 @@ fun CommunityEcosystemGroup(
                     content = {
                         Text(
                             text = "Champion Workspace",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Official Telegram community for updates & testing",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1452,12 +1442,12 @@ fun CommunityEcosystemGroup(
                     content = {
                         Text(
                             text = "Developer Ecosystem",
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "15+ active open-source tools, apps and libraries",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1484,12 +1474,12 @@ fun CommunityEcosystemGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_share_app),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_share_app_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1516,12 +1506,12 @@ fun CommunityEcosystemGroup(
                     content = {
                         Text(
                             text = stringResource(R.string.about_rate_app),
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.about_rate_app_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     },
@@ -1588,7 +1578,7 @@ private fun M3TechTag(label: String, isGlass: Boolean = false) {
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+            style = PetalText.chip,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
         )
@@ -1622,7 +1612,7 @@ fun MissionMetricsGroup(
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
                     text = stringResource(R.string.ui_petal_browser_was_built_to),
-                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
+                    style = PetalText.cardBody,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(8.dp))
@@ -1638,7 +1628,7 @@ fun MissionMetricsGroup(
                     )
                     Text(
                         text = "Tap card to copy mission",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -1681,12 +1671,12 @@ fun MissionMetricsGroup(
                 content = {
                     Text(
                         text = value,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = stringResource(labelRes),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.rowSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },

@@ -1,6 +1,7 @@
 package com.petal.browser.compose.incognito
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -46,7 +47,6 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.lens.PetalLensBridge
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalVoiceSearchBridge
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.containment.*
@@ -132,7 +132,7 @@ fun PetalIncognitoHomeScreen(
                 // Background morphing shapes & wallpaper recorder (sibling to content)
                 com.petal.browser.ui.components.PetalGlassHeaderLayout(
                     modifier = Modifier.fillMaxSize(),
-                    pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "incognito_firefox_stealth") },
+                    pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "incognito_page", modifier = Modifier.fillMaxSize()) },
                     header = { headerModifier, headerBackdrop ->
                         ExpressiveHeader(
                             modifier = headerModifier,
@@ -226,8 +226,7 @@ fun PetalIncognitoHomeScreen(
                             // ── 2. Hero Headline & Subtitle ──
                             Text(
                                 text = stringResource(R.string.private_browsing_title),
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontWeight = FontWeight.Bold,
+                                style = PetalText.pageTitle.copy(
                                     letterSpacing = (-0.3).sp
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -239,8 +238,7 @@ fun PetalIncognitoHomeScreen(
 
                             Text(
                                 text = stringResource(R.string.private_browsing_subtitle),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    lineHeight = 21.sp,
+                                style = PetalText.pageSubtitle.copy(
                                     letterSpacing = 0.1.sp
                                 ),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -309,18 +307,13 @@ fun PetalIncognitoHomeScreen(
                                     content = {
                                         Text(
                                             text = stringResource(R.string.ui_block_third_party_cookies),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Medium,
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_when_on_sites_can_t),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                     },
                                     trailing = {
@@ -360,18 +353,13 @@ fun PetalIncognitoHomeScreen(
                                     content = {
                                         Text(
                                             text = "Biometric Tab Lock",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Medium,
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = "Require fingerprint or unlock to view private tabs",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                     },
                                     trailing = {
@@ -411,18 +399,13 @@ fun PetalIncognitoHomeScreen(
                                     content = {
                                         Text(
                                             text = stringResource(R.string.ui_https_only_mode),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Medium,
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = "Automatically upgrade connections to secure HTTPS",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                     },
                                     trailing = {
@@ -460,8 +443,7 @@ fun PetalIncognitoHomeScreen(
                                     content = {
                                         Text(
                                             text = stringResource(R.string.private_browsing_not_saved),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.SemiBold,
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Spacer(Modifier.height(4.dp))
@@ -470,7 +452,7 @@ fun PetalIncognitoHomeScreen(
                                                     "\n• " + stringResource(R.string.private_browsing_not_saved_cookies) +
                                                     "\n• " + stringResource(R.string.private_browsing_not_saved_forms) +
                                                     "\n• Screenshots & app switcher previews (FLAG_SECURE)",
-                                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     },
@@ -490,8 +472,7 @@ fun PetalIncognitoHomeScreen(
                                     content = {
                                         Text(
                                             text = stringResource(R.string.private_browsing_visible_to),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.SemiBold,
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Spacer(Modifier.height(4.dp))
@@ -499,7 +480,7 @@ fun PetalIncognitoHomeScreen(
                                             text = "• " + stringResource(R.string.private_browsing_visible_network) +
                                                     "\n• " + stringResource(R.string.private_browsing_visible_employer) +
                                                     "\n• " + stringResource(R.string.private_browsing_visible_sites),
-                                            style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     },
@@ -535,18 +516,13 @@ fun PetalIncognitoHomeScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = stringResource(R.string.private_browsing_close_all),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Medium,
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.error,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_automatically_purge_cache_history_and),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                     Icon(
@@ -582,13 +558,13 @@ fun PetalIncognitoHomeScreen(
                             ) {
                                 Text(
                                     text = stringResource(R.string.ui_petal_won_t_remember_your),
-                                    style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+                                    style = PetalText.cardBody,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
                                 Text(
                                     text = stringResource(R.string.ui_important_safeguards),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sheetTitle,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 BulletItem("GeckoView private engine session isolates cookies, IndexedDB, and cache into an ephemeral sandbox.")
@@ -646,7 +622,7 @@ private fun IncognitoDecoySearchBar(
         Spacer(Modifier.width(12.dp))
         Text(
             text = stringResource(R.string.ui_search_or_type_web_address),
-            style = MaterialTheme.typography.bodyLarge,
+            style = PetalText.rowTitle.copy(fontWeight = FontWeight.Normal),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -709,18 +685,12 @@ private fun BulletItem(
     ) {
         Text(
             text = "•",
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontWeight = FontWeight.Bold,
-                lineHeight = 20.sp
-            ),
+            style = PetalText.cardBody.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyMedium.copy(
-                lineHeight = 20.sp,
-                letterSpacing = 0.1.sp
-            ),
+            style = PetalText.cardBody,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }

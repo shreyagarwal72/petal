@@ -12,6 +12,7 @@
 package com.petal.browser.privacy
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -66,7 +67,6 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalThemedSnackbarHost
 import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.ui.containment.PetalBadgeVariant
@@ -100,13 +100,12 @@ object SafeLockerBridge {
                     onDispose { com.petal.browser.predictive.PetalContentSnapshot.clear() }
                 }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = remember(fontName) { com.petal.browser.ui.theme.AppFont.fromName(fontName) }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 }
@@ -114,7 +113,7 @@ object SafeLockerBridge {
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    appFont = appFont,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -270,7 +269,7 @@ fun SafeLockerScreen(
                 Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                     com.petal.browser.ui.components.PetalGlassHeaderLayout(
                         modifier = Modifier.fillMaxSize(),
-                        pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "safe_locker_page") },
+                        pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "safe_locker_page", modifier = Modifier.fillMaxSize()) },
                         header = { headerModifier, headerBackdrop ->
                         if (isSelectionMode) {
                             ExpressiveHeader(
@@ -381,12 +380,12 @@ fun SafeLockerScreen(
                                     )
                                     Text(
                                         stringResource(R.string.ui_safe_locker_is_locked),
-                                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.pageTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         authError ?: "Authenticate using your fingerprint, face, or device PIN/pattern to access your private encrypted vault.",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = PetalText.pageSubtitle,
                                         color = if (authError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(horizontal = 24.dp),
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -471,12 +470,12 @@ fun SafeLockerScreen(
                                         )
                                         Text(
                                             if (searchQuery.isNotEmpty()) "No matching files" else "Safe Locker is empty",
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.emptyState,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             if (searchQuery.isNotEmpty()) "Try a different search term" else "Import private downloads, images, or documents into your hardware-encrypted vault",
-                                            style = MaterialTheme.typography.bodyMedium,
+                                            style = PetalText.pageSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                         )
@@ -560,15 +559,13 @@ fun SafeLockerScreen(
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
                                                         item.name,
-                                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis,
+                                                        style = PetalText.listItemTitle,
                                                         color = MaterialTheme.colorScheme.onSurface
                                                     )
                                                     Spacer(Modifier.height(2.dp))
                                                     Text(
                                                         "${formatSafeFileSize(item.sizeBytes)} • ${formatSafeFileDate(item.modifiedTime)}",
-                                                        style = MaterialTheme.typography.bodySmall,
+                                                        style = PetalText.listItemMeta,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
                                                 }

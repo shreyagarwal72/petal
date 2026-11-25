@@ -1,6 +1,7 @@
 package com.petal.browser.lens
 
 import android.net.Uri
+import com.petal.browser.ui.theme.PetalText
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -217,12 +218,12 @@ fun PetalLensBottomSheet(
                             Column {
                                 Text(
                                     text = stringResource(R.string.ui_petal_qr_scanner),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sheetTitle,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = stringResource(R.string.ui_select_a_photo_or_snap),
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.pageSubtitle,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -274,13 +275,12 @@ fun PetalLensBottomSheet(
                                 Column(Modifier.weight(1f)) {
                                     Text(
                                         text = stringResource(R.string.ui_snap_photo),
-                                        maxLines = 2,
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.cardTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = stringResource(R.string.ui_use_camera),
-                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        style = PetalText.cardBody,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -316,13 +316,12 @@ fun PetalLensBottomSheet(
                                 Column(Modifier.weight(1f)) {
                                     Text(
                                         text = stringResource(R.string.ui_android_system_picker),
-                                        maxLines = 2,
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.cardTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = stringResource(R.string.ui_photos_picker),
-                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                                        style = PetalText.cardBody,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -377,12 +376,12 @@ fun PetalLensBottomSheet(
                                 )
                                 Text(
                                     text = stringResource(R.string.ui_photo_gallery_access),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.cardTitle,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = stringResource(R.string.ui_allow_petal_browser_to_display),
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.cardBody,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
                                 )
@@ -429,12 +428,12 @@ fun PetalLensBottomSheet(
                                 )
                                 Text(
                                     text = stringResource(R.string.ui_no_indexed_photos_found_in),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.emptyState,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = stringResource(R.string.ui_you_can_browse_your_device),
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.cardBody,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
                                 )
@@ -452,7 +451,7 @@ fun PetalLensBottomSheet(
                     } else {
                         Text(
                             text = stringResource(R.string.ui_recent_photos),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.align(Alignment.Start)
                         )

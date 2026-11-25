@@ -141,12 +141,11 @@ object PetalQuickToolsBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                 setContent {
-                    val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                    val fontState = com.petal.browser.ui.theme.rememberFontState()
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                     val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                     val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                     val isAmoled = sp.getBoolean("sp_amoled", false)
-                    val appFont = remember(fontName) { AppFont.fromName(fontName) }
                     val colorStyle = remember(styleName) {
                         try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                     }
@@ -173,7 +172,7 @@ object PetalQuickToolsBridge {
                     PetalExpressiveTheme(
                         dynamicColor = dynamicColor,
                         useAmoled = isAmoled,
-                        appFont = appFont,
+                        fontState = fontState,
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
@@ -512,7 +511,7 @@ object PetalQuickToolsBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                 setContent {
-                    val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                    val fontState = com.petal.browser.ui.theme.rememberFontState()
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                     val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                     val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
@@ -522,7 +521,7 @@ object PetalQuickToolsBridge {
                     PetalExpressiveTheme(
                         dynamicColor = dynamicColor,
                         useAmoled = isAmoled,
-                        appFont = remember(fontName) { AppFont.fromName(fontName) },
+                        fontState = fontState,
                         colorStyle = remember(styleName) {
                             try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                         },
@@ -576,7 +575,7 @@ object PetalQuickToolsBridge {
                 setViewTreeSavedStateRegistryOwner(activity)
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                 setContent {
-                    val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                    val fontState = com.petal.browser.ui.theme.rememberFontState()
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                     val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                     val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
@@ -585,7 +584,7 @@ object PetalQuickToolsBridge {
                     PetalExpressiveTheme(
                         dynamicColor = dynamicColor,
                         useAmoled = isAmoled,
-                        appFont = remember(fontName) { AppFont.fromName(fontName) },
+                        fontState = fontState,
                         colorStyle = remember(styleName) {
                             try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                         },
@@ -655,7 +654,7 @@ object PetalQuickToolsBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                     setContent {
-                        val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                         val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                         val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
@@ -664,7 +663,7 @@ object PetalQuickToolsBridge {
                         PetalExpressiveTheme(
                             dynamicColor = dynamicColor,
                             useAmoled = isAmoled,
-                            appFont = remember(fontName) { AppFont.fromName(fontName) },
+                            fontState = fontState,
                             colorStyle = remember(styleName) {
                                 try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                             },

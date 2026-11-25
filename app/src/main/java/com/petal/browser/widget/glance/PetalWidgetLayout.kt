@@ -22,6 +22,8 @@ internal data class PetalLayoutPlan(
     val tiles: List<PetalSlot>,
     val tileCookie: Int,
     val showTileLabels: Boolean,
+    val hintWidthDp: Int,
+    val tileWidthDp: Int,
     /** Corner radius, in dp, of the bar's outer edge. */
     val radius: Int,
     /** Corner radius of the nested search field. */
@@ -73,9 +75,18 @@ internal fun planLayout(cfg: PetalWidgetConfig, widthDp: Float, heightDp: Float)
 
     val tileRegion = h - barH - 2 * pad - 6
     val showLabels = tileRegion >= 62
-    val tileCookie = (tileRegion - if (showLabels) 18 else 0).coerceIn(30f, 56f).toInt()
+    val tileCookie = (tileRegion - if (showLabels) 22 else 0).coerceIn(30f, 56f).toInt()
     val tileFit = floor((w - 2 * pad) / TILE_MIN_WIDTH_DP).toInt().coerceIn(1, 4)
     val tiles = if (expanded) tileSlots.take(tileFit) else emptyList()
+
+    val buttonsWidth = when (kind) {
+        PetalWidgetKind.PETAL2 -> buttons.size * (touch + 4) + 14 * 2 + 20 + 10
+        PetalWidgetKind.PETAL3 -> buttons.size * touch + 4 + (if (showBadge) 14 else 16)
+        PetalWidgetKind.PETAL1 -> buttons.size * touch + (if (showBadge) 10 else 14) + (if (expanded) 4 else 0)
+    }
+    val badgeWidth = if (showBadge) badge else 0
+    val hintWidthDp = (w - 2 * pad - badgeWidth - buttonsWidth - 8).toInt().coerceAtLeast(48)
+    val tileWidthDp = if (tiles.isNotEmpty()) ((w - 2 * pad) / tiles.size - 6).toInt().coerceAtLeast(44) else 72
 
     val radius = cfg.cornerRadius
     val fieldRadius = when {
@@ -95,6 +106,8 @@ internal fun planLayout(cfg: PetalWidgetConfig, widthDp: Float, heightDp: Float)
         tiles = tiles,
         tileCookie = tileCookie,
         showTileLabels = showLabels,
+        hintWidthDp = hintWidthDp,
+        tileWidthDp = tileWidthDp,
         radius = radius,
         fieldRadius = fieldRadius
     )

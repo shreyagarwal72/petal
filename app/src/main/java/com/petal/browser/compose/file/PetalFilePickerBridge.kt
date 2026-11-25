@@ -22,6 +22,7 @@ import android.webkit.WebChromeClient
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -77,19 +78,19 @@ object PetalFilePickerBridge {
                 )
 
                 setContent {
+                    val snapshotBitmap = remember {
+                        com.petal.browser.predictive.PetalContentSnapshot.current?.asImageBitmap()
+                    }
+                    DisposableEffect(Unit) {
+                        onDispose { com.petal.browser.predictive.PetalContentSnapshot.clear() }
+                    }
                     val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                    var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
                     var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                     var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                     var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
                     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-                    var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
-                    var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
-                    var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
 
-                    val appFont = remember(fontName) {
-                        try { AppFont.valueOf(fontName) } catch (_: Exception) { AppFont.PETAL }
-                    }
+                    val fontState = rememberFontState()
                     val colorStyle = remember(styleName) {
                         try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                     }
@@ -98,10 +99,7 @@ object PetalFilePickerBridge {
                         darkTheme = isSystemInDarkTheme(),
                         dynamicColor = dynamicColor,
                         useAmoled = isAmoled,
-                        appFont = appFont,
-                        fontWidth = fontWidthVal,
-                        fontWeight = fontWeightVal,
-                        fontRoundness = fontRoundnessVal,
+                        fontState = fontState,
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
@@ -109,6 +107,7 @@ object PetalFilePickerBridge {
                             mimeTypes = mimeTypes,
                             allowFolderSelection = allowFolderSelection,
                             allowMultiple = allowMultiple,
+                            backgroundSnapshot = snapshotBitmap,
                             onDismissRequest = {
                                 if (!isHandled) {
                                     isHandled = true
@@ -181,6 +180,9 @@ object PetalFilePickerBridge {
 
             // Non-browser callers (or modal dialog callers) get a full-screen host dialog.
             // This prevents wiping MainActivity's contentFrame / destroying active bottom sheets.
+            activity.window?.decorView?.rootView?.let {
+                com.petal.browser.predictive.PetalContentSnapshot.capture(it)
+            }
             val dialog = Dialog(activity)
             activeDialog = dialog
             dialog.setContentView(composeView)

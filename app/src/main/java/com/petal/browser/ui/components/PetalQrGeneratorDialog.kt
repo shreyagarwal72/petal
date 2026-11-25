@@ -50,12 +50,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.petal.browser.ui.theme.PetalText
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
 import com.google.zxing.qrcode.QRCodeWriter
@@ -125,12 +124,12 @@ fun PetalQrGeneratorDialog(
                         Column {
                             Text(
                                 text = stringResource(R.string.ui_petal_share_qr),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.dialogTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = stringResource(R.string.ui_scan_to_open_immediately),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -169,7 +168,7 @@ fun PetalQrGeneratorDialog(
                             Text(
                                 text = stringResource(R.string.ui_could_not_generate_qr_code),
                                 color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodySmall
+                                style = PetalText.cardBody
                             )
                         }
                     }
@@ -189,16 +188,14 @@ fun PetalQrGeneratorDialog(
                     ) {
                         Text(
                             text = title.ifEmpty { url },
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.cardTitle,
                             color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = url,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            style = PetalText.listItemMeta,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -233,7 +230,7 @@ fun PetalQrGeneratorDialog(
                     ) {
                         Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.ui_copy), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.ui_copy), style = PetalText.button)
                     }
 
                     FilledTonalButton(
@@ -256,7 +253,7 @@ fun PetalQrGeneratorDialog(
                     ) {
                         Icon(Icons.Rounded.QrCode2, contentDescription = null, modifier = Modifier.size(17.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.ui_share_qr), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
+                        Text(stringResource(R.string.ui_share_qr), style = PetalText.button)
                     }
 
                     Button(
@@ -280,7 +277,7 @@ fun PetalQrGeneratorDialog(
                     ) {
                         Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.ui_link), style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.ui_link), style = PetalText.button)
                     }
                 }
             }

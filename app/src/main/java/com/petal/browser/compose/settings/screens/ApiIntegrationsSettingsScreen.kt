@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +30,7 @@ import androidx.compose.material.icons.rounded.DataUsage
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.ErrorOutline
+import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Lightbulb
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.NetworkCheck
@@ -47,6 +50,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -156,16 +160,13 @@ private fun HubBlock(
                 Column(Modifier.weight(1f)) {
                     Text(
                         title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
                     )
                     if (!subtitle.isNullOrBlank()) {
                         Text(
                             subtitle,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -197,7 +198,7 @@ private fun HubNote(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(text, style = MaterialTheme.typography.bodySmall, color = content)
+            Text(text, style = PetalText.cardBody, color = content)
         }
     }
 }
@@ -244,6 +245,7 @@ fun ApiIntegrationsSettingsScreenContent(
     var isTestingKey by remember { mutableStateOf(false) }
     var autoPageContext by remember { mutableStateOf(PetalAiResearchEngine.isAutoPageContextEnabled(context)) }
     var generateSuggestions by remember { mutableStateOf(PetalAiResearchEngine.isGeneratePageSuggestionsEnabled(context)) }
+    var customVisionRevision by remember { mutableIntStateOf(0) }
     var todayTokens by remember { mutableLongStateOf(PetalAiUsageTracker.getTodayTokens(context)) }
     var monthTokens by remember { mutableLongStateOf(PetalAiUsageTracker.getMonthTokens(context)) }
 
@@ -255,7 +257,7 @@ fun ApiIntegrationsSettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "api_integrations_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "api_integrations_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,
@@ -327,8 +329,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 ) {
                                     Text(
                                         "Local Server Presets",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.SemiBold,
+                                        style = PetalText.sectionHeader,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                     FlowRow(
@@ -387,7 +388,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 ) {
                                     Text(
                                         stringResource(R.string.ui_petal_ai_termux_help_body),
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.cardBody,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
@@ -494,7 +495,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                         ) {
                                             Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Get API Key", style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                                            Text("Get API Key", style = PetalText.button, maxLines = 1)
                                         }
                                     }
                                 }
@@ -550,7 +551,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                             Spacer(Modifier.width(6.dp))
                                             Text(
                                                 stringResource(R.string.ui_fetch_models),
-                                                style = MaterialTheme.typography.labelLarge,
+                                                style = PetalText.button,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -593,7 +594,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                         Spacer(Modifier.width(6.dp))
                                         Text(
                                             stringResource(R.string.ui_test_connection),
-                                            style = MaterialTheme.typography.labelLarge,
+                                            style = PetalText.button,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
@@ -668,6 +669,26 @@ fun ApiIntegrationsSettingsScreenContent(
                                         }
                                     }
                                 }
+                            }
+                        }
+
+                        if (isCustom) {
+                            val customVisionChecked = remember(selectedModel, customVisionRevision) {
+                                PetalAiResearchEngine.isVisionSupported(context, AiProvider.CUSTOM, selectedModel)
+                            }
+                            add { pos ->
+                                PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_petal_ai_custom_model_vision_title),
+                                    subtitle = stringResource(R.string.ui_petal_ai_custom_model_vision_desc),
+                                    icon = Icons.Rounded.Image,
+                                    checked = customVisionChecked,
+                                    enabled = selectedModel.isNotBlank(),
+                                    position = pos,
+                                    onCheckedChange = { enabled ->
+                                        PetalAiResearchEngine.setCustomModelVisionOverride(context, selectedModel, enabled)
+                                        customVisionRevision++
+                                    }
+                                )
                             }
                         }
                     }

@@ -30,8 +30,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.R
 import com.petal.browser.motion.MotionGate
 import androidx.compose.animation.animateColorAsState
@@ -221,7 +221,7 @@ fun ExpressiveSplitButton(
                 }
                 Text(
                     text = label,
-                    style = if (height >= 48.dp) MaterialTheme.typography.labelLarge else MaterialTheme.typography.labelMedium,
+                    style = PetalText.button,
                     color = contentColor,
                     maxLines = 1
                 )

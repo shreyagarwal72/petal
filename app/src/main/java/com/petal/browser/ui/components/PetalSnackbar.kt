@@ -29,11 +29,10 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
@@ -328,11 +327,8 @@ fun PetalSnackbar(
             Text(
                 text = data.message,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Medium,
-                    lineHeight = 18.sp
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
+                style = PetalText.cardBody,
+                color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurface),
                 maxLines = 2
             )
 
@@ -349,7 +345,7 @@ fun PetalSnackbar(
                 ) {
                     Text(
                         text = label,
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.button
                     )
                 }
             }

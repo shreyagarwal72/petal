@@ -90,10 +90,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -621,8 +621,7 @@ private fun BetaTile(
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = PetalText.chip,
                 color = content,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -642,8 +641,7 @@ private fun BetaTile(
             ) {
                 Text(
                     text = badgeCount.toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.badge,
                     color = MaterialTheme.colorScheme.onPrimary,
                     maxLines = 1
                 )
@@ -734,15 +732,14 @@ private fun BetaToggleTile(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
+                style = PetalText.chip,
                 color = content,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = stateText,
-                style = MaterialTheme.typography.labelSmall,
+                style = PetalText.badge,
                 color = content,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -886,6 +883,7 @@ private fun BetaFooter(
             Spacer(Modifier.width(6.dp))
             Text(
                 text = stringResource(R.string.ui_delete_browsing_data),
+                style = PetalText.button,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -908,6 +906,7 @@ private fun BetaFooter(
             Spacer(Modifier.width(6.dp))
             Text(
                 text = stringResource(R.string.ui_settings),
+                style = PetalText.button,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

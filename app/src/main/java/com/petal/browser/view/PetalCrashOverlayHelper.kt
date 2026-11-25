@@ -80,6 +80,7 @@ object PetalCrashOverlayHelper {
                 }
             }
             addView(reloadBtn)
+            com.petal.browser.ui.theme.PetalFontHelper.applyTo(this)
         }
         parent.addView(container)
         return container

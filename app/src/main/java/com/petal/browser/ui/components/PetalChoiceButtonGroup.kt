@@ -44,6 +44,7 @@ import com.petal.browser.motion.MotionGate
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.material3.Icon
 
 /**
@@ -215,8 +216,7 @@ fun <T> PetalChoiceButtonGroup(
                     if (showLabel && option.label.isNotEmpty()) {
                         Text(
                             text = option.label,
-                            style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
-                            fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Medium,
+                            style = (if (compact) PetalText.tabLabel else PetalText.chip).copy(fontWeight = if (isChecked) FontWeight.Bold else FontWeight.SemiBold),
                             maxLines = 1,
                             softWrap = false,
                             overflow = TextOverflow.Ellipsis

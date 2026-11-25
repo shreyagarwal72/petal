@@ -1,6 +1,7 @@
 package com.petal.browser.passwords
 
 import android.os.Environment
+import com.petal.browser.ui.theme.PetalText
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -44,8 +45,7 @@ fun PetalPasswordExportDialog(
     ) {
         Text(
             text = "Export Password Backup",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
+            style = PetalText.dialogTitle,
             color = MaterialTheme.colorScheme.onSurface
         )
 
@@ -55,7 +55,7 @@ fun PetalPasswordExportDialog(
             } else {
                 "Your password vault will be exported as a plaintext JSON file saved to your Downloads folder.\n\nKeep this file secure, as anyone with access can read the exported passwords."
             },
-            style = MaterialTheme.typography.bodyMedium,
+            style = PetalText.dialogBody,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
@@ -93,13 +93,12 @@ fun PetalPasswordExportDialog(
                     Column {
                         Text(
                             text = "Password-protected backup",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = if (exportEncrypted) "Opens only with your password (*.petal)" else "Standard JSON format (*.json)",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

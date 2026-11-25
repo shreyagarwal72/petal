@@ -1,6 +1,7 @@
 package com.petal.browser.compose.tabs
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.ui.graphics.asImageBitmap
@@ -49,7 +50,6 @@ import com.petal.browser.security.BiometricLockManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveTabGroupPill
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.PetalAlertDialog
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -147,7 +147,7 @@ fun PetalRecentlyClosedVault(
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
                 pageBackground = {
-                    M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "vault_page")
+                    com.petal.browser.ui.components.PetalPageBackground(pageKey = "vault_page", modifier = Modifier.fillMaxSize())
                 },
                 header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
@@ -270,7 +270,7 @@ fun PetalRecentlyClosedVault(
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
                 pageBackground = {
-                    M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "vault_settings")
+                    com.petal.browser.ui.components.PetalPageBackground(pageKey = "vault_settings", modifier = Modifier.fillMaxSize())
                 },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(
@@ -391,7 +391,7 @@ private fun LockScreenContent(
 
         Text(
             text = stringResource(R.string.ui_closed_tabs_vault),
-            style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.pageTitle,
             color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center
         )
@@ -402,7 +402,7 @@ private fun LockScreenContent(
             text = if (lockType == "password") "Enter your vault passcode to unlock"
             else if (lockType == "biometric") "Verify your biometric identity to unlock"
             else "Vault is ready to access",
-            style = MaterialTheme.typography.bodyMedium,
+            style = PetalText.pageSubtitle,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
         )
@@ -425,7 +425,7 @@ private fun LockScreenContent(
                 Text(
                     text = stringResource(R.string.ui_incorrect_passcode_try_again),
                     color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.labelMedium
+                    style = PetalText.caption
                 )
             }
 
@@ -515,14 +515,14 @@ private fun UnlockedVaultContent(
             Spacer(Modifier.height(18.dp))
             Text(
                 text = stringResource(R.string.ui_no_recently_closed_tabs),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.emptyState,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
             Spacer(Modifier.height(6.dp))
             Text(
                 text = stringResource(R.string.ui_when_you_close_tabs_their),
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.pageSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
@@ -562,7 +562,7 @@ private fun UnlockedVaultContent(
 
         Text(
             text = "Only titles and links are kept. No page previews are stored.",
-            style = MaterialTheme.typography.bodySmall,
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
         )
@@ -598,9 +598,7 @@ private fun UnlockedVaultContent(
                     content = {
                         Text(
                             text = rec.title.ifBlank { rec.url },
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            style = PetalText.listItemTitle,
                         )
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -608,7 +606,7 @@ private fun UnlockedVaultContent(
                         ) {
                             Text(
                                 text = rec.url,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.listItemMeta,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -616,7 +614,7 @@ private fun UnlockedVaultContent(
                             )
                             Text(
                                 text = "· $timeAgo",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                 maxLines = 1,
                                 softWrap = false
@@ -680,7 +678,7 @@ private fun VaultActionButton(
             Spacer(Modifier.width(6.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                style = PetalText.chip,
                 maxLines = 1,
                 softWrap = false,
                 overflow = TextOverflow.Ellipsis
@@ -740,7 +738,7 @@ private fun VaultSettingsPage(
             ) {
                 Text(
                     text = "How long closed tabs stay in the vault before they are removed.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
                 )
@@ -761,7 +759,7 @@ private fun VaultSettingsPage(
             ) {
                 Text(
                     text = "Choose how the vault is unlocked.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
                 )
@@ -836,7 +834,7 @@ private fun VaultSettingsPage(
                     ),
                     modifier = Modifier.weight(1f).height(52.dp)
                 ) {
-                    Text(stringResource(R.string.ui_cancel), maxLines = 1)
+                    Text(stringResource(R.string.ui_cancel), style = PetalText.button, maxLines = 1)
                 }
                 Button(
                     onClick = { onSave(selectedRetention, selectedLockType, newPasswordInput) },
@@ -848,7 +846,7 @@ private fun VaultSettingsPage(
                     ),
                     modifier = Modifier.weight(1f).height(52.dp)
                 ) {
-                    Text(stringResource(R.string.ui_save), fontWeight = FontWeight.Bold, maxLines = 1)
+                    Text(stringResource(R.string.ui_save), style = PetalText.button, maxLines = 1)
                 }
             }
         }
@@ -879,18 +877,13 @@ private fun VaultChoiceRow(
         content = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                style = PetalText.rowTitle,
             )
             if (subtitle != null) {
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
                 )
             }
         },

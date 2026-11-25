@@ -49,6 +49,7 @@ import com.petal.browser.predictive.PetalPredictiveJunction
 import com.petal.browser.predictive.PetalContentSnapshot
 import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
+import com.petal.browser.predictive.PetalSubPageHost
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.theme.*
@@ -74,6 +75,37 @@ enum class SettingsCategory(val title: String, val subtitle: String, val iconRes
     ABOUT("About & Developer", "App version, licenses, GitHub & developer", com.petal.browser.R.drawable.info_filled)
 }
 
+/**
+ * Petal's semantic icon accent mapping per Settings category:
+ * - Primary: Core navigation and browsing infrastructure.
+ * - Secondary: Supporting tools, media, extensions and downloads.
+ * - Tertiary: Expressive customization, privacy shields, AI and security.
+ * - Neutral: General info, updater and diagnostics.
+ */
+fun SettingsCategory.iconAccent(): com.petal.browser.ui.theme.PetalIconAccent = when (this) {
+    SettingsCategory.OVERVIEW,
+    SettingsCategory.SEARCH_HOMEPAGE,
+    SettingsCategory.ADDRESS_BAR,
+    SettingsCategory.TABS,
+    SettingsCategory.ACCOUNT_SYNC -> com.petal.browser.ui.theme.PetalIconAccent.PRIMARY
+
+    SettingsCategory.DOWNLOADS,
+    SettingsCategory.MEDIA,
+    SettingsCategory.EXTENSIONS,
+    SettingsCategory.DATA_STORAGE -> com.petal.browser.ui.theme.PetalIconAccent.SECONDARY
+
+    SettingsCategory.API_INTEGRATIONS,
+    SettingsCategory.APPEARANCE,
+    SettingsCategory.APP_ICON,
+    SettingsCategory.PRIVACY,
+    SettingsCategory.APP_LOCK,
+    SettingsCategory.DISPLAY_ZOOM -> com.petal.browser.ui.theme.PetalIconAccent.TERTIARY
+
+    SettingsCategory.UPDATER,
+    SettingsCategory.ABOUT,
+    SettingsCategory.MISCELLANEOUS -> com.petal.browser.ui.theme.PetalIconAccent.NEUTRAL
+}
+
 object PetalSettingsBridge {
     @JvmStatic
     @JvmOverloads
@@ -95,36 +127,16 @@ object PetalSettingsBridge {
                 val context = LocalContext.current
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
-                var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
-                var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
-                var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
-                var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
-                var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "PETAL_SIGNATURE") ?: "PETAL_SIGNATURE") }
-                var gsFlexSettingsState by remember { mutableStateOf(loadGSFlexSettings(sp)) }
                 var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                 var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
                 var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
                 var isExpressiveColors by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
                 var themeConfigName by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
-                var customFontSettingsState by remember { mutableStateOf(getCustomFontSettings(sp)) }
-                var customFontPathState by remember { mutableStateOf(sp.getString("sp_custom_font_path", null)) }
 
                 DisposableEffect(sp) {
                     val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                        if (key != null && key.startsWith("sp_custom_")) {
-                            customFontSettingsState = getCustomFontSettings(sp)
-                            customFontPathState = sp.getString("sp_custom_font_path", null)
-                        }
-                        if (key != null && (key.startsWith("sp_gs_") || key == "sp_gs_flex_preset")) {
-                            gsFlexSettingsState = loadGSFlexSettings(sp)
-                        }
                         when (key) {
-                            "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
-                            "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
-                            "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
-                            "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
-                            "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "PETAL_SIGNATURE") ?: "PETAL_SIGNATURE"
                             "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                             "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                             "useDynamicColor" -> dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
@@ -137,10 +149,7 @@ object PetalSettingsBridge {
                     onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
                 }
 
-                val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (e: Exception) { AppFont.PETAL }
-                }
-                val gsFlexSettings = gsFlexSettingsState
+                val fontState = rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
@@ -160,13 +169,7 @@ object PetalSettingsBridge {
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
                     expressiveColors = isExpressiveColors,
-                    appFont = appFont,
-                    customFontPath = customFontPathState,
-                    customFontSettings = customFontSettingsState,
-                    fontWidth = fontWidthVal,
-                    fontWeight = fontWeightVal,
-                    fontRoundness = fontRoundnessVal,
-                    gsFlexSettings = gsFlexSettings,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -289,12 +292,8 @@ fun PetalSettingsScreen(
         }
     }
 
-    // A nested category pops back to its parent with the crossfade; the predictive surface (which
-    // slides the whole page away) is only active for a top-level category or the hub.
-    if (parentCategory != null) {
-        androidx.activity.compose.BackHandler(enabled = !hasSearchOverlay) { popToParent() }
-    }
-
+    // Nested categories delegate back handling to Layer 2's PetalSubPageHost; the outer surface
+    // stays disabled while a nested sub-page is open so the inner surface wins cleanly.
     PetalPredictiveBackSurface(
         enabled = !hasSearchOverlay && parentCategory == null,
         // Popping a category keeps Settings on screen, so only park the pose when leaving Settings,
@@ -362,18 +361,37 @@ fun PetalSettingsScreen(
                                 alpha = baseAlpha
                             }
                     ) {
-                        PetalSettingsAnimatedContent(targetKey = shown) { category ->
-                            RenderCategoryContent(
-                                category = category,
-                                targetHighlightItemId = currentHighlightId,
-                                onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
-                                onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
-                                onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
-                                onNavigateToAppIcon = { openCategory(SettingsCategory.APP_ICON, null) },
-                                onNavigateToAppLock = { openCategory(SettingsCategory.APP_LOCK, null) },
-                                onNavigateBack = { closeCategory() }
-                            )
-                        }
+                        val baseCategory = parentCategory ?: shown
+                        PetalSubPageHost(
+                            visible = parentCategory != null,
+                            onBack = { popToParent() },
+                            parent = {
+                                RenderCategoryContent(
+                                    category = baseCategory,
+                                    targetHighlightItemId = if (parentCategory == null) currentHighlightId else null,
+                                    onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
+                                    onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                                    onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
+                                    onNavigateToAppIcon = { openCategory(SettingsCategory.APP_ICON, null) },
+                                    onNavigateToAppLock = { openCategory(SettingsCategory.APP_LOCK, null) },
+                                    onNavigateBack = { closeCategory() }
+                                )
+                            },
+                            subPage = {
+                                if (parentCategory != null) {
+                                    RenderCategoryContent(
+                                        category = shown,
+                                        targetHighlightItemId = currentHighlightId,
+                                        onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
+                                        onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                                        onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
+                                        onNavigateToAppIcon = { openCategory(SettingsCategory.APP_ICON, null) },
+                                        onNavigateToAppLock = { openCategory(SettingsCategory.APP_LOCK, null) },
+                                        onNavigateBack = { closeCategory() }
+                                    )
+                                }
+                            }
+                        )
                     }
                 }
             }
@@ -392,7 +410,8 @@ private fun RenderCategoryContent(
     onNavigateToAppLock: () -> Unit = {},
     onNavigateBack: () -> Unit
 ) {
-    when (category) {
+    CompositionLocalProvider(com.petal.browser.ui.theme.LocalPetalIconAccent provides category.iconAccent()) {
+        when (category) {
         SettingsCategory.OVERVIEW -> {}
         SettingsCategory.API_INTEGRATIONS -> {
             ApiIntegrationsSettingsScreen(onNavigateBack = onNavigateBack, targetHighlightItemId = targetHighlightItemId)
@@ -473,28 +492,5 @@ private fun RenderCategoryContent(
             )
         }
     }
-}
-
-
-/**
- * Crossfades between categories (e.g. Search -> Address Bar). The content lambda receives the
- * category it is rendering: previously it ignored the animated state and always drew the NEW
- * category, so the outgoing page visibly jumped to the incoming one before fading.
- */
-@Composable
-private fun PetalSettingsAnimatedContent(
-    targetKey: SettingsCategory,
-    content: @Composable (SettingsCategory) -> Unit
-) {
-    AnimatedContent(
-        targetState = targetKey,
-        modifier = Modifier.fillMaxSize(),
-        transitionSpec = {
-            (fadeIn(animationSpec = PetalSpring.calm()) togetherWith
-                fadeOut(animationSpec = PetalSpring.calm()))
-        },
-        label = "petalSettingsContentTransition"
-    ) { category ->
-        content(category)
     }
 }

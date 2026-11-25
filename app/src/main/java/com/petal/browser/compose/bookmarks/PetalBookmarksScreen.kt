@@ -9,6 +9,7 @@
 package com.petal.browser.compose.bookmarks
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
@@ -70,7 +71,7 @@ import com.petal.browser.database.HistoryBookmarkRepository
 import com.petal.browser.database.Record
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalPageBackground
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.components.PetalSwipeActionRow
 import com.petal.browser.ui.components.PetalRowSwipeAction
@@ -119,15 +120,12 @@ object PetalBookmarksBridge {
                     }
                 }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = remember(fontName) {
-                    com.petal.browser.ui.theme.AppFont.fromName(fontName)
-                }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 }
@@ -135,7 +133,7 @@ object PetalBookmarksBridge {
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    appFont = appFont,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -303,7 +301,7 @@ fun PetalBookmarksScreen(
             }
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "bookmarks_page") },
+                pageBackground = { com.petal.browser.ui.components.PetalPageBackground("bookmarks_page") },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(
                         modifier = headerModifier,
@@ -514,14 +512,13 @@ fun PetalBookmarksScreen(
                                     }
                                 },
                                 content = {
-                                    Text(record.title?.ifBlank { record.url } ?: "Bookmark", style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
+                                    Text(record.title?.ifBlank { record.url } ?: "Bookmark", style = PetalText.listItemTitle)
+                                    Text(record.url ?: "", style = PetalText.listItemMeta,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     if (record.isReadingList) {
                                         Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.tertiaryContainer,
                                             contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
-                                            Text(stringResource(R.string.ui_reading_list), style = MaterialTheme.typography.labelSmall,
+                                            Text(stringResource(R.string.ui_reading_list), style = PetalText.badge,
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                                         }
                                     }
@@ -733,8 +730,7 @@ fun PetalBookmarksScreen(
 
                 Text(
                     text = "Edit Bookmark",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
@@ -860,8 +856,7 @@ fun PetalBookmarksScreen(
 
                 Text(
                     text = stringResource(R.string.ui_add_bookmark),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 

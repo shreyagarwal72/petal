@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.containment.PetalSettingsSection
 
@@ -20,7 +21,6 @@ import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
 import com.petal.browser.browser.PetalSessionRestoreManager
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 
@@ -52,7 +52,7 @@ fun TabsSettingsScreen(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "tabs_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "tabs_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,
@@ -133,7 +133,7 @@ fun TabsSettingsScreen(
                 ) {
                     Text(
                         text = "Firefox-grade CPU prioritization and tab memory hibernation to extend battery life.",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )

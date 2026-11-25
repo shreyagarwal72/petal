@@ -77,7 +77,8 @@ enum class ExpressiveButtonPreset(val id: String, val title: String) {
     SOFT_BURST("SOFT_BURST", "Soft burst"),
     PUFFY("PUFFY", "Puffy"),
     PILL("PILL", "Pill"),
-    CIRCLE("CIRCLE", "Circle");
+    CIRCLE("CIRCLE", "Circle"),
+    GHOSTISH("GHOSTISH", "Ghostish");
 
     val polygon: RoundedPolygon
         get() = when (this) {
@@ -90,6 +91,7 @@ enum class ExpressiveButtonPreset(val id: String, val title: String) {
             PUFFY -> androidx.compose.material3.MaterialShapes.Puffy
             PILL -> androidx.compose.material3.MaterialShapes.Pill
             CIRCLE -> androidx.compose.material3.MaterialShapes.Circle
+            GHOSTISH -> androidx.compose.material3.MaterialShapes.Ghostish
         }
 
     companion object {
@@ -181,6 +183,9 @@ class ExpressiveShape(private val preset: ExpressiveButtonPreset) : Shape {
     override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline =
         buildOutline(preset, size)
 }
+
+/** Fixed ghost-shaped outline used by [com.petal.browser.ui.components.PetalGhostSearchButton]. */
+val GhostishSearchShape: Shape = ExpressiveShape(ExpressiveButtonPreset.GHOSTISH)
 
 private fun buildOutline(preset: ExpressiveButtonPreset, size: Size): Outline {
     val minSide = min(size.width, size.height)

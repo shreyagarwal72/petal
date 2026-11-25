@@ -38,10 +38,18 @@
         android:layout_marginTop="20dp"
         android:text="@string/petal_autofill_save_title"
         android:textSize="22sp"
-        android:fontFamily="sans-serif-medium"
         android:textStyle="bold"
         android:textColor="@color/petal_autofill_title"
         android:gravity="center" />
+
+    <ImageView
+        android:id="@+id/petal_save_title_img"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:scaleType="fitCenter"
+        android:contentDescription="@null"
+        android:visibility="gone" />
 
     <!-- Subtle separator -->
     <View
@@ -63,7 +71,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="14sp"
-            android:fontFamily="sans-serif-medium"
             android:textColor="@color/petal_autofill_subtitle"
             android:maxLines="1"
             android:ellipsize="middle" />
@@ -75,7 +82,6 @@
             android:layout_height="wrap_content"
             android:text=" · "
             android:textSize="14sp"
-            android:fontFamily="sans-serif"
             android:textColor="@color/petal_autofill_caption" />
 
         <TextView
@@ -83,10 +89,17 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="13sp"
-            android:fontFamily="sans-serif-light"
             android:textColor="@color/petal_autofill_caption"
             android:maxLines="1"
             android:ellipsize="end" />
+
+        <ImageView
+            android:id="@+id/petal_save_domain_img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="fitCenter"
+            android:contentDescription="@null"
+            android:visibility="gone" />
 
     </LinearLayout>
 
@@ -113,13 +126,21 @@
             android:scaleType="fitCenter" />
 
         <TextView
+            android:id="@+id/petal_save_badge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/petal_autofill_encryption_badge"
             android:textSize="11sp"
-            android:fontFamily="sans-serif-medium"
             android:textColor="@color/petal_autofill_accent"
             android:gravity="center" />
+
+        <ImageView
+            android:id="@+id/petal_save_badge_img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="fitCenter"
+            android:contentDescription="@null"
+            android:visibility="gone" />
     </LinearLayout>
 
 </LinearLayout>

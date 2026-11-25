@@ -142,15 +142,12 @@ class PetalVideoPlayerOverlayBridge(
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
             setContent {
                 val hostView = this
-                val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val isAmoled = sp.getBoolean("sp_amoled", false)
                 val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-                val appFont = androidx.compose.runtime.remember(fontName) {
-                    AppFont.fromName(fontName)
-                }
                 val colorStyle = androidx.compose.runtime.remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
@@ -161,7 +158,7 @@ class PetalVideoPlayerOverlayBridge(
                     PetalExpressiveTheme(
                         dynamicColor = dynamicColor,
                         useAmoled = isAmoled,
-                        appFont = appFont,
+                        fontState = fontState,
                         colorStyle = colorStyle,
                         paletteId = paletteId,
                     ) {

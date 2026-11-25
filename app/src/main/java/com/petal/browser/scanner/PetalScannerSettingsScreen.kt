@@ -1,6 +1,7 @@
 package com.petal.browser.scanner
 
 import androidx.compose.foundation.background
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,7 +16,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -40,14 +40,13 @@ fun PetalScannerSettingsScreen(
     var historyEnabled by remember { mutableStateOf(PetalScannerSettings.isHistoryEnabled(context)) }
     var safetyWarnings by remember { mutableStateOf(PetalScannerSettings.isSafetyWarningsEnabled(context)) }
 
-    PetalPredictiveBackSurface(onBack = onBack) {
-        Scaffold(
+    Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         Text(
                             text = "Scanner Settings",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                            style = PetalText.pageTitle
                         )
                     },
                     navigationIcon = {
@@ -73,7 +72,7 @@ fun PetalScannerSettingsScreen(
                 // Section: Behavior
                 Text(
                     text = "Behavior & Feedback",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 8.dp, top = 8.dp)
                 )
@@ -113,7 +112,7 @@ fun PetalScannerSettingsScreen(
                 // Section: Safety & Privacy
                 Text(
                     text = "Safety & Privacy",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 8.dp, top = 8.dp)
                 )
@@ -142,7 +141,6 @@ fun PetalScannerSettingsScreen(
             }
         }
     }
-}
 
 @Composable
 private fun SettingsCard(
@@ -179,12 +177,12 @@ private fun SettingToggleRow(
         Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                style = PetalText.rowTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.rowSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

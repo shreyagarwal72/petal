@@ -17,11 +17,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -119,15 +118,13 @@ fun PetalConfirmSheetContent(
         // Title & Description
         Text(
             text = title,
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
+            style = PetalText.sheetTitle,
             textAlign = TextAlign.Center
         )
 
         Text(
             text = message,
-            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = PetalText.dialogBody,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 8.dp)
         )

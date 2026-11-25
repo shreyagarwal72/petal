@@ -22,6 +22,7 @@ object PetalAiUsageTracker {
     private const val PREFS_NAME = "petal_ai_usage_prefs"
     const val KEY_DAILY_LIMIT = "sp_ai_soft_daily_token_limit"
     const val DEFAULT_DAILY_LIMIT = 0L // 0 means disabled / no limit
+    const val TOKENS_PER_IMAGE = 300
 
     private fun prefs(context: Context): SharedPreferences {
         return context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -41,6 +42,15 @@ object PetalAiUsageTracker {
     fun estimateTokens(chars: Int): Int {
         if (chars <= 0) return 0
         return (chars + 3) / 4
+    }
+
+    /**
+     * Estimates input tokens for [messages], adding [TOKENS_PER_IMAGE] for every image part sent.
+     */
+    fun estimateInputTokens(messages: List<AiChatMessage>): Int {
+        val textChars = messages.sumOf { it.textContent.length }
+        val imageParts = messages.sumOf { msg -> msg.parts.count { it is AiMessagePart.Image } }
+        return estimateTokens(textChars) + (imageParts * TOKENS_PER_IMAGE)
     }
 
     /**
@@ -72,10 +82,12 @@ object PetalAiUsageTracker {
         inputChars: Int,
         outputChars: Int,
         exactInputTokens: Int? = null,
-        exactOutputTokens: Int? = null
+        exactOutputTokens: Int? = null,
+        imageCount: Int = 0
     ) {
         val sp = prefs(context)
-        val inTokens = exactInputTokens ?: estimateTokens(inputChars)
+        val inTokens = exactInputTokens
+            ?: (estimateTokens(inputChars) + (imageCount.coerceAtLeast(0) * TOKENS_PER_IMAGE))
         val outTokens = exactOutputTokens ?: estimateTokens(outputChars)
         val total = (inTokens + outTokens).toLong()
 

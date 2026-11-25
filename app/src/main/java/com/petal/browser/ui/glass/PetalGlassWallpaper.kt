@@ -297,54 +297,6 @@ private fun Modifier.liveGlassWallpaperImpl(
         }
     }
 
-/** Fixed palette pools and contours, matching Stride's default glass wallpaper. */
-@Composable
-fun PetalGlassPattern(modifier: Modifier = Modifier) {
-    val scheme = MaterialTheme.colorScheme
-    val dark = scheme.background.luminance() < 0.5f
-    Canvas(modifier.fillMaxSize()) {
-        drawRect(if (dark) scheme.background else scheme.surface)
-        val colors = if (dark) listOf(
-            scheme.primary.copy(alpha = .85f),
-            scheme.tertiary.copy(alpha = .75f),
-            scheme.secondary.copy(alpha = .65f)
-        ) else listOf(
-            scheme.primary.copy(alpha = .22f),
-            scheme.tertiary.copy(alpha = .18f),
-            scheme.secondaryContainer.copy(alpha = .45f)
-        )
-        val centers = listOf(
-            Offset(size.width * .15f, size.height * .12f),
-            Offset(size.width * .95f, size.height * .48f),
-            Offset(size.width * .2f, size.height * .88f)
-        )
-        centers.forEachIndexed { i, center ->
-            val radius = size.width * (.85f + i * .05f)
-            drawCircle(
-                Brush.radialGradient(listOf(colors[i], Color.Transparent), center, radius),
-                radius,
-                center
-            )
-        }
-        repeat(12) { i ->
-            val y = size.height * (.04f + i * .085f)
-            val amp = size.height * .035f * if (i % 2 == 0) 1f else -1f
-            val path = Path().apply {
-                moveTo(-size.width * .1f, y)
-                cubicTo(
-                    size.width * .25f, y - amp * 2,
-                    size.width * .55f, y + amp * 2,
-                    size.width * 1.1f, y - amp
-                )
-            }
-            drawPath(
-                path,
-                (if (dark) Color.White else scheme.primary).copy(alpha = if (dark) .26f else .14f),
-                style = Stroke(2.dp.toPx(), cap = StrokeCap.Round)
-            )
-        }
-    }
-}
 
 @Composable
 fun Modifier.petalGlassPanel(
@@ -360,6 +312,7 @@ fun Modifier.petalGlassPanel(
     val glass = rememberGraphicsLayer()
     val dark = MaterialTheme.colorScheme.background.luminance() < .5f
     val primaryColor = MaterialTheme.colorScheme.primary
+    val surfaceTintColor = MaterialTheme.colorScheme.surfaceTint
     val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(androidx.compose.ui.platform.LocalContext.current)
     val glowPref = sp.getFloat("sp_liquid_glass_sheen", 0.60f).coerceIn(0f, 1f)
     return onGloballyPositioned { place.coords = it; place.origin = it.positionInRoot() }
@@ -389,12 +342,12 @@ fun Modifier.petalGlassPanel(
                 ceil(size.width + 2 * pad).toInt().coerceAtLeast(1),
                 ceil(size.height + 2 * pad).toInt().coerceAtLeast(1)
             )
-            // Chromatic dual-angle glowing rim reflecting theme primary accent and specular highlight
+            // Chromatic dual-angle glowing rim reflecting surfaceTint, primary accent and specular highlight
             val rim = Brush.linearGradient(
                 colors = listOf(
                     Color.White.copy(alpha = ((if (dark) 0.50f else 0.85f) * edge).coerceIn(0f, 1f)),
-                    primaryColor.copy(alpha = ((if (dark) 0.35f else 0.45f) * edge * glowPref).coerceIn(0f, 1f)),
-                    Color.White.copy(alpha = ((if (dark) 0.08f else 0.20f) * edge).coerceIn(0f, 1f)),
+                    surfaceTintColor.copy(alpha = ((if (dark) 0.35f else 0.45f) * edge * glowPref).coerceIn(0f, 1f)),
+                    primaryColor.copy(alpha = ((if (dark) 0.15f else 0.25f) * edge * glowPref).coerceIn(0f, 1f)),
                     Color.White.copy(alpha = ((if (dark) 0.25f else 0.45f) * edge).coerceIn(0f, 1f))
                 ),
                 start = Offset.Zero,
@@ -572,7 +525,7 @@ fun PetalGlassContainer(
                 }
             } else {
                 Box(modifier = Modifier.matchParentSize().recordGlassWallpaper(wallpaper)) {
-                    PetalGlassPattern(Modifier.fillMaxSize())
+                    com.petal.browser.ui.components.PetalBloomBackground(pageSeed = "glass_container", modifier = Modifier.fillMaxSize())
                 }
             }
             content()

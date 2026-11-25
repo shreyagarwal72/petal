@@ -1,6 +1,7 @@
 package com.petal.browser.passwords
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -84,14 +85,13 @@ fun PetalPasswordTermsDialog(
         ) {
             Text(
                 text = stringResource(R.string.ui_petal_passwords_autofill),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.dialogTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.ui_secure_hardware_backed_completely_loca),
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.dialogBody,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -197,14 +197,13 @@ private fun TermsBulletPoint(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
+                    style = PetalText.rowTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = description,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

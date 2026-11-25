@@ -27,9 +27,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.res.stringResource
@@ -131,7 +131,7 @@ fun PetalLinkContextMenuDialog(
                                 } else {
                                     Text(
                                         text = title.take(1).uppercase().ifBlank { "L" },
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.cardTitle,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
                                     )
                                 }
@@ -140,15 +140,12 @@ fun PetalLinkContextMenuDialog(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = title.ifBlank { "Link Options" },
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    style = PetalText.dialogTitle,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = url.ifBlank { "about:blank" },
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.listItemMeta,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -223,10 +220,8 @@ private fun DialogContextRow(
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                style = PetalText.rowTitle,
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

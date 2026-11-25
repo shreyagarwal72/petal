@@ -59,7 +59,8 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             glassWidgetHandler.postDelayed(glassWidgetRefresh, 250L)
             return@OnSharedPreferenceChangeListener
         }
-        if (key != null && (key.startsWith("sp_gs_") || key == "sp_gs_flex_preset" || key.startsWith("sp_custom_font"))) {
+        if (key == null || com.petal.browser.ui.theme.PetalFontPrefs.isFontKey(key)) {
+            com.petal.browser.widget.glance.PetalWidgetShapes.clear()
             PetalSearchWidgetProvider.updateAllWidgets(this@PetalApplication)
             return@OnSharedPreferenceChangeListener
         }
@@ -70,8 +71,6 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             "sp_amoled",
             "sp_color_style",
             "sp_expressive_colors",
-            "sp_app_font",
-            "sp_custom_font_path",
             "sp_search_engine" -> {
                 PetalSearchWidgetProvider.updateAllWidgets(this@PetalApplication)
             }

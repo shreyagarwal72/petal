@@ -41,10 +41,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.unit.Dp
+import com.petal.browser.ui.theme.PetalText
 
 /*
  * PixelMusic-style sheet building blocks for Petal.
@@ -106,9 +106,7 @@ fun PetalSheetCard(
 fun PetalSheetSectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text = text,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        style = PetalText.sectionHeader,
         modifier = modifier.padding(horizontal = 12.dp, vertical = 4.dp),
     )
 }
@@ -133,9 +131,9 @@ fun PetalSheetListRow(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 64.dp)
+            .heightIn(min = 70.dp)
             .petalSheetSurface(RoundedCornerShape(32.dp), container, onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
@@ -147,24 +145,18 @@ fun PetalSheetListRow(
             ) {
                 Icon(icon, contentDescription = null, tint = tone.content(), modifier = Modifier.size(22.dp))
             }
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(16.dp))
         } else Spacer(Modifier.width(6.dp))
-        Column(Modifier.weight(1f)) {
+        Column(Modifier.weight(1f).padding(end = 6.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
-                color = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                style = PetalText.rowTitle,
+                color = if (danger) MaterialTheme.colorScheme.error else Color.Unspecified,
             )
             if (!subtitle.isNullOrBlank()) {
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                    style = PetalText.rowSubtitle,
                 )
             }
         }
@@ -217,8 +209,7 @@ fun PetalSheetPill(
         Spacer(Modifier.width(12.dp))
         Text(
             text = text,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Medium,
+            style = PetalText.button,
             color = tone.content(),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -267,7 +258,7 @@ fun PetalSheetHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(80.dp),
+            .heightIn(min = 80.dp),
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -275,19 +266,12 @@ fun PetalSheetHeader(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp, lineHeight = 30.sp),
-                fontWeight = FontWeight.Light,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = PetalText.sheetTitle,
             )
             if (!subtitle.isNullOrBlank()) {
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    style = PetalText.rowSubtitle,
                 )
             }
         }
@@ -340,8 +324,7 @@ fun PetalSheetSegmentedBar(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = segment.label.uppercase(),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.tabLabel,
                     color = fg,
                     maxLines = 1,
                 )
@@ -410,11 +393,9 @@ fun PetalSheetChoicePill(
             Icon(icon, contentDescription = null, tint = content, modifier = Modifier.size(26.dp))
             Text(
                 text = text,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                style = PetalText.chip,
+                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 color = content,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
             )
         }
@@ -443,22 +424,22 @@ fun PetalSheetToggleRow(
             .fillMaxWidth()
             .heightIn(min = 72.dp)
             .petalSheetSurface(RoundedCornerShape(36.dp), MaterialTheme.colorScheme.surfaceContainerHighest, { onCheckedChange(!checked) }, role = Role.Switch)
-            .padding(start = 12.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+            .padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
             Box(Modifier.size(48.dp).petalSheetSurface(CircleShape, tone.container()), contentAlignment = Alignment.Center) {
                 Icon(icon, contentDescription = null, tint = tone.content(), modifier = Modifier.size(24.dp))
             }
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(16.dp))
         } else Spacer(Modifier.width(6.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Column(Modifier.weight(1f).padding(end = 6.dp)) {
+            Text(title, style = PetalText.rowTitle)
             if (!subtitle.isNullOrBlank()) {
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+                Text(subtitle, style = PetalText.rowSubtitle)
             }
         }
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(10.dp))
         com.petal.browser.ui.components.IconSwitch(checked = checked, icon = switchIcon, onCheckedChange = onCheckedChange)
     }
 }

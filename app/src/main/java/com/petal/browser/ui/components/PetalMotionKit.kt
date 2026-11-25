@@ -73,7 +73,7 @@ import kotlin.math.sign
 import androidx.compose.material3.Icon
 
 /*
- * Orion Store inspired motion kit for Petal.
+ * Petal Expressive motion kit.
  *
  *  - PetalInstantMotionScheme : every M3 spec snaps (reduce motion / animations off)
  *  - Modifier.petalSpringClick: ONE press modifier (squash spring + ripple + haptic tick)

@@ -88,12 +88,34 @@ object PetalLiquidGlassWidgetBinder {
         }
 
         val ink = PetalWallpaperBlurHelper.getContentColor(context, id, config)
-        views.setTextColor(R.id.btn_search_bar, ink)
+        val hintText = context.getString(R.string.widget_search_hint)
+        val minW = mgr.getAppWidgetOptions(id)?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
+        val iconsOverheadDp = if (isPill) 130 else 174
+        val computedMaxDp = if (minW > 0) (minW - iconsOverheadDp).coerceIn(72, 280) else if (isPill) 140 else 160
+        val hintBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+            context = context,
+            text = hintText,
+            textSizeSp = if (isPill) 13f else 14f,
+            colorInt = ink,
+            weight = 500,
+            maxWidthDp = computedMaxDp
+        )
+        if (hintBmp != null) {
+            views.setImageViewBitmap(R.id.btn_search_bar_img, hintBmp)
+            views.setViewVisibility(R.id.btn_search_bar_img, View.VISIBLE)
+            views.setViewVisibility(R.id.btn_search_bar, View.GONE)
+        } else {
+            views.setTextColor(R.id.btn_search_bar, ink)
+            views.setViewVisibility(R.id.btn_search_bar, View.VISIBLE)
+            views.setViewVisibility(R.id.btn_search_bar_img, View.GONE)
+        }
         views.setInt(R.id.btn_petal_logo, "setColorFilter", ink)
         views.setInt(R.id.btn_voice_search, "setColorFilter", ink)
         views.setInt(R.id.btn_lens_camera, "setColorFilter", ink)
 
-        views.setOnClickPendingIntent(R.id.btn_search_bar, actionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
+        val searchPending = actionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH)
+        views.setOnClickPendingIntent(R.id.btn_search_bar, searchPending)
+        views.setOnClickPendingIntent(R.id.btn_search_bar_img, searchPending)
         views.setOnClickPendingIntent(R.id.btn_voice_search, actionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_VOICE))
         views.setOnClickPendingIntent(R.id.btn_lens_camera, actionIntent(context, PetalSearchWidgetProvider.ACTION_OPEN_LENS))
         if (!isPill) {

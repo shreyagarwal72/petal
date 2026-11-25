@@ -1,6 +1,7 @@
 package com.petal.browser.compose.find
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.AnimatedVisibility
@@ -162,7 +163,7 @@ fun PetalFindInPageBar(
                         if (query.isEmpty()) {
                             Text(
                                 text = stringResource(R.string.ui_find_in_page_2),
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
                         }
@@ -199,7 +200,7 @@ fun PetalFindInPageBar(
                                     noResults -> "No results"
                                     else -> "…"
                                 },
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.badge,
                                 modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
                             )
                         }

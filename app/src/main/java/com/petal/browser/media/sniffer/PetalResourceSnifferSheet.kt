@@ -1,6 +1,7 @@
 package com.petal.browser.media.sniffer
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.media.PetalVideoPlayerOverlayBridge
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -117,13 +118,12 @@ fun PetalResourceSnifferSheet(
                     Column {
                         Text(
                             text = "Resource Sniffer",
-                            style = MaterialTheme.typography.headlineSmall.copy(fontSize = 24.sp),
-                            fontWeight = FontWeight.Light,
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "${filteredResources.size} detected (${selectedIds.size} selected)",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -144,7 +144,7 @@ fun PetalResourceSnifferSheet(
                         ) {
                             Text(
                                 text = if (selectedIds.size == filteredResources.size) "Deselect" else "Select All",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                                style = PetalText.button
                             )
                         }
                     }
@@ -207,7 +207,7 @@ fun PetalResourceSnifferSheet(
                             Text(
                                 text = "${category.label} ($count)",
                                 maxLines = 1,
-                                style = MaterialTheme.typography.labelMedium.copy(
+                                style = PetalText.chip.copy(
                                     fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
                                 )
                             )
@@ -237,7 +237,7 @@ fun PetalResourceSnifferSheet(
                         Spacer(Modifier.height(8.dp))
                         Text(
                             text = "No ${selectedCategory.label.lowercase()} streams found yet",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.emptyState,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -340,13 +340,13 @@ fun PetalResourceSnifferSheet(
                             ) {
                                 Text(
                                     text = "${selectedIds.size}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.badge,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
                             Text(
                                 text = "${selectedIds.size} selected",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.sheetTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -476,10 +476,8 @@ private fun SniffedResourceRow(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = resource.title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.listItemTitle,
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
                 )
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -491,7 +489,7 @@ private fun SniffedResourceRow(
                     ) {
                         Text(
                             text = resource.fileExtension,
-                            style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp, fontWeight = FontWeight.Bold),
+                            style = PetalText.badge,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                         )
@@ -500,7 +498,7 @@ private fun SniffedResourceRow(
                     if (resource.displaySize.isNotBlank()) {
                         Text(
                             text = resource.displaySize,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

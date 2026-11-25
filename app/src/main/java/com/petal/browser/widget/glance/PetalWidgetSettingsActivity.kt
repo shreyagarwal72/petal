@@ -1,6 +1,7 @@
 package com.petal.browser.widget.glance
 
 import android.app.Activity
+import com.petal.browser.ui.theme.PetalText
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -260,7 +261,7 @@ private fun PetalWidgetSettingsScreen(
                 }
                 Text(
                     stringResource(R.string.pw_visibility_note),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.cardBody,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 )
@@ -525,9 +526,8 @@ private fun PreviewBadge(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, size: 
 private fun PreviewHint(cfg: PetalWidgetConfig, color: Int) {
     Text(
         cfg.hint.trim().ifEmpty { stringResource(cfg.hintRes()) },
+        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium),
         color = Color(color),
-        fontSize = 15.sp,
-        fontWeight = FontWeight.Medium,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
     )
@@ -562,7 +562,13 @@ private fun WidgetPreview(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, width
                             Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                 CookieIcon(cfg.tileShape, plan.tileCookie, pal.tileTones[slot.index.coerceIn(0, 3)], slot.action.iconRes, (slot.index * 20).toFloat(), 0.46f)
                                 if (plan.showTileLabels) {
-                                    Text(stringResource(slot.action.labelRes), color = Color(pal.onBar), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                                    Text(
+                                        stringResource(slot.action.labelRes),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                                        color = Color(pal.onBar),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                             }
                         }
@@ -624,9 +630,9 @@ private fun PreviewSearchRow(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, pl
 private fun SectionCard(title: String, subtitle: String? = null, content: @Composable ColumnScope.() -> Unit) {
     Surface(shape = RoundedCornerShape(28.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(title, style = PetalText.cardTitle)
             if (subtitle != null) {
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(subtitle, style = PetalText.cardBody, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.height(4.dp))
             content()
@@ -636,7 +642,7 @@ private fun SectionCard(title: String, subtitle: String? = null, content: @Compo
 
 @Composable
 private fun Label(text: String) {
-    Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(text, style = PetalText.sectionHeader, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 @Composable
@@ -646,9 +652,9 @@ private fun SwitchRow(title: String, subtitle: String?, checked: Boolean, onChan
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.bodyLarge)
+            Text(title, style = PetalText.rowTitle)
             if (subtitle != null) {
-                Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(subtitle, style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
         Spacer(Modifier.width(12.dp))
@@ -668,8 +674,8 @@ private fun LabeledSlider(
 ) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            Text(valueText, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(title, style = PetalText.rowTitle, modifier = Modifier.weight(1f))
+            Text(valueText, style = PetalText.value, color = MaterialTheme.colorScheme.primary)
         }
         PetalSlider(value = value, onValueChange = onChange, valueRange = range, steps = steps.coerceAtLeast(0), enabled = enabled)
     }
@@ -687,8 +693,8 @@ private fun GradientSliderRow(
 ) {
     Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(title, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            Text(valueText, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+            Text(title, style = PetalText.rowTitle, modifier = Modifier.weight(1f))
+            Text(valueText, style = PetalText.value, color = MaterialTheme.colorScheme.primary)
         }
         Box(modifier = Modifier.fillMaxWidth().height(40.dp), contentAlignment = Alignment.Center) {
             Box(
@@ -735,7 +741,7 @@ private fun ShapePicker(selected: PetalWidgetShape, onSelect: (PetalWidgetShape)
             }
         }
     }
-    Text(selected.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(selected.label, style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 private val SWATCHES = listOf(
@@ -786,7 +792,7 @@ private fun Swatch(color: Int?, selected: Boolean, label: String?, plus: Boolean
                 tint = if (androidx.core.graphics.ColorUtils.calculateLuminance(color) > 0.5) Color.Black else Color.White,
                 modifier = Modifier.size(20.dp)
             )
-            label != null -> Text(label.take(1), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurface)
+            label != null -> Text(label.take(1), style = PetalText.badge, color = MaterialTheme.colorScheme.onSurface)
             plus -> Icon(Icons.Rounded.Add, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
         }
     }
@@ -812,8 +818,8 @@ private fun ActionSlotRow(label: String, action: PetalWidgetAction, onClick: () 
         }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(stringResource(action.labelRes), style = MaterialTheme.typography.bodyLarge)
+            Text(label, style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(action.labelRes), style = PetalText.rowTitle)
         }
     }
 }

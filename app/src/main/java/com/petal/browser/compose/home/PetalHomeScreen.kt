@@ -11,6 +11,7 @@
 package com.petal.browser.compose.home
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 
@@ -555,44 +556,29 @@ fun PetalHomeScreen(
     }
 
     val activeWallpaperUri = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperUri
-    val effectiveWallpaperUri = when {
-        !activeWallpaperUri.isNullOrBlank() -> activeWallpaperUri
-        isGlassEnabled && glassBgMode == "IMAGE" && glassImageUri.isNotBlank() -> glassImageUri
-        else -> null
-    }
 
     CompositionLocalProvider(
         com.petal.browser.ui.glass.LocalPetalGlassWallpaper provides glassWallpaper
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
-            color = if (isGlassEnabled || !effectiveWallpaperUri.isNullOrBlank()) Color.Transparent else MaterialTheme.colorScheme.background
+            color = if (isGlassEnabled || !activeWallpaperUri.isNullOrBlank()) Color.Transparent else MaterialTheme.colorScheme.background
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
-                // Page background (wallpaper / living M3 background). It is handed to the glass header
+                // Page background (wallpaper / themed surface). It is handed to the glass header
                 // layout so the header refracts the real page and the wallpaper stays full-screen
                 // behind the scrolling content.
                 val homePageBackground: @Composable () -> Unit = {
-                // ── Layer 0: OmniBrowser Wallpaper engine OR Living M3 background ───────────
+                // ── Layer 0: OmniBrowser Wallpaper engine (Home Wallpaper Only) ───────────
 
                 Box(
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    if (!effectiveWallpaperUri.isNullOrBlank()) {
-                        val effDim = if (!activeWallpaperUri.isNullOrBlank()) {
-                            com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim
-                        } else {
-                            glassBgDim
-                        }
-                        val effBlur = if (!activeWallpaperUri.isNullOrBlank()) {
-                            com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur
-                        } else {
-                            glassBgBlur
-                        }
+                    if (!activeWallpaperUri.isNullOrBlank()) {
                         com.petal.browser.wallpaper.PetalGlassAwareWallpaperBackground(
-                            wallpaperUri = effectiveWallpaperUri,
-                            dim = effDim,
-                            blur = effBlur,
+                            wallpaperUri = activeWallpaperUri,
+                            dim = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperDim,
+                            blur = com.petal.browser.wallpaper.PetalWallpaperManager.wallpaperBlur,
                             glassWallpaper = glassWallpaper,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -602,9 +588,11 @@ fun PetalHomeScreen(
                             glassWallpaper = glassWallpaper
                         )
                     } else {
-                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
-                            modifier = Modifier.fillMaxSize(),
-                            pageSeed = "home_page"
+                        val isAmoled = homeSp.getBoolean("sp_amoled", false)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(if (isAmoled) Color.Black else MaterialTheme.colorScheme.background)
                         )
                     }
                 }
@@ -674,7 +662,7 @@ fun PetalHomeScreen(
                                         Spacer(Modifier.width(6.dp))
                                         Text(
                                             text = currentProfile.name,
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            style = PetalText.chip,
                                             color = headerGlass?.content ?: MaterialTheme.colorScheme.onSurface,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
@@ -751,12 +739,12 @@ fun PetalHomeScreen(
                                     ) {
                                         Text(
                                             text = stringResource(R.string.ui_collections),
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.sheetTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_saved, collections.size),
-                                            style = MaterialTheme.typography.labelMedium,
+                                            style = PetalText.badge,
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                     }
@@ -799,12 +787,12 @@ fun PetalHomeScreen(
                                                             )
                                                             Text(
                                                                 text = col.name,
-                                                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                                                style = PetalText.cardTitle,
                                                                 color = MaterialTheme.colorScheme.onSurface
                                                             )
                                                             Text(
                                                                 text = stringResource(R.string.ui_tabs_3, col.items.size),
-                                                                style = MaterialTheme.typography.bodySmall,
+                                                                style = PetalText.cardBody,
                                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                                             )
                                                         }
@@ -862,14 +850,12 @@ fun PetalHomeScreen(
                                                                     Column(modifier = Modifier.weight(1f)) {
                                                                         Text(
                                                                             text = tabItem.title.ifBlank { tabItem.url },
-                                                                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                                                            style = PetalText.listItemTitle,
                                                                             color = MaterialTheme.colorScheme.onSurface,
-                                                                            maxLines = 1,
-                                                                            overflow = TextOverflow.Ellipsis
                                                                         )
                                                                         Text(
                                                                             text = tabItem.url,
-                                                                            style = MaterialTheme.typography.bodySmall,
+                                                                            style = PetalText.listItemMeta,
                                                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                                             maxLines = 1,
                                                                             overflow = TextOverflow.Ellipsis
@@ -1126,7 +1112,7 @@ private fun ShortcutTile(
         Spacer(Modifier.height(5.dp))
         Text(
             text = shortcut.label,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+            style = PetalText.tabLabel,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -1167,7 +1153,7 @@ private fun AddShortcutTile(index: Int = 0, onClick: () -> Unit) {
         Spacer(Modifier.height(5.dp))
         Text(
             text = stringResource(R.string.ui_add),
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+            style = PetalText.tabLabel,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             textAlign = TextAlign.Center,
@@ -1236,7 +1222,7 @@ private fun PetalSearchBar(onSearch: (String) -> Unit) {
                 Spacer(Modifier.width(6.dp))
                 Text(
                     text = stringResource(R.string.ui_search_or_type_url_2),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = PetalText.rowTitle.copy(fontWeight = FontWeight.Normal),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1386,15 +1372,9 @@ private fun PetalGreetingTagline(profile: com.petal.browser.account.PetalUserPro
 
             Text(
                 text = tagline,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 14.5.sp,
-                    lineHeight = 20.sp
-                ),
+                style = PetalText.rowTitle,
                 color = if (updateWelcomeMessage != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Start,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -1595,7 +1575,7 @@ private fun EditShortcutDialog(
 
                 Text(
                     text = stringResource(R.string.ui_material_3_expressive_shape),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -1633,7 +1613,7 @@ private fun EditShortcutDialog(
                         ) {
                             Text(
                                 text = shapeHolder.name.take(2),
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 10.sp),
+                                style = PetalText.badge,
                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -1682,12 +1662,10 @@ private fun EditShortcutDialog(
                         }
                     }
                     Column {
-                        Text(stringResource(R.string.ui_live_preview, selectedShapeName), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                        Text(stringResource(R.string.ui_live_preview, selectedShapeName), style = PetalText.cardTitle)
                         Text(
                             nameText.ifBlank { "Shortcut" },
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            style = PetalText.rowTitle,
                         )
                     }
                 }

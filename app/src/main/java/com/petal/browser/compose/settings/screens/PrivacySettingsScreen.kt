@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import com.petal.browser.ui.components.PetalSpring
 
 import android.content.Context
@@ -37,7 +39,6 @@ import com.petal.browser.browser.PetalAdBlockEngine
 import com.petal.browser.compose.settings.viewmodel.PrivacySettingsViewModel
 import com.petal.browser.passwords.PetalPasswordsScreen
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.*
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
@@ -212,17 +213,6 @@ fun PrivacySettingsScreenContent(
         PetalAdBlockEngine.getTotalBlockedCount()
     }
 
-    if (showAdBlockSettings) {
-        PetalAdBlockSettingsScreen(
-            onNavigateBack = {
-                showAdBlockSettings = false
-                whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
-            },
-            modifier = modifier
-        )
-        return
-    }
-
     if (showWhitelistDialog) {
         PetalAlertDialog(
             onDismissRequest = { showWhitelistDialog = false },
@@ -234,7 +224,7 @@ fun PrivacySettingsScreenContent(
             content = {
                 Text(
                     stringResource(R.string.ui_domains_added_here_will_bypass),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.dialogBody,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -273,7 +263,7 @@ fun PrivacySettingsScreenContent(
                 if (whitelistedDomainsState.isEmpty()) {
                     Text(
                         stringResource(R.string.ui_no_whitelisted_domains),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.emptyState,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
@@ -306,14 +296,31 @@ fun PrivacySettingsScreenContent(
 
     CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
         val passwordsActivity = context as? ComponentActivity
-        // The Password Manager is a real sub-page: this page stays composed (and blurred / dimmed by the
-        // sub-page's own back gesture) behind it, instead of a bare overlay with nothing behind it.
+        val hasAdBlockSub = showAdBlockSettings
+        val hasPasswordsSub = showPasswordsScreen && passwordsActivity != null
+        // AdBlock Settings and Password Manager are real sub-pages: this page stays composed
+        // (and blurred / dimmed by the sub-page's own back gesture) behind them.
         com.petal.browser.predictive.PetalSubPageHost(
-            visible = showPasswordsScreen && passwordsActivity != null,
-            onBack = { showPasswordsScreen = false },
+            visible = hasAdBlockSub || hasPasswordsSub,
+            onBack = {
+                if (hasAdBlockSub) {
+                    showAdBlockSettings = false
+                    whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
+                } else {
+                    showPasswordsScreen = false
+                }
+            },
             modifier = modifier,
             subPage = {
-                if (passwordsActivity != null) {
+                if (hasAdBlockSub) {
+                    PetalAdBlockSettingsScreen(
+                        onNavigateBack = {
+                            showAdBlockSettings = false
+                            whitelistedDomainsState = PetalAdBlockEngine.getWhitelistedDomains()
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else if (hasPasswordsSub && passwordsActivity != null) {
                     PetalPasswordsScreen(
                         activity = passwordsActivity,
                         onNavigateBack = { showPasswordsScreen = false },
@@ -325,7 +332,7 @@ fun PrivacySettingsScreenContent(
         Box(modifier = Modifier.fillMaxSize()) {
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "privacy_settings") },
+                pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "privacy_settings", modifier = Modifier.fillMaxSize()) },
                 header = { headerModifier, headerBackdrop ->
                     ExpressiveHeader(
                         modifier = headerModifier,
@@ -381,12 +388,12 @@ fun PrivacySettingsScreenContent(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = if (adBlockEnabled) "Shields Actively Blocking" else "Shields Paused",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.cardTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "${NumberFormat.getInstance().format(totalBlockedCount)} ads & trackers blocked",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = PetalText.cardBody,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -454,12 +461,12 @@ fun PrivacySettingsScreenContent(
                                 content = {
                                     Text(
                                         text = title,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = subtitle,
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
@@ -591,12 +598,12 @@ fun PrivacySettingsScreenContent(
                                         content = {
                                             Text(
                                                 text = entry.title,
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                style = PetalText.rowTitle,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = entry.desc,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.rowSubtitle,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         },
@@ -633,12 +640,12 @@ fun PrivacySettingsScreenContent(
                                             content = {
                                                 Text(
                                                     text = entry.provider,
-                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                    style = PetalText.rowTitle,
                                                     color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 Text(
                                                     text = activeChoice?.let { "Using ${it.label}" } ?: "${entry.choices.size} options",
-                                                    style = MaterialTheme.typography.bodySmall,
+                                                    style = PetalText.rowSubtitle,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             },
@@ -688,12 +695,12 @@ fun PrivacySettingsScreenContent(
                                                         content = {
                                                             Text(
                                                                 text = choice.label,
-                                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                                style = PetalText.rowTitle,
                                                                 color = MaterialTheme.colorScheme.onSurface
                                                             )
                                                             Text(
                                                                 text = choice.desc,
-                                                                style = MaterialTheme.typography.bodySmall,
+                                                                style = PetalText.rowSubtitle,
                                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                                             )
                                                         },

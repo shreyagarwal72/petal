@@ -15,10 +15,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.petal.browser.R
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.PetalBrowserShapes
 import androidx.compose.ui.res.stringResource
 
@@ -85,10 +84,7 @@ fun PetalThemedSnackbar(
             Text(
                 text = message,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Medium,
-                    lineHeight = 18.sp
-                ),
+                style = PetalText.cardBody,
                 color = contentColor,
                 maxLines = 2
             )
@@ -99,7 +95,7 @@ fun PetalThemedSnackbar(
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                     colors = ButtonDefaults.textButtonColors(contentColor = actionColor)
                 ) {
-                    Text(label, fontWeight = FontWeight.Bold)
+                    Text(label, style = PetalText.button)
                 }
             }
 

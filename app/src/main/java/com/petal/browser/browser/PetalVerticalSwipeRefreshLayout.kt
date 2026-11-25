@@ -63,7 +63,7 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
             }
             val elapsed = SystemClock.uptimeMillis() - refreshCommittedAt
             val stillLoading = isPageLoading?.invoke() ?: true
-            if (elapsed >= REFRESH_MAX_VISIBLE_MS || (!stillLoading && elapsed >= REFRESH_MIN_VISIBLE_MS)) {
+            if (elapsed >= REFRESH_MAX_VISIBLE_MS || (!stillLoading && elapsed >= REFRESH_FINISH_GRACE_MS)) {
                 isRefreshing = false
             } else {
                 postDelayed(this, REFRESH_POLL_MS)
@@ -71,6 +71,8 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
         }
     }
 
+    private var activeFingerDown = false
+    private var pulledPastSlop = false
     private var isQuickScaleInProgress = false
     private var quickScaleEvents = QuickScaleEvents()
     private var previousX = 0f
@@ -243,16 +245,33 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
     }
 
     override fun setRefreshing(refreshing: Boolean) {
+        if (!refreshing) {
+            pulledPastSlop = false
+            onPullProgress?.invoke(0f)
+        }
         super.setRefreshing(refreshing)
         if (refreshing) markRefreshCommitted() else clearRefreshCommitted()
         onRefreshStateChanged?.invoke(refreshing)
+    }
+
+    /** Immediately clears any active pull or committed spinner state once loading finishes. */
+    fun forceStopRefresh() {
+        pulledPastSlop = false
+        activeFingerDown = false
+        initialDownY = 0f
+        if (isRefreshing) {
+            super.setRefreshing(false)
+        }
+        clearRefreshCommitted()
+        onPullProgress?.invoke(0f)
+        onRefreshStateChanged?.invoke(false)
     }
 
     private fun markRefreshCommitted() {
         if (refreshCommittedAt == 0L) {
             refreshCommittedAt = SystemClock.uptimeMillis()
             removeCallbacks(refreshWatchdog)
-            postDelayed(refreshWatchdog, REFRESH_MIN_VISIBLE_MS)
+            postDelayed(refreshWatchdog, REFRESH_FINISH_GRACE_MS)
         }
     }
 
@@ -263,10 +282,9 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
 
     /** A new touch while a finished/never-started reload still holds the spinner: release it now. */
     private fun healStuckRefresh() {
-        if (!isRefreshing || refreshCommittedAt == 0L) return
-        val elapsed = SystemClock.uptimeMillis() - refreshCommittedAt
-        if (elapsed >= REFRESH_MIN_VISIBLE_MS && isPageLoading?.invoke() == false) {
-            isRefreshing = false
+        if (!isRefreshing) return
+        if (isPageLoading?.invoke() == false) {
+            forceStopRefresh()
         }
     }
 
@@ -276,12 +294,16 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
             // reset of its disallow flag never applies to ours. Without this reset one page-handled
             // touch disabled pull-to-refresh for the rest of the session.
             disallowInterceptTouchEvent = false
+            activeFingerDown = true
+            pulledPastSlop = false
+            initialDownY = ev.y
             healStuckRefresh()
             syncStyleNow()
             if (offsetDirty && !isRefreshing) applyNativeOffset()
         }
         val handled = super.dispatchTouchEvent(ev)
         if (ev.actionMasked == MotionEvent.ACTION_UP || ev.actionMasked == MotionEvent.ACTION_CANCEL) {
+            activeFingerDown = false
             disallowInterceptTouchEvent = false
         }
         return handled
@@ -331,12 +353,20 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
             return false
         }
 
-        // A move that is mostly horizontal is not a pull.
+        // A move that is mostly horizontal is not a pull, and only a genuine downward pull
+        // starting at the top past touchSlop (never a fling to the top) may trigger refresh.
         if (MotionEvent.ACTION_DOWN == eventAction) {
+            activeFingerDown = true
+            pulledPastSlop = false
             previousX = event.x
             previousY = event.y
             initialDownY = event.y
         } else if (MotionEvent.ACTION_MOVE == eventAction) {
+            if (!activeFingerDown || com.petal.browser.ui.glass.GeckoGlassBackend.isFlinging) {
+                pulledPastSlop = false
+                onPullProgress?.invoke(0f)
+                return false
+            }
             val xDistance = abs(event.x - previousX)
             val yDistance = abs(event.y - previousY)
             previousX = event.x
@@ -344,6 +374,20 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
             if (xDistance > yDistance) {
                 return false
             }
+            if (canChildScrollUp()) {
+                // Re-anchor while the page itself is still scrolling toward the top so prior drag
+                // distance cannot spill over into an accidental pull-to-refresh once it hits top.
+                initialDownY = event.y
+                pulledPastSlop = false
+                if (!isRefreshing) onPullProgress?.invoke(0f)
+                return false
+            }
+            val totalDy = event.y - initialDownY
+            if (totalDy <= touchSlop) {
+                pulledPastSlop = false
+                return false
+            }
+            pulledPastSlop = true
         }
 
         return super.onInterceptTouchEvent(event)
@@ -356,21 +400,29 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
 
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                activeFingerDown = true
+                pulledPastSlop = false
                 initialDownY = event.y
             }
             MotionEvent.ACTION_MOVE -> {
                 if (initialDownY == 0f) {
-                    initialDownY = previousY
+                    initialDownY = event.y
                 }
-                // Only report a pull the AndroidX layout itself is handling: not while a refresh is
-                // running and not while Gecko says the page can still scroll up.
-                if (!isRefreshing && !canChildScrollUp()) {
-                    val density = resources.displayMetrics.density
-                    // Mirrors SwipeRefreshLayout.onTouchEvent: the drag starts after touch slop and is
-                    // damped by DRAG_RATE (0.5); the refresh commits at 64dp of damped drag.
-                    val totalDragDistance = 64f * density
-                    val dragY = (event.y - initialDownY - touchSlop).coerceAtLeast(0f) * 0.5f
-                    onPullProgress?.invoke((dragY / totalDragDistance).coerceIn(0f, 1f))
+                if (!activeFingerDown || com.petal.browser.ui.glass.GeckoGlassBackend.isFlinging || canChildScrollUp()) {
+                    pulledPastSlop = false
+                    if (!isRefreshing) onPullProgress?.invoke(0f)
+                } else {
+                    val rawDelta = event.y - initialDownY - touchSlop
+                    if (rawDelta > 0f) pulledPastSlop = true
+                    // Only report a pull the AndroidX layout itself is handling after passing slop.
+                    if (!isRefreshing && pulledPastSlop) {
+                        val density = resources.displayMetrics.density
+                        val totalDragDistance = 64f * density
+                        val dragY = rawDelta.coerceAtLeast(0f) * 0.5f
+                        onPullProgress?.invoke((dragY / totalDragDistance).coerceIn(0f, 1f))
+                    } else if (!isRefreshing) {
+                        onPullProgress?.invoke(0f)
+                    }
                 }
             }
         }
@@ -379,12 +431,18 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
         // A pull that crosses the threshold calls SwipeRefreshLayout's private setRefreshing(true, true),
         // which bypasses the override above: tell the indicator and arm the watchdog ourselves.
         if (!wasRefreshing && isRefreshing) {
-            markRefreshCommitted()
-            onRefreshStateChanged?.invoke(true)
+            if (!pulledPastSlop || com.petal.browser.ui.glass.GeckoGlassBackend.isFlinging) {
+                isRefreshing = false
+            } else {
+                markRefreshCommitted()
+                onRefreshStateChanged?.invoke(true)
+            }
         }
         // Reset AFTER super so a committed refresh (setRefreshing(true)) and the end of the pull
         // reach the indicator in the same frame and it settles instead of dipping to zero first.
         if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
+            activeFingerDown = false
+            pulledPastSlop = false
             initialDownY = 0f
             onPullProgress?.invoke(0f)
         }
@@ -479,6 +537,6 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
     )
 }
 
-private const val REFRESH_MIN_VISIBLE_MS = 1_500L
-private const val REFRESH_POLL_MS = 1_000L
+private const val REFRESH_FINISH_GRACE_MS = 500L
+private const val REFRESH_POLL_MS = 500L
 private const val REFRESH_MAX_VISIBLE_MS = 20_000L

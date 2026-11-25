@@ -45,6 +45,7 @@ import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.theme.PetalMaterialShapes
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.toShape
 
 /**
@@ -109,14 +110,13 @@ fun PetalDeveloperHeroSection(
             // App Title & Tagline
             Text(
                 text = "Petal v$versionName",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Black,
+                style = PetalText.pageTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
             Text(
                 text = "Fast, private, and customizable browser for Android",
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.pageSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -156,11 +156,9 @@ fun PetalDeveloperHeroSection(
             // Crafted by Vanshu Agarwal with heart from India
             Text(
                 text = "Crafted by Vanshu Agarwal\nwith ❤️ from 🇮🇳",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = PetalText.cardTitle,
                 color = MaterialTheme.colorScheme.onSurface,
-                textAlign = TextAlign.Center,
-                lineHeight = 22.sp
+                textAlign = TextAlign.Center
             )
 
             // Connected contact group (M3 Expressive): outer corners pill, inner corners 6dp,
@@ -220,8 +218,7 @@ fun PetalDeveloperHeroSection(
                             Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
                             Text(
                                 label,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
+                                style = PetalText.button,
                                 textAlign = TextAlign.Center,
                                 softWrap = false,
                                 overflow = TextOverflow.Visible
@@ -247,7 +244,7 @@ fun PetalDeveloperHeroSection(
                 ) {
                     Icon(Icons.Rounded.Favorite, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text("Support", fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    Text("Support", style = PetalText.button, maxLines = 1)
                 }
 
                 HeroGlassButton(
@@ -261,7 +258,7 @@ fun PetalDeveloperHeroSection(
                 ) {
                     Icon(Icons.Rounded.Apps, null, Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text("Projects", fontWeight = FontWeight.SemiBold, maxLines = 1)
+                    Text("Projects", style = PetalText.button, maxLines = 1)
                     Spacer(Modifier.width(2.dp))
                     Icon(
                         imageVector = if (isOtherAppsExpanded) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown,
@@ -386,13 +383,12 @@ private fun HeroListRow(
             Column(Modifier.weight(1f)) {
                 Text(
                     text = link.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
+                    style = PetalText.rowTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = link.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

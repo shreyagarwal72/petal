@@ -9,6 +9,7 @@
 package com.petal.browser.compose.downloads
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
@@ -104,7 +105,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.theme.PetalMaterialShapes
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -171,15 +171,12 @@ object PetalDownloadBridge {
                     }
                 }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = remember(fontName) {
-                    com.petal.browser.ui.theme.AppFont.fromName(fontName)
-                }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 }
@@ -187,7 +184,7 @@ object PetalDownloadBridge {
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    appFont = appFont,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -624,7 +621,7 @@ fun PetalDownloadManagerScreen(
         Box(modifier = Modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "downloads_page") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "downloads_page", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,
@@ -794,7 +791,7 @@ fun PetalDownloadManagerScreen(
                             ) {
                                 Text(
                                     text = dateHeader,
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Medium),
+                                    style = PetalText.sectionHeader,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -1103,7 +1100,7 @@ private fun DownloadedImagePreviewStrip(
     val images = downloads.filter { it.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }.take(6)
     if (images.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-        Text(stringResource(R.string.ui_downloaded_images), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(horizontal = 16.dp))
+        Text(stringResource(R.string.ui_downloaded_images), style = PetalText.sectionHeader, modifier = Modifier.padding(horizontal = 16.dp))
         Spacer(Modifier.height(8.dp))
         val carouselState = androidx.compose.material3.carousel.rememberCarouselState { images.size }
         androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel(
@@ -1199,7 +1196,7 @@ private fun ToolbarAction(icon: androidx.compose.ui.graphics.vector.ImageVector,
     ) {
         Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
         Spacer(Modifier.height(2.dp))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
+        Text(label, style = PetalText.chip, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
     }
 }
 
@@ -1253,7 +1250,7 @@ private fun DownloadRowItem(
             title = {
                 Text(
                     text = stringResource(R.string.ui_rename_file),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             },
@@ -1286,7 +1283,7 @@ private fun DownloadRowItem(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_rename),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.button
                     )
                 }
             },
@@ -1297,7 +1294,7 @@ private fun DownloadRowItem(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_cancel),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                        style = PetalText.button
                     )
                 }
             }
@@ -1348,10 +1345,8 @@ private fun DownloadRowItem(
             Column(verticalArrangement = Arrangement.Center) {
                     Text(
                         text = item.fileName,
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        style = PetalText.listItemTitle,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
 
                     Spacer(modifier = Modifier.height(2.dp))
@@ -1397,11 +1392,8 @@ private fun DownloadRowItem(
 
                     Text(
                         text = subtitleText,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.listItemMeta,
                         color = if (item.status == DownloadStatus.STATUS_FAILED) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                        // A failure reason is the one line the user needs; let it wrap instead of truncating.
-                        maxLines = if (item.status == DownloadStatus.STATUS_FAILED) 3 else 1,
-                        overflow = TextOverflow.Ellipsis
                     )
 
                     // Source badge: shown for everything that is not an ordinary browser download.
@@ -1413,7 +1405,7 @@ private fun DownloadRowItem(
                         ) {
                             Text(
                                 text = item.source.displayName,
-                                style = MaterialTheme.typography.labelSmall,
+                                style = PetalText.badge,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                             )
@@ -1520,23 +1512,19 @@ private fun ActiveDownloadsSummary(items: List<DownloadItem>, modifier: Modifier
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.cardTitle,
                         color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                     Text(
                         text = detail,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 if (overall != null) {
                     Text(
                         text = "${(overall * 100).toInt()}%",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.value,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
@@ -1577,7 +1565,7 @@ private fun BackgroundDownloadWarning(onFix: () -> Unit, modifier: Modifier = Mo
             Spacer(Modifier.width(12.dp))
             Text(
                 text = "Downloads may pause when your screen locks",
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.cardBody,
                 color = MaterialTheme.colorScheme.onTertiaryContainer,
                 modifier = Modifier.weight(1f)
             )

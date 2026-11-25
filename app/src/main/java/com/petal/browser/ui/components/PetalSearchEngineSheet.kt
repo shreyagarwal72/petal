@@ -19,9 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
@@ -306,7 +306,7 @@ fun PetalSearchEngineSheetContent(
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
-                    if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    if (error != null) Text(error!!, color = MaterialTheme.colorScheme.error, style = PetalText.caption)
                 }
             }
         )
@@ -329,8 +329,8 @@ fun PetalSearchEngineSheetContent(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 PetalGroupIconBadge(Icons.Rounded.Search, size = 48.dp)
                 Column {
-                    Text(stringResource(R.string.ui_choose_default_search_engine), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
-                    Text(stringResource(R.string.ui_built_in_and_unlimited_custom), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_choose_default_search_engine), style = PetalText.sheetTitle)
+                    Text(stringResource(R.string.ui_built_in_and_unlimited_custom), style = PetalText.rowSubtitle)
                 }
             }
 
@@ -355,8 +355,8 @@ fun PetalSearchEngineSheetContent(
                     onClick = { selectedIndex = engine.index },
                     leading = { PetalGroupIconBadge(badgeIcon, size = 40.dp, iconSize = 20.dp) },
                     content = {
-                        Text(engine.name, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
-                        Text(engine.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(engine.name, style = PetalText.rowTitle)
+                        Text(engine.description, style = PetalText.rowSubtitle)
                     },
                     trailing = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -385,7 +385,7 @@ fun PetalSearchEngineSheetContent(
             ) {
                 Icon(Icons.Rounded.Add, null, modifier = Modifier.size(18.dp))
                 Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.ui_add_custom_search_engine), fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.ui_add_custom_search_engine), style = PetalText.button)
             }
 
             com.petal.browser.ui.containment.PetalActionRow(

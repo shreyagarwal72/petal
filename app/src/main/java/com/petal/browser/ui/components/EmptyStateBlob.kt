@@ -20,12 +20,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.theme.PetalMaterialShapes
+import com.petal.browser.ui.theme.PetalText
 
 enum class EmptyStateIllustrationType {
     DEFAULT,
@@ -261,8 +260,7 @@ fun EmptyStateBlob(
 
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-            color = MaterialTheme.colorScheme.onSurface,
+            style = PetalText.emptyState,
             textAlign = TextAlign.Center
         )
 
@@ -270,8 +268,7 @@ fun EmptyStateBlob(
             Spacer(Modifier.height(8.dp))
             Text(
                 text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = PetalText.cardBody,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
@@ -291,7 +288,7 @@ fun EmptyStateBlob(
                     Icon(actionIcon, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
                 }
-                Text(actionText, fontWeight = FontWeight.Bold)
+                Text(actionText, style = PetalText.button)
             }
         }
     }

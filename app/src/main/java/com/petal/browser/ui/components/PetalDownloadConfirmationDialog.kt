@@ -19,13 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -102,16 +100,14 @@ fun PetalDownloadConfirmationDialog(
 
             Text(
                 text = if (isDuplicate) "Download File Again?" else "Download File?",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+                style = PetalText.dialogTitle
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = "Do you want to download this file?",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = PetalText.dialogBody
             )
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -143,17 +139,13 @@ fun PetalDownloadConfirmationDialog(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = fileName,
-                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
+                            style = PetalText.listItemTitle
                         )
                         if (fileSizeFormatted.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = fileSizeFormatted,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = PetalText.listItemMeta
                             )
                         }
                     }
@@ -174,7 +166,7 @@ fun PetalDownloadConfirmationDialog(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(44.dp)
+                        .heightIn(min = 44.dp)
                 ) {
                     Icon(
                         Icons.Rounded.OpenInNew,
@@ -184,9 +176,7 @@ fun PetalDownloadConfirmationDialog(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.ui_download_with_external_downloader),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        style = PetalText.button
                     )
                 }
                 Spacer(modifier = Modifier.height(10.dp))
@@ -210,7 +200,7 @@ fun PetalDownloadConfirmationDialog(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_cancel),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                        style = PetalText.button
                     )
                 }
 
@@ -233,7 +223,7 @@ fun PetalDownloadConfirmationDialog(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = downloadLabel,
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.button
                     )
                 }
             }
@@ -294,16 +284,14 @@ fun PetalFirstTimeDownloadEngineDialog(
 
             Text(
                 text = stringResource(R.string.ui_choose_default_download_engine),
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+                style = PetalText.dialogTitle
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
                 text = stringResource(R.string.ui_select_your_preferred_high_speed),
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = PetalText.dialogBody
             )
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -357,14 +345,12 @@ fun PetalFirstTimeDownloadEngineDialog(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = mode.title,
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    style = PetalText.rowTitle
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = mode.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = PetalText.rowSubtitle
                                 )
                             }
 
@@ -397,7 +383,7 @@ fun PetalFirstTimeDownloadEngineDialog(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_skip),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                        style = PetalText.button
                     )
                 }
 
@@ -418,7 +404,7 @@ fun PetalFirstTimeDownloadEngineDialog(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_set_as_default),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.button
                     )
                 }
             }
@@ -464,13 +450,11 @@ object PetalDownloadDialogBridge {
                 lateinit var engineDialog: androidx.appcompat.app.AlertDialog
 
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = com.petal.browser.ui.theme.AppFont.fromName(fontName)
                 val colorStyle = try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 val initialEngineKey = com.petal.browser.torrent.PetalTorrentEngineManager.getSelectedEngineMode(activity).key
 
@@ -482,11 +466,12 @@ object PetalDownloadDialogBridge {
                     setContent {
                         val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
                             ?: activity.findViewById(android.R.id.content)
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
                             PetalExpressiveTheme(
                                 dynamicColor = dynamicColor,
                                 useAmoled = isAmoled,
-                                appFont = appFont,
+                                fontState = fontState,
                                 colorStyle = colorStyle,
                                 paletteId = paletteId
                             ) {
@@ -560,13 +545,11 @@ object PetalDownloadDialogBridge {
                     lateinit var dialog: androidx.appcompat.app.AlertDialog
 
                     val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                     val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                     val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                     val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                    val appFont = com.petal.browser.ui.theme.AppFont.fromName(fontName)
                     val colorStyle = try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
 
                     // Magnet links can't go through the plain-URL external path (it would rewrite
@@ -597,11 +580,12 @@ object PetalDownloadDialogBridge {
                         setContent {
                             val hostSource = activity.findViewById<android.view.View>(com.petal.browser.R.id.main)
                                 ?: activity.findViewById(android.R.id.content)
+                            val fontState = com.petal.browser.ui.theme.rememberFontState()
                             CompositionLocalProvider(LocalPetalGlassSource provides hostSource) {
                                 PetalExpressiveTheme(
                                     dynamicColor = dynamicColor,
                                     useAmoled = isAmoled,
-                                    appFont = appFont,
+                                    fontState = fontState,
                                     colorStyle = colorStyle,
                                     paletteId = paletteId
                                 ) {
@@ -676,13 +660,11 @@ object PetalDownloadDialogBridge {
                 lateinit var dialog: androidx.appcompat.app.AlertDialog
 
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = com.petal.browser.ui.theme.AppFont.fromName(fontName)
                 val colorStyle = try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
 
                 val composeView = ComposeView(activity).apply {
@@ -691,10 +673,11 @@ object PetalDownloadDialogBridge {
                     setViewTreeSavedStateRegistryOwner(activity)
                     setViewCompositionStrategy(androidx.compose.ui.platform.ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                     setContent {
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         PetalExpressiveTheme(
                             dynamicColor = dynamicColor,
                             useAmoled = isAmoled,
-                            appFont = appFont,
+                            fontState = fontState,
                             colorStyle = colorStyle,
                             paletteId = paletteId
                         ) {

@@ -1,6 +1,7 @@
 package com.petal.browser.split
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
@@ -231,15 +232,14 @@ private fun SplitPaneHeader(
                 ) {
                     Text(
                         text = if (isPrimary) "Pane 1" else "Pane 2",
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.badge,
                         color = if (isPrimary) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )
                 }
                 Text(
                     text = tab.title.ifBlank { tab.url },
-                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                    style = PetalText.tabLabel,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

@@ -1,6 +1,7 @@
 package com.petal.browser.compose.menu
 
 import android.view.ViewGroup
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -194,7 +195,7 @@ private fun PetalPagePreviewSheet(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = PetalAndroidUtils.domain(url) ?: url,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.sheetTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

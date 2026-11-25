@@ -1,6 +1,7 @@
 package com.petal.browser.compose.pdf
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.animateContentSize
@@ -269,10 +270,8 @@ private fun ScrollPage(
             Spacer(Modifier.width(12.dp))
             Text(
                 text = stringResource(R.string.ui_pdf_auto_scroll_unavailable),
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.cardBody,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }

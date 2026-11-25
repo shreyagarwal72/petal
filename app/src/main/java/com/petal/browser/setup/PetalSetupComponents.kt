@@ -1,6 +1,7 @@
 package com.petal.browser.setup
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -102,13 +103,12 @@ internal fun SetupPageHeader(
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.pageTitle,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
                 body,
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.pageSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -120,8 +120,7 @@ internal fun SetupSectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
         modifier = modifier.padding(start = 4.dp, top = 4.dp),
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.SemiBold,
+        style = PetalText.sectionHeader,
         color = MaterialTheme.colorScheme.primary
     )
 }
@@ -163,7 +162,7 @@ internal fun PaletteSwatch(
         }
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall,
+            style = PetalText.chip,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
@@ -228,7 +227,7 @@ internal fun MiniBrowserPreview(
                 Text(
                     searchHint,
                     Modifier.weight(1f),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = PetalText.caption,
                     color = cs.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -257,8 +256,7 @@ internal fun MiniBrowserPreview(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         pageTitle,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.cardTitle,
                         color = cs.onPrimaryContainer,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
@@ -291,7 +289,7 @@ internal fun MiniBrowserPreview(
                         Icon(icon, label, Modifier.size(18.dp), tint = if (i == 0) cs.primary else cs.onSurfaceVariant)
                         Text(
                             label,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.tabLabel,
                             color = if (i == 0) cs.primary else cs.onSurfaceVariant,
                             maxLines = 1
                         )

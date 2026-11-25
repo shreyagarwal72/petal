@@ -13,6 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.petal.browser.ui.theme.PetalViewThemeBridge
 
 /**
  * Drop-in replacement for [MaterialAlertDialogBuilder] used by every legacy View-system dialog.
@@ -55,10 +56,11 @@ class PetalAlertDialogBuilder : MaterialAlertDialogBuilder {
         fun styleWindow(dialog: AlertDialog) {
             val window = dialog.window ?: return
             val ctx = dialog.context
-            val surface = MaterialColors.getColor(
-                ctx, com.google.android.material.R.attr.colorSurfaceContainerHigh,
-                MaterialColors.getColor(ctx, com.google.android.material.R.attr.colorSurface, 0xFF1C1B1F.toInt())
-            )
+            val surface = PetalViewThemeBridge.tokenColor(ctx, "surfaceContainerHigh")
+                ?: MaterialColors.getColor(
+                    ctx, com.google.android.material.R.attr.colorSurfaceContainerHigh,
+                    MaterialColors.getColor(ctx, com.google.android.material.R.attr.colorSurface, 0xFF1C1B1F.toInt())
+                )
             val bg = GradientDrawable().apply {
                 shape = GradientDrawable.RECTANGLE
                 setColor(surface)
@@ -72,12 +74,18 @@ class PetalAlertDialogBuilder : MaterialAlertDialogBuilder {
         @JvmStatic
         fun styleContent(dialog: AlertDialog) {
             val root = dialog.window?.decorView ?: return
-            val primary = color(root, androidx.appcompat.R.attr.colorPrimary, 0xFFB81D63.toInt())
-            val onPrimary = color(root, com.google.android.material.R.attr.colorOnPrimary, 0xFFFFFFFF.toInt())
-            val tonal = color(root, com.google.android.material.R.attr.colorSecondaryContainer, primary)
-            val onTonal = color(root, com.google.android.material.R.attr.colorOnSecondaryContainer, onPrimary)
-            val onSurface = color(root, com.google.android.material.R.attr.colorOnSurface, 0xFF000000.toInt())
-            val onVariant = color(root, com.google.android.material.R.attr.colorOnSurfaceVariant, onSurface)
+            val primary = PetalViewThemeBridge.tokenColor(root.context, "primary")
+                ?: color(root, androidx.appcompat.R.attr.colorPrimary, 0xFFB81D63.toInt())
+            val onPrimary = PetalViewThemeBridge.tokenColor(root.context, "onPrimary")
+                ?: color(root, com.google.android.material.R.attr.colorOnPrimary, 0xFFFFFFFF.toInt())
+            val tonal = PetalViewThemeBridge.tokenColor(root.context, "secondaryContainer")
+                ?: color(root, com.google.android.material.R.attr.colorSecondaryContainer, primary)
+            val onTonal = PetalViewThemeBridge.tokenColor(root.context, "onSecondaryContainer")
+                ?: color(root, com.google.android.material.R.attr.colorOnSecondaryContainer, onPrimary)
+            val onSurface = PetalViewThemeBridge.tokenColor(root.context, "onSurface")
+                ?: color(root, com.google.android.material.R.attr.colorOnSurface, 0xFF000000.toInt())
+            val onVariant = PetalViewThemeBridge.tokenColor(root.context, "onSurfaceVariant")
+                ?: color(root, com.google.android.material.R.attr.colorOnSurfaceVariant, onSurface)
 
             dialog.findViewById<ImageView>(android.R.id.icon)?.setColorFilter(primary)
             dialog.findViewById<TextView>(androidx.appcompat.R.id.alertTitle)?.setTextColor(onSurface)

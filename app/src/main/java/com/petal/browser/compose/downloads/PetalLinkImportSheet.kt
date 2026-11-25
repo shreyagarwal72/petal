@@ -1,6 +1,7 @@
 package com.petal.browser.compose.downloads
 
 import android.app.Activity
+import com.petal.browser.ui.theme.PetalText
 import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
@@ -125,10 +126,10 @@ fun PetalLinkImportSheet(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
     ) {
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 20.dp)) {
-            Text("Import links", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+            Text("Import links", style = PetalText.sheetTitle)
             Text(
                 "${links.size} found" + if (isPrivate) " · private (no previews)" else "",
-                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = PetalText.pageSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(12.dp))
             PetalChoiceButtonGroup(
@@ -144,8 +145,8 @@ fun PetalLinkImportSheet(
                     if (on) visible.forEach { if (it.url !in selected) selected.add(it.url) }
                     else selected.removeAll(visible.map { it.url }.toSet())
                 })
-                Text("Select all", Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
-                Text("${selectedVisible.size} selected", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                Text("Select all", Modifier.weight(1f), style = PetalText.rowTitle)
+                Text("${selectedVisible.size} selected", style = PetalText.badge, color = MaterialTheme.colorScheme.primary)
             }
             LazyColumn(Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
                 items(visible, key = { it.url }) { link ->
@@ -158,12 +159,12 @@ fun PetalLinkImportSheet(
                             onCheckedChange = { on -> if (on) selected.add(link.url) else selected.remove(link.url) }
                         )
                         Column(Modifier.weight(1f)) {
-                            Text(probe?.fileName ?: link.suggestedName, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
+                            Text(probe?.fileName ?: link.suggestedName, style = PetalText.listItemTitle)
                             val size = probe?.sizeBytes?.takeIf { it > 0 }?.let { formatBytes(it) }
                             Text(
                                 listOfNotNull(link.url.substringAfter("://", link.url).substringBefore('/').take(40), size).joinToString(" · "),
                                 maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = PetalText.listItemMeta, color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -172,10 +173,10 @@ fun PetalLinkImportSheet(
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Sort into folders by type", style = MaterialTheme.typography.bodyLarge)
+                    Text("Sort into folders by type", style = PetalText.rowTitle)
                     Text(
                         if (smartFolders) "Saves to Downloads/Petal/<type>" else "Saves to Downloads",
-                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
+                        style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 Switch(checked = smartFolders, onCheckedChange = {

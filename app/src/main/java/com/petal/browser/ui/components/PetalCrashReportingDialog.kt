@@ -48,6 +48,7 @@ import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
@@ -179,7 +180,7 @@ fun PetalCrashRecoveryHost(
 
                 Text(
                     text = stringResource(R.string.ui_petal_browser_crashed),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
@@ -187,7 +188,7 @@ fun PetalCrashRecoveryHost(
 
             Text(
                 text = stringResource(R.string.ui_petal_recovered_from_an_unexpected),
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.dialogBody,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -250,8 +251,7 @@ fun PetalCrashRecoveryHost(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.ui_report_on_github),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
+                        style = PetalText.button
                     )
                 }
 
@@ -278,8 +278,7 @@ fun PetalCrashRecoveryHost(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.ui_view_log),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.button,
                             maxLines = 1
                         )
                     }
@@ -297,8 +296,7 @@ fun PetalCrashRecoveryHost(
                     ) {
                         Text(
                             text = stringResource(R.string.ui_dismiss),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.button,
                             maxLines = 1
                         )
                     }
@@ -369,7 +367,7 @@ fun PetalCrashRecoveryHost(
                             }
                             Text(
                                 text = stringResource(R.string.ui_crash_diagnostics),
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                                style = PetalText.dialogTitle
                             )
                         }
                         IconButton(onClick = { showFullTraceDialog = false }) {
@@ -436,7 +434,7 @@ fun PetalCrashRecoveryHost(
                         ) {
                             Icon(Icons.Rounded.ContentCopy, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.ui_copy), fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.ui_copy), style = PetalText.button)
                         }
 
                         Button(
@@ -454,7 +452,7 @@ fun PetalCrashRecoveryHost(
                         ) {
                             Icon(Icons.Rounded.Share, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(6.dp))
-                            Text(stringResource(R.string.ui_share_zip), fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.ui_share_zip), style = PetalText.button)
                         }
                     }
                 }
@@ -516,12 +514,12 @@ fun PetalCrashReportingPicker(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.ui_crash_diagnostics_reporting),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (selectedMode == "auto") "Automatically captures crash logs and offers recovery reports" else "Crash logs and recovery prompts are disabled",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.rowSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -556,7 +554,7 @@ fun PetalCrashReportingPicker(
                             )
                         }
                     ) {
-                        Text(labels[index], fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Medium)
+                        Text(labels[index], style = PetalText.chip.copy(fontWeight = if (isChecked) FontWeight.Bold else FontWeight.Medium))
                     }
                 }
             }

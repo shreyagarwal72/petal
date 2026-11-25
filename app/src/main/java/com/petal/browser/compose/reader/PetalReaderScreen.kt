@@ -12,6 +12,7 @@
 package com.petal.browser.compose.reader
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -86,6 +87,7 @@ fun PetalReaderScreen(
 ) {
     val context = LocalContext.current
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+    val appFontState = com.petal.browser.ui.theme.rememberFontState()
 
     var selectedTheme by remember {
         val themeName = sp.getString("sp_reader_theme", "SYSTEM") ?: "SYSTEM"
@@ -145,7 +147,7 @@ fun PetalReaderScreen(
     ) {
         PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot, isolateGlassWallpaper = false) {
             Scaffold(
-                containerColor = containerBg,
+                containerColor = if (selectedTheme == ReaderTheme.SYSTEM) Color.Transparent else containerBg,
                 contentWindowInsets = WindowInsets(0, 0, 0, 0)
             ) { innerPadding ->
                 Box(
@@ -155,7 +157,16 @@ fun PetalReaderScreen(
                 ) {
                     com.petal.browser.ui.components.PetalGlassHeaderLayout(
                         modifier = Modifier.fillMaxSize(),
-                        pageBackground = { Box(Modifier.fillMaxSize().background(containerBg)) },
+                        pageBackground = {
+                            if (selectedTheme == ReaderTheme.SYSTEM) {
+                                com.petal.browser.ui.components.PetalPageBackground(
+                                    pageKey = "reader_page",
+                                    modifier = Modifier.fillMaxSize()
+                                )
+                            } else {
+                                Box(Modifier.fillMaxSize().background(containerBg))
+                            }
+                        },
                         header = { headerModifier, headerBackdrop ->
                         ExpressiveHeader(
                             modifier = headerModifier,
@@ -204,12 +215,21 @@ fun PetalReaderScreen(
                                 .fillMaxWidth()
                                 .padding(horizontal = 24.dp, vertical = 12.dp)
                         ) {
+                            val readerFontFamily = if (selectedFont == ReaderFont.SYSTEM && appFontState.readerFollowsAppFont) {
+                                remember(appFontState) {
+                                    com.petal.browser.ui.theme.VariableFontFactory
+                                        .createTypography(appFontState).bodyLarge.fontFamily ?: FontFamily.Default
+                                }
+                            } else {
+                                selectedFont.family
+                            }
+
                             // Article Title
                             Text(
                                 text = article.title,
                                 style = MaterialTheme.typography.headlineMedium.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontFamily = selectedFont.family,
+                                    fontFamily = readerFontFamily,
                                     fontSize = (fontSizeSp + 8).sp,
                                     lineHeight = ((fontSizeSp + 8) * 1.3f).sp
                                 ),
@@ -234,7 +254,7 @@ fun PetalReaderScreen(
                                         text = listOf(article.author, article.domain)
                                             .filter { it.isNotBlank() }
                                             .joinToString(" • "),
-                                        style = MaterialTheme.typography.labelMedium.copy(
+                                        style = PetalText.caption.copy(
                                             fontStyle = FontStyle.Italic
                                         ),
                                         color = subtitleTextColor
@@ -276,7 +296,7 @@ fun PetalReaderScreen(
                                 Text(
                                     text = paragraph,
                                     style = MaterialTheme.typography.bodyLarge.copy(
-                                        fontFamily = selectedFont.family,
+                                        fontFamily = readerFontFamily,
                                         fontSize = fontSizeSp.sp,
                                         lineHeight = (fontSizeSp * lineHeightMult).sp
                                     ),
@@ -316,13 +336,13 @@ fun PetalReaderScreen(
                             ) {
                                 Text(
                                     text = stringResource(R.string.ui_reader_appearance),
-                                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sheetTitle,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
 
                                 // Theme Selector
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(stringResource(R.string.ui_theme), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
+                                    Text(stringResource(R.string.ui_theme), style = PetalText.sectionHeader)
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -366,7 +386,7 @@ fun PetalReaderScreen(
                                                         }
                                                         Text(
                                                             text = theme.title,
-                                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                            style = PetalText.chip,
                                                             color = contentColor
                                                         )
                                                     }
@@ -378,7 +398,7 @@ fun PetalReaderScreen(
 
                                 // Font Family Selector
                                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(stringResource(R.string.ui_font_family), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
+                                    Text(stringResource(R.string.ui_font_family), style = PetalText.sectionHeader)
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -403,6 +423,25 @@ fun PetalReaderScreen(
                                             )
                                         }
                                     }
+                                    if (selectedFont == ReaderFont.SYSTEM) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.SpaceBetween
+                                        ) {
+                                            Text(
+                                                text = "Follow Petal app font",
+                                                style = PetalText.rowSubtitle,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Switch(
+                                                checked = appFontState.readerFollowsAppFont,
+                                                onCheckedChange = {
+                                                    com.petal.browser.ui.theme.PetalFontPrefs.setReaderFollowsAppFont(sp, it)
+                                                }
+                                            )
+                                        }
+                                    }
                                 }
 
                                 // Font Size Slider
@@ -411,8 +450,8 @@ fun PetalReaderScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Text(stringResource(R.string.ui_font_size), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
-                                        Text(stringResource(R.string.ui_sp, fontSizeSp.toInt()), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                        Text(stringResource(R.string.ui_font_size), style = PetalText.sectionHeader)
+                                        Text(stringResource(R.string.ui_sp, fontSizeSp.toInt()), style = PetalText.value, color = MaterialTheme.colorScheme.primary)
                                     }
                                     PetalSlider(
                                         value = fontSizeSp,
@@ -431,8 +470,8 @@ fun PetalReaderScreen(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Text(stringResource(R.string.ui_line_spacing), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
-                                        Text(String.format("%.1fx", lineHeightMult), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                        Text(stringResource(R.string.ui_line_spacing), style = PetalText.sectionHeader)
+                                        Text(String.format("%.1fx", lineHeightMult), style = PetalText.value, color = MaterialTheme.colorScheme.primary)
                                     }
                                     PetalSlider(
                                         value = lineHeightMult,

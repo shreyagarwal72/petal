@@ -8,6 +8,7 @@
 package com.petal.browser.compose.security
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
@@ -45,7 +46,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Shape
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressivePasswordShapes
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.PetalAlertDialog
 import com.petal.browser.ui.containment.PetalSnackbarHost
@@ -156,9 +156,9 @@ fun PetalAppLockScreen(
                     .fillMaxSize()
                     .padding(innerPadding)
             ) {
-                M3ExpressiveVariableBackground(
+                com.petal.browser.ui.components.PetalPageBackground(
                     modifier = Modifier.fillMaxSize(),
-                    pageSeed = "security_app_lock"
+                    pageKey = "security_app_lock"
                 )
 
                 Column(
@@ -243,7 +243,7 @@ fun PetalAppLockScreen(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = "${activeProfile.name} Profile",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.chip,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -251,14 +251,13 @@ fun PetalAppLockScreen(
 
                     Text(
                         text = if (isUnlockedSuccess) "Unlocked Successfully" else "App Protected",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.pageTitle,
                         color = MaterialTheme.colorScheme.onBackground
                     )
 
                     Text(
                         text = stringResource(R.string.ui_enter_your_passcode_or_use),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
@@ -290,7 +289,7 @@ fun PetalAppLockScreen(
                         if (errorMessage != null) {
                             Text(
                                 text = errorMessage!!,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.padding(top = 8.dp)
                             )

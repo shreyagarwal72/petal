@@ -103,16 +103,30 @@ object PetalSettingsSearchIndex {
         SettingsSearchItem(
             id = "appearance_fonts",
             title = "App Typography & Custom Fonts",
-            subtitle = "Select built-in fonts (Petal, Product Sans, Roboto, Inter, Outfit, Open Sans, Space Grotesk) or import custom TTF/OTF",
+            subtitle = "Select built-in fonts (Google Sans Flex / Petal Signature, Nunito, System) or import custom TTF/OTF",
             category = SettingsCategory.APPEARANCE,
-            keywords = listOf("font", "typography", "custom font", "product sans", "roboto", "inter", "outfit", "typeface", "ttf", "otf", "text style")
+            keywords = listOf("font", "typography", "custom font", "google sans flex", "petal signature", "nunito", "system", "typeface", "ttf", "otf", "text style")
         ),
         SettingsSearchItem(
             id = "appearance_font_sliders",
-            title = "Font Width, Weight & Roundness",
-            subtitle = "Fine-tune font variable axes: width stretching, bold weight, and corner roundness",
+            title = "Variable Font Axes & Presets",
+            subtitle = "Customize Weight, Width, Optical Size, Grade, Slant & Roundness across Display, Headline & Body",
             category = SettingsCategory.APPEARANCE,
-            keywords = listOf("font weight", "font width", "font roundness", "bold", "variable font", "stretch", "sliders")
+            keywords = listOf("font weight", "font width", "optical size", "grade", "slant", "font roundness", "variable font", "preset", "neo", "impact", "airy", "sliders")
+        ),
+        SettingsSearchItem(
+            id = "appearance_font_accent",
+            title = "Font Accent Color",
+            subtitle = "Tint headings, labels, or all text with your theme accent color",
+            category = SettingsCategory.APPEARANCE,
+            keywords = listOf("font accent", "text color", "headings", "labels", "typography color")
+        ),
+        SettingsSearchItem(
+            id = "appearance_font_test",
+            title = "Font Test Lab",
+            subtitle = "Preview type scale, presets, and global variable axis overrides with custom text",
+            category = SettingsCategory.APPEARANCE,
+            keywords = listOf("font test", "typography test", "type scale", "preview")
         ),
         SettingsSearchItem(
             id = "appearance_color_styles",
@@ -569,7 +583,8 @@ object PetalSettingsSearchIndex {
         "reader", "caret", "language", "backup", "restore", "export", "import", "bookmarks",
         "history", "updater", "updates", "developer", "about", "model", "provider", "groq",
         "gemini", "claude", "ollama", "deepseek", "openai", "token", "key", "gestures",
-        "swipe", "lock", "passcode", "blur", "scaling", "audio", "video", "pip", "cache", "icon", "launcher", "splash", "intro"
+        "swipe", "lock", "passcode", "blur", "scaling", "audio", "video", "pip", "cache", "icon", "launcher", "splash", "intro",
+        "petal now", "nowbar", "island", "capsule", "wavy"
     )
 
     /**

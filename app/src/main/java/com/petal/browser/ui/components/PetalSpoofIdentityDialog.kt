@@ -18,8 +18,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.containment.PetalDialog
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalSelectableOptionCard
@@ -83,7 +83,7 @@ fun PetalSpoofIdentityDialog(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_spoof_identity_user_agent),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.dialogTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = onDismissRequest) {

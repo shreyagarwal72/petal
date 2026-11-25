@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.unit.PetalBrowserUtils
 import java.util.regex.Pattern
 import androidx.compose.ui.res.stringResource
@@ -176,15 +177,14 @@ fun PetalMarkdownText(
         blocks.forEach { block ->
             when (block) {
                 is MarkdownBlock.Heading -> {
-                    val fontSize = when (block.level) {
-                        1 -> 22.sp
-                        2 -> 19.sp
-                        3 -> 17.sp
-                        else -> 15.sp
+                    val baseHeading = when (block.level) {
+                        1 -> MaterialTheme.typography.titleLarge
+                        2 -> MaterialTheme.typography.titleMedium
+                        3 -> MaterialTheme.typography.titleSmall
+                        else -> MaterialTheme.typography.labelLarge
                     }
                     val fontWeight = if (block.level <= 2) FontWeight.Bold else FontWeight.SemiBold
-                    val headingStyle = MaterialTheme.typography.titleMedium.copy(
-                        fontSize = fontSize,
+                    val headingStyle = baseHeading.copy(
                         fontWeight = fontWeight,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -228,7 +228,7 @@ fun PetalMarkdownText(
                                     )
                                     Text(
                                         text = block.language.ifBlank { "code" },
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.badge,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
@@ -243,7 +243,7 @@ fun PetalMarkdownText(
                                 ) {
                                     Icon(Icons.Rounded.ContentCopy, contentDescription = stringResource(R.string.ui_copy_code), modifier = Modifier.size(14.dp))
                                     Spacer(Modifier.width(4.dp))
-                                    Text(stringResource(R.string.ui_copy), style = MaterialTheme.typography.labelSmall)
+                                    Text(stringResource(R.string.ui_copy), style = PetalText.button)
                                 }
                             }
 
@@ -354,9 +354,8 @@ private fun RenderInlineMarkdownText(
         buildInlineMarkdown(text, textColor, linkColor)
     }
 
-    val finalStyle = textStyle ?: MaterialTheme.typography.bodyMedium.copy(
-        color = textColor,
-        lineHeight = 22.sp
+    val finalStyle = textStyle ?: PetalText.cardBody.copy(
+        color = textColor
     )
 
     ClickableText(

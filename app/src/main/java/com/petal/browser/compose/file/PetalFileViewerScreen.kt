@@ -21,6 +21,7 @@
 package com.petal.browser.compose.file
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.components.petalContainerEnter
 import android.content.Context
 import android.content.Intent
@@ -121,13 +122,12 @@ object PetalFileViewerBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = remember(fontName) { AppFont.fromName(fontName) }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                 }
@@ -135,7 +135,7 @@ object PetalFileViewerBridge {
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    appFont = appFont,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId,
                 ) {
@@ -312,9 +312,9 @@ fun PetalFileViewerScreen(
                                 else Modifier
                             )
                     ) {
-                        com.petal.browser.ui.components.M3ExpressiveVariableBackground(
+                        com.petal.browser.ui.components.PetalPageBackground(
                             modifier = Modifier.fillMaxSize(),
-                            pageSeed = "petal_file_viewer"
+                            pageKey = "petal_file_viewer"
                         )
                     }
                     Scaffold(
@@ -421,14 +421,14 @@ private fun PetalFileViewerTopBar(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.sheetTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = if (extension.isNotEmpty()) "${extension.uppercase(Locale.US)} File" else "File",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.caption,
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
@@ -616,7 +616,7 @@ private fun ArchiveViewerContent(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     PetalContainedLoadingIndicator(size = 48.dp)
                     Spacer(Modifier.height(14.dp))
-                    Text(stringResource(R.string.ui_opening_archive), style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.ui_opening_archive), style = PetalText.cardBody)
                 }
             }
         }
@@ -679,13 +679,13 @@ private fun ArchiveViewerContent(
                                 Column(Modifier.weight(1f)) {
                                     Text(
                                         text = if (pathSegments.isEmpty()) displayName else pathSegments.last(),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.sheetTitle,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
                                         text = stringResource(R.string.ui_items, visibleEntries.size),
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = PetalText.caption,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -765,7 +765,7 @@ private fun ArchiveViewerContent(
                                         Spacer(Modifier.height(10.dp))
                                         Text(
                                             stringResource(R.string.ui_this_folder_is_empty),
-                                            style = MaterialTheme.typography.bodyLarge,
+                                            style = PetalText.emptyState,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -856,14 +856,12 @@ private fun ArchiveEntryRow(
         content = {
             Text(
                 text = name,
-                style = MaterialTheme.typography.bodyLarge,
+                style = PetalText.listItemTitle,
                 fontWeight = if (isFolder) FontWeight.SemiBold else FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = if (isFolder) "Directory" else formatArchiveSize(entry.size),
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.listItemMeta,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
@@ -934,9 +932,7 @@ private fun ArchiveEntryPreview(
                 }
                 Text(
                     entry.path.substringAfterLast('/'),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    style = PetalText.sheetTitle,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -1000,7 +996,7 @@ private fun ArchiveEntryPreview(
                                     iconSize = 32.dp
                                 )
                                 Spacer(Modifier.height(16.dp))
-                                Text(name, style = MaterialTheme.typography.titleMedium, textAlign = TextAlign.Center)
+                                Text(name, style = PetalText.sheetTitle, textAlign = TextAlign.Center)
                                 Spacer(Modifier.height(8.dp))
                                 Text(
                                     stringResource(R.string.ui_this_entry_was_extracted_successfully),
@@ -1079,9 +1075,9 @@ private fun MediaViewerContent(fileUri: Uri, displayName: String, extension: Str
                 iconSize = 44.dp
             )
             Spacer(Modifier.height(16.dp))
-            Text(displayName, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+            Text(displayName, style = PetalText.pageTitle, textAlign = TextAlign.Center)
             Spacer(Modifier.height(6.dp))
-            Text("${extension.uppercase(Locale.US)} Media", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("${extension.uppercase(Locale.US)} Media", style = PetalText.pageSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.height(24.dp))
             Button(
                 onClick = { openExternal(context, fileUri) },
@@ -1340,7 +1336,7 @@ private fun PptxViewerContent(fileUri: Uri) {
                                 ) {
                                     Text(
                                         text = "Slide ${index + 1}",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.badge,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                     )
@@ -1349,7 +1345,7 @@ private fun PptxViewerContent(fileUri: Uri) {
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 text = slideText,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 lineHeight = 22.sp
                             )
@@ -1464,14 +1460,14 @@ private fun XlsxViewerContent(fileUri: Uri) {
                             ) {
                                 Text(
                                     text = "${rowIndex + 1}",
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.caption,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                                     modifier = Modifier.width(32.dp)
                                 )
                                 cellValues.forEach { cell ->
                                     Text(
                                         text = cell,
-                                        style = MaterialTheme.typography.bodyMedium.copy(
+                                        style = PetalText.listItemTitle.copy(
                                             fontWeight = if (rowIndex == 0) FontWeight.Bold else FontWeight.Normal
                                         ),
                                         color = if (rowIndex == 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
@@ -1556,7 +1552,7 @@ private fun DocxViewerContent(fileUri: Uri) {
                     ) {
                         Text(
                             text = para,
-                            style = MaterialTheme.typography.bodyLarge,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(14.dp),
                             lineHeight = 24.sp,
@@ -1595,13 +1591,13 @@ private fun GenericBinaryContent(fileUri: Uri, displayName: String, extension: S
         Spacer(Modifier.height(16.dp))
         Text(
             text = displayName,
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.pageTitle,
             color = MaterialTheme.colorScheme.onSurface,
         )
         Spacer(Modifier.height(6.dp))
         Text(
             text = if (extension.isNotEmpty()) "${extension.uppercase(Locale.US)} File" else "Binary Data",
-            style = MaterialTheme.typography.bodyMedium,
+            style = PetalText.pageSubtitle,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(24.dp))
@@ -1651,13 +1647,13 @@ private fun ErrorDisplayBox(error: String) {
                 Spacer(Modifier.height(12.dp))
                 Text(
                     text = stringResource(R.string.ui_cannot_view_file),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.cardTitle,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = error,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.cardBody,
                     color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                 )
             }

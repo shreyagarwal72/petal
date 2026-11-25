@@ -50,9 +50,16 @@
             android:textSize="15sp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:fontFamily="sans-serif-medium"
             android:textStyle="bold"
             android:textColor="@color/petal_autofill_title" />
+
+        <ImageView
+            android:id="@+id/petal_autofill_username_img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="fitStart"
+            android:contentDescription="@null"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/petal_autofill_domain"
@@ -61,8 +68,15 @@
             android:textSize="12sp"
             android:maxLines="1"
             android:ellipsize="end"
-            android:fontFamily="sans-serif-light"
             android:textColor="@color/petal_autofill_subtitle" />
+
+        <ImageView
+            android:id="@+id/petal_autofill_domain_img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="fitStart"
+            android:contentDescription="@null"
+            android:visibility="gone" />
 
     </LinearLayout>
 
@@ -89,12 +103,20 @@
             android:scaleType="fitCenter" />
 
         <TextView
+            android:id="@+id/petal_autofill_brand"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/petal_autofill_brand"
             android:textSize="11sp"
-            android:fontFamily="sans-serif-medium"
             android:textColor="@color/petal_autofill_accent" />
+
+        <ImageView
+            android:id="@+id/petal_autofill_brand_img"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:scaleType="fitCenter"
+            android:contentDescription="@null"
+            android:visibility="gone" />
     </LinearLayout>
 
 </LinearLayout>

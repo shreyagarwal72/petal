@@ -1990,21 +1990,30 @@ class PetalTabViewController private constructor(
     }
 
     fun captureFullPageBitmap(callback: (Bitmap?) -> Unit) {
-        val geckoView = findGeckoView(engineView.asView())
-        if (geckoView == null || !isAttachedToWindow || geckoView.width <= 0 || geckoView.height <= 0) {
-            callback(null)
-            return
-        }
-        try {
-            geckoView.capturePixels().then({ bitmap ->
-                callback(bitmap)
-                org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
-            }, {
+        val runCapture = {
+            val geckoView = findGeckoView(engineView.asView())
+            if (geckoView == null || !isAttachedToWindow || geckoView.width <= 0 || geckoView.height <= 0) {
                 callback(null)
-                org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
-            })
-        } catch (_: Throwable) {
-            callback(null)
+            } else if (!com.petal.browser.compose.engine.PetalViewportThumbnailer.canCapturePixelsNow()) {
+                callback(null)
+            } else {
+                try {
+                    geckoView.capturePixels().then({ bitmap ->
+                        callback(bitmap)
+                        org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
+                    }, {
+                        callback(null)
+                        org.mozilla.geckoview.GeckoResult.fromValue<Void?>(null)
+                    })
+                } catch (_: Throwable) {
+                    callback(null)
+                }
+            }
+        }
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            runCapture()
+        } else {
+            previewMainHandler.post { runCapture() }
         }
     }
 

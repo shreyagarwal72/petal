@@ -1,6 +1,7 @@
 package com.petal.browser.passwords
 
 import androidx.activity.ComponentActivity
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
@@ -173,13 +174,12 @@ fun PetalPasswordImportSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Import Passwords",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Pick a source format, then choose the file with Petal File Picker",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -201,7 +201,7 @@ fun PetalPasswordImportSheet(
                         PetalContainedLoadingIndicator()
                         Text(
                             text = "Importing passwords...",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

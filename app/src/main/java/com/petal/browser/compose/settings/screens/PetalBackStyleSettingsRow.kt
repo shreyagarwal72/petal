@@ -50,6 +50,7 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.theme.PetalText
 import kotlin.math.roundToInt
 
 @Composable
@@ -117,13 +118,12 @@ fun PetalBackStyleSettingsRow(
                 Column(Modifier.weight(1f)) {
                     Text(
                         stringResource(R.string.ui_back_style_title),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         stringResource(R.string.ui_back_style_subtitle),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.rowSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -142,15 +142,14 @@ fun PetalBackStyleSettingsRow(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         shownStyle.label(),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.pageTitle,
                         color = MaterialTheme.colorScheme.primary,
                     )
                     Text(
                         stringResource(
                             if (depthBlur) R.string.ui_back_style_blur_on else R.string.ui_back_style_blur_off
                         ),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -178,8 +177,9 @@ fun PetalBackStyleSettingsRow(
                             .padding(vertical = 4.dp),
                         textAlign = TextAlign.Center,
                         maxLines = 1,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        style = PetalText.tabLabel.copy(
+                            fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        ),
                         color = if (selected) MaterialTheme.colorScheme.primary
                         else MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -194,7 +194,7 @@ fun PetalBackStyleSettingsRow(
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
                         stringResource(R.string.ui_back_exit_direction),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = PetalText.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     com.petal.browser.ui.components.ExpressiveButtonGroup(

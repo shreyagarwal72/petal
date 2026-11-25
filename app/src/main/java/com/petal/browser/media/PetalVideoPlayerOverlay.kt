@@ -1,6 +1,7 @@
 package com.petal.browser.media
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
@@ -279,9 +280,8 @@ fun PetalVideoPlayerOverlay(
                     PetalDoubleTapSeekTriangles(isForward = doubleTapIsForward)
                     Text(
                         text = doubleTapSeekText ?: "",
+                        style = PetalText.sheetTitle,
                         color = Color.White,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold,
                     )
                 }
             }
@@ -316,8 +316,7 @@ fun PetalVideoPlayerOverlay(
                     Text(
                         text = "2X SPEED",
                         color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        style = PetalText.button
                     )
                 }
             }
@@ -395,8 +394,7 @@ fun PetalVideoPlayerOverlay(
                     Text(
                         text = aspectRatioHudText ?: "",
                         color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
+                        style = PetalText.rowTitle,
                     )
                 }
             }
@@ -516,9 +514,8 @@ fun PetalVideoPlayerOverlay(
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
                                     text = title.ifBlank { stringResource(R.string.app_name) },
+                                    style = PetalText.listItemTitle,
                                     color = Color.White,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.SemiBold,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -662,9 +659,8 @@ fun PetalVideoPlayerOverlay(
                                     ) {
                                         Text(
                                             text = "${spd}x",
+                                            style = PetalText.chip,
                                             color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.White,
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Bold,
                                         )
                                     }
                                 }

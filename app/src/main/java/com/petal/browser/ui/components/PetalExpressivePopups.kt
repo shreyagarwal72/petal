@@ -35,6 +35,7 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.theme.PetalText
 
 /**
  * Shared popup/dialog language for Petal.
@@ -114,14 +115,13 @@ fun PetalExpressiveAlertDialog(
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.dialogTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             if (!message.isNullOrBlank()) {
                 Text(
                     text = message,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.dialogBody,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -144,7 +144,7 @@ fun PetalExpressiveAlertDialog(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                 ) {
-                    Text(dismissText, fontWeight = FontWeight.SemiBold)
+                    Text(dismissText, style = PetalText.button)
                 }
             }
 
@@ -170,7 +170,7 @@ fun PetalExpressiveAlertDialog(
                     .weight(1f)
                     .heightIn(min = 48.dp)
             ) {
-                Text(confirmText, fontWeight = FontWeight.Bold)
+                Text(confirmText, style = PetalText.button)
             }
         }
     }
@@ -218,14 +218,13 @@ fun PetalExpressiveTextPromptDialog(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.dialogTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             if (!message.isNullOrBlank()) {
                 Text(
                     text = message,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.dialogBody,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -260,7 +259,7 @@ fun PetalExpressiveTextPromptDialog(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                 ) {
-                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.ui_cancel), style = PetalText.button)
                 }
 
                 Button(
@@ -274,7 +273,7 @@ fun PetalExpressiveTextPromptDialog(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                 ) {
-                    Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_ok), style = PetalText.button)
                 }
             }
         }
@@ -366,11 +365,8 @@ fun PetalExpressiveChoiceDialog(
                 if (!title.isNullOrBlank()) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 24.dp, vertical = 8.dp)
@@ -399,8 +395,7 @@ fun PetalExpressiveChoiceDialog(
                             )
                             opt.isHeader -> Text(
                                 text = opt.label,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.sectionHeader,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 10.dp)
                             )
@@ -431,8 +426,9 @@ fun PetalExpressiveChoiceDialog(
                                 ) {
                                     Text(
                                         text = opt.label,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal,
+                                        style = PetalText.listItemTitle.copy(
+                                            fontWeight = if (isSel) FontWeight.Bold else FontWeight.Normal
+                                        ),
                                         color = if (opt.disabled) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                                                 else MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier.weight(1f)
@@ -484,7 +480,7 @@ fun PetalExpressiveChoiceDialog(
                                 .weight(1f)
                                 .heightIn(min = 48.dp)
                         ) {
-                            Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.ui_cancel), style = PetalText.button)
                         }
 
                         Button(
@@ -494,7 +490,7 @@ fun PetalExpressiveChoiceDialog(
                                 .weight(1f)
                                 .heightIn(min = 48.dp)
                         ) {
-                            Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.ui_ok), style = PetalText.button)
                         }
                     }
                 }
@@ -549,8 +545,7 @@ fun PetalExpressiveColorDialog(
     PetalExpressiveDialog(onDismissRequest = onDismiss) {
         Text(
             text = if (title.isNullOrBlank()) "Pick a colour" else title,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
+            style = PetalText.dialogTitle,
             color = MaterialTheme.colorScheme.onSurface
         )
         Box(
@@ -585,7 +580,7 @@ fun PetalExpressiveColorDialog(
         }
         listOf(Triple("R", r, 0), Triple("G", g, 1), Triple("B", b, 2)).forEach { (label, value, idx) ->
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, modifier = Modifier.width(24.dp))
+                Text(label, style = PetalText.rowTitle, modifier = Modifier.width(24.dp))
                 PetalSlider(
                     value = value,
                     onValueChange = {
@@ -595,7 +590,7 @@ fun PetalExpressiveColorDialog(
                     valueRange = 0f..255f,
                     modifier = Modifier.weight(1f)
                 )
-                Text(value.toInt().toString(), style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(36.dp))
+                Text(value.toInt().toString(), style = PetalText.value, modifier = Modifier.width(36.dp))
             }
         }
         TextField(
@@ -636,7 +631,7 @@ fun PetalExpressiveColorDialog(
                     .weight(1f)
                     .heightIn(min = 48.dp)
             ) {
-                Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                Text(stringResource(R.string.ui_cancel), style = PetalText.button)
             }
 
             Button(
@@ -650,7 +645,7 @@ fun PetalExpressiveColorDialog(
                     .weight(1f)
                     .heightIn(min = 48.dp)
             ) {
-                Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                Text(stringResource(R.string.ui_ok), style = PetalText.button)
             }
         }
     }
@@ -753,10 +748,10 @@ fun PetalExpressiveDateTimeDialog(
                     onClick = { if (goesToTime) step = 1 else onConfirm(result()) },
                     modifier = Modifier.heightIn(min = 48.dp),
                     shape = RoundedCornerShape(16.dp)
-                ) { Text(if (goesToTime) "Next" else stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold) }
+                ) { Text(if (goesToTime) "Next" else stringResource(R.string.ui_ok), style = PetalText.button) }
             },
             dismissButton = {
-                TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ui_cancel)) }
+                TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.ui_cancel), style = PetalText.button) }
             }
         ) {
             DatePicker(state = dateState, showModeToggle = false)
@@ -765,8 +760,7 @@ fun PetalExpressiveDateTimeDialog(
         PetalExpressiveDialog(onDismissRequest = onDismiss) {
             Text(
                 text = if (title.isNullOrBlank()) "Select time" else title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.dialogTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
@@ -789,7 +783,7 @@ fun PetalExpressiveDateTimeDialog(
                             .weight(1f)
                             .heightIn(min = 48.dp)
                     ) {
-                        Text("Back", fontWeight = FontWeight.SemiBold)
+                        Text("Back", style = PetalText.button)
                     }
                 }
                 Button(
@@ -803,7 +797,7 @@ fun PetalExpressiveDateTimeDialog(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                 ) {
-                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.ui_cancel), style = PetalText.button)
                 }
                 Button(
                     onClick = { onConfirm(result()) },
@@ -816,7 +810,7 @@ fun PetalExpressiveDateTimeDialog(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                 ) {
-                    Text(stringResource(R.string.ui_ok), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_ok), style = PetalText.button)
                 }
             }
         }
@@ -842,14 +836,13 @@ fun PetalExpressiveAuthPromptDialog(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.dialogTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             if (!message.isNullOrBlank()) {
                 Text(
                     text = message,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.dialogBody,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -903,7 +896,7 @@ fun PetalExpressiveAuthPromptDialog(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                 ) {
-                    Text(stringResource(R.string.ui_cancel), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.ui_cancel), style = PetalText.button)
                 }
 
                 Button(
@@ -917,7 +910,7 @@ fun PetalExpressiveAuthPromptDialog(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                 ) {
-                    Text(stringResource(R.string.ui_sign_in), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_sign_in), style = PetalText.button)
                 }
             }
         }

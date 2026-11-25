@@ -18,6 +18,7 @@
 package com.petal.browser.compose.file
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.HeaderActionIcon
 import com.petal.browser.ui.components.PetalButtonGroupItem
@@ -94,7 +95,7 @@ import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.predictive.PetalScreenWrapper
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalPageBackground
 import com.petal.browser.ui.containment.PetalBadgeVariant
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupListRow
@@ -185,6 +186,7 @@ fun PetalFilePickerScreen(
     mimeTypes: Array<String> = emptyArray(),
     allowFolderSelection: Boolean = false,
     allowMultiple: Boolean = false,
+    backgroundSnapshot: ImageBitmap? = null,
     onDismissRequest: () -> Unit,
     onFileSelected: (File) -> Unit,
     onMultipleFilesSelected: ((List<File>) -> Unit)? = null,
@@ -231,15 +233,15 @@ fun PetalFilePickerScreen(
         enabled = true,
         onBack = onDismissRequest
     ) {
-        PetalScreenWrapper {
+        PetalScreenWrapper(backgroundSnapshot = backgroundSnapshot) {
           CompositionLocalProvider(LocalPetalGlassWallpaper provides wallpaper) {
             Box(modifier = Modifier.fillMaxSize()) {
                 // With storage access the background lives inside the glass header layout (so the header
                 // refracts it); only the permission prompt draws it here.
                 if (!hasPerms) {
-                    M3ExpressiveVariableBackground(
+                    PetalPageBackground(
                         modifier = Modifier.fillMaxSize(),
-                        pageSeed = "petal_file_picker"
+                        pageKey = "petal_file_picker"
                     )
                 }
                 Surface(
@@ -303,13 +305,13 @@ private fun StoragePermissionRequestState(
         Spacer(Modifier.height(20.dp))
         Text(
             text = stringResource(R.string.file_picker_title),
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.pageTitle,
             color = MaterialTheme.colorScheme.onSurface
         )
         Spacer(Modifier.height(8.dp))
         Text(
             text = stringResource(R.string.file_picker_grant_permission),
-            style = MaterialTheme.typography.bodyMedium,
+            style = PetalText.pageSubtitle,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
@@ -321,7 +323,7 @@ private fun StoragePermissionRequestState(
         ) {
             Icon(Icons.Rounded.LockOpen, contentDescription = null, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.file_picker_grant_button), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.file_picker_grant_button), style = PetalText.button)
         }
 
         if (onBrowseSystemFallback != null) {
@@ -330,7 +332,7 @@ private fun StoragePermissionRequestState(
                 onClick = onBrowseSystemFallback,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
             ) {
-                Text(stringResource(R.string.ui_open_system_file_picker), style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.ui_open_system_file_picker), style = PetalText.button)
             }
         }
 
@@ -502,9 +504,9 @@ private fun FilePickerBrowserContent(
     com.petal.browser.ui.components.PetalGlassHeaderLayout(
         modifier = Modifier.fillMaxSize(),
         pageBackground = {
-            M3ExpressiveVariableBackground(
+            PetalPageBackground(
                 modifier = Modifier.fillMaxSize(),
-                pageSeed = "petal_file_picker"
+                pageKey = "petal_file_picker"
             )
         },
         header = { headerModifier, headerBackdrop ->
@@ -573,7 +575,7 @@ private fun FilePickerBrowserContent(
                         SortItem(FileSortMode.DATE_ASC, R.string.file_picker_sort_date_asc)
                         com.petal.browser.ui.containment.PetalMenuDivider()
                         com.petal.browser.ui.containment.PetalPopupMenuItem(
-                            text = { Text(stringResource(R.string.file_picker_show_hidden_files), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold) },
+                            text = { Text(stringResource(R.string.file_picker_show_hidden_files), style = PetalText.listItemTitle) },
                             trailingIcon = {
                                 IconSwitch(
                                     checked = showHiddenFiles,
@@ -619,7 +621,7 @@ private fun FilePickerBrowserContent(
                         Spacer(Modifier.height(8.dp))
                         Text(
                             text = stringResource(R.string.file_picker_no_files),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.emptyState,
                             color = MaterialTheme.colorScheme.outline
                         )
                     }
@@ -654,7 +656,7 @@ private fun FilePickerBrowserContent(
                                 content = {
                                     Text(
                                         text = stringResource(R.string.file_picker_previous_directory),
-                                        style = MaterialTheme.typography.bodyLarge,
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 }
@@ -715,12 +717,12 @@ private fun FilePickerBrowserContent(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = stringResource(R.string.ui_current_directory),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 text = currentDir.name.ifEmpty { currentDir.absolutePath },
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.sheetTitle,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -739,7 +741,7 @@ private fun FilePickerBrowserContent(
                     } else if (allowMultiple) {
                         Text(
                             text = stringResource(R.string.ui_selected_2, selectedFiles.size),
-                            style = MaterialTheme.typography.titleMedium,
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Button(
@@ -789,7 +791,7 @@ private fun PickerBreadcrumbs(
                 val isLast = index == crumbs.lastIndex
                 Text(
                     text = name,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = PetalText.tabLabel,
                     fontWeight = if (isLast) FontWeight.Bold else FontWeight.Medium,
                     color = if (isLast) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -908,8 +910,8 @@ private fun FilePickerRowItem(
             }
         },
         content = {
-            Text(file.name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(detailText, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(file.name, style = PetalText.listItemTitle)
+            Text(detailText, style = PetalText.listItemMeta, color = MaterialTheme.colorScheme.onSurfaceVariant)
         },
         trailing = {
             if (allowMultiple) {

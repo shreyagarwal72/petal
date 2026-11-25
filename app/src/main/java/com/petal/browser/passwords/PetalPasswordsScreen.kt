@@ -1,6 +1,7 @@
 package com.petal.browser.passwords
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import android.app.KeyguardManager
 import android.content.ClipData
@@ -62,7 +63,6 @@ import com.petal.browser.ui.components.ExpressiveButtonGroup
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveSegmentItem
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalButtonGroupItem
 import com.petal.browser.ui.components.PetalChoiceButtonGroup
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
@@ -100,7 +100,9 @@ fun PetalPasswordsScreen(
     backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
     modifier: Modifier = Modifier,
     /** True when a host page (PetalSubPageHost) already owns the back gesture and surface wrapper. */
-    embedded: Boolean = false
+    embedded: Boolean = false,
+    /** True when hosted as the root of PetalPasswordsActivity so Android handles cross-activity back. */
+    isStandaloneActivity: Boolean = false
 ) {
     val context = LocalContext.current
     val haptic = remember { PetalHapticEngine.getInstance(context) }
@@ -290,7 +292,7 @@ fun PetalPasswordsScreen(
     }
 
     com.petal.browser.predictive.PetalPredictiveShell(
-        wrap = !embedded,
+        wrap = !embedded && !isStandaloneActivity,
         enabled = !hasSubOverlay,
         onBack = onNavigateBack,
         backgroundSnapshot = backgroundSnapshot
@@ -312,7 +314,7 @@ fun PetalPasswordsScreen(
                             // off the layout simply stacks the Material 3 Expressive header above the list.
                             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                                 modifier = Modifier.fillMaxSize(),
-                                pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "passwords_settings") },
+                                pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "passwords_settings", modifier = Modifier.fillMaxSize()) },
                                 header = { headerModifier, headerBackdrop ->
                                     ExpressiveHeader(
                                         modifier = headerModifier,
@@ -517,15 +519,14 @@ fun PetalPasswordsScreen(
                                                             }
                                                             Text(
                                                                 text = if (searchQuery.isBlank()) "No Passwords Stored" else "No Matches Found",
-                                                                style = MaterialTheme.typography.titleMedium,
-                                                                fontWeight = FontWeight.Bold,
+                                                                style = PetalText.emptyState,
                                                                 color = MaterialTheme.colorScheme.onSurface
                                                             )
                                                             Text(
                                                                 text = if (searchQuery.isBlank())
                                                                     "Logins saved in Petal or imported from Chrome, Firefox, or Bitwarden will appear here."
                                                                 else "Try searching for a different domain, username, or note.",
-                                                                style = MaterialTheme.typography.bodySmall,
+                                                                style = PetalText.pageSubtitle,
                                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                                             )
                                                         }
@@ -569,11 +570,11 @@ fun PetalPasswordsScreen(
                                                                 )
                                                                 Text(
                                                                     "No Ignored Websites",
-                                                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                                                    style = PetalText.emptyState
                                                                 )
                                                                 Text(
                                                                     "Websites where you choose 'Never for this site' when prompted will appear here.",
-                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    style = PetalText.pageSubtitle,
                                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                                 )
                                                             }
@@ -767,8 +768,7 @@ private fun VaultSecurityAuditSection(
                     Column(modifier = Modifier.weight(1f).padding(end = 12.dp)) {
                         Text(
                             text = "Vault Health Score",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.cardTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         val health = if (credentials.isEmpty()) 100 else {
@@ -777,7 +777,7 @@ private fun VaultSecurityAuditSection(
                         }
                         Text(
                             text = "$health% Protected",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = if (health > 80) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -854,7 +854,7 @@ private fun VaultSecurityAuditSection(
                 }
                 Text(
                     text = "Old = password not changed in 180+ days",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = PetalText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -880,13 +880,12 @@ private fun AuditMetricCard(
         ) {
             Text(
                 text = count.toString(),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.value,
                 color = if (isAlert) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall,
+                style = PetalText.badge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 softWrap = false
@@ -988,7 +987,7 @@ private fun PasswordGeneratorSection(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             text = "Length: ${genLength.toInt()} characters",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         PetalSlider(
@@ -1054,8 +1053,7 @@ private fun DomainCredentialGroup(
                     } else {
                         Text(
                             text = displayLabel.take(1).uppercase(),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.badge,
                             color = badgeFg
                         )
                     }
@@ -1064,17 +1062,12 @@ private fun DomainCredentialGroup(
             content = {
                 Text(
                     text = displayLabel,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    style = PetalText.listItemTitle,
                 )
                 Text(
                     text = cred.username.ifBlank { "Password only" },
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.listItemMeta,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
                 )
             },
             trailing = {
@@ -1197,24 +1190,20 @@ private fun PasswordDetailsSheet(
                 ) {
                     Text(
                         text = credential.domain.take(1).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.badge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = PetalAutofillService.cleanDisplayLabel(context, credential.domain),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                     if (credential.originUrl.isNotBlank()) {
                         Text(
                             text = credential.originUrl,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -1238,13 +1227,10 @@ private fun PasswordDetailsSheet(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Username", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Username", style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             credential.username.ifBlank { "(empty)" },
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            style = PetalText.listItemTitle,
                         )
                     }
                     IconButton(
@@ -1273,11 +1259,10 @@ private fun PasswordDetailsSheet(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Password", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Password", style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Text(
                             text = if (isPasswordVisible) credential.password else "••••••••••••",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium
+                            style = PetalText.listItemTitle
                         )
                     }
                     Row {
@@ -1340,8 +1325,8 @@ private fun PasswordDetailsSheet(
                         .then(if (isGlass) Modifier.liquidGlassChrome(fieldShape, enabled = true, sheenIntensity = 0.45f) else Modifier)
                 ) {
                     Column(modifier = Modifier.padding(14.dp)) {
-                        Text("Notes", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(credential.notes, style = MaterialTheme.typography.bodySmall)
+                        Text("Notes", style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(credential.notes, style = PetalText.cardBody)
                     }
                 }
             }
@@ -1393,7 +1378,7 @@ private fun PasswordDetailsSheet(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = "Found in ${state.count} public data breaches! Recommended to update.",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -1414,7 +1399,7 @@ private fun PasswordDetailsSheet(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = "Safe! Not found in known public breaches.",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                                 fontWeight = FontWeight.SemiBold
                             )
@@ -1500,8 +1485,7 @@ private fun PasswordEditSheet(
         ) {
             Text(
                 text = if (initial == null) "Add Password" else "Edit Password",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.dialogTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
@@ -1596,7 +1580,7 @@ private fun PasswordEditSheet(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Generator Preset", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Generator Preset", style = PetalText.sectionHeader)
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -1609,7 +1593,7 @@ private fun PasswordEditSheet(
                                     selectedPreset = preset
                                     com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                                 },
-                                label = { Text(preset.name.lowercase().replaceFirstChar { it.uppercaseChar() }, fontSize = 11.sp) },
+                                label = { Text(preset.name.lowercase().replaceFirstChar { it.uppercaseChar() }, style = PetalText.chip) },
                                 border = null
                             )
                         }
@@ -1617,7 +1601,7 @@ private fun PasswordEditSheet(
 
                     if (selectedPreset == PetalPasswordGenerator.Preset.CUSTOM || selectedPreset == PetalPasswordGenerator.Preset.PIN) {
                         val range = if (selectedPreset == PetalPasswordGenerator.Preset.PIN) 4f..12f else 8f..32f
-                        Text("Length: ${customLength.toInt()} characters", style = MaterialTheme.typography.bodySmall)
+                        Text("Length: ${customLength.toInt()} characters", style = PetalText.rowSubtitle)
                         PetalSlider(
                             value = customLength.coerceIn(range.start, range.endInclusive),
                             onValueChange = { customLength = it },
@@ -1630,7 +1614,7 @@ private fun PasswordEditSheet(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("Include Special Symbols", style = MaterialTheme.typography.bodySmall)
+                                Text("Include Special Symbols", style = PetalText.rowTitle)
                                 IconSwitch(checked = includeSymbols, icon = Icons.Rounded.Check, onCheckedChange = { includeSymbols = it })
                             }
                         }

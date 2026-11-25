@@ -1,6 +1,7 @@
 package com.petal.browser.media.sniffer
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -165,13 +166,12 @@ fun PetalMediaSnifferOverlay(
                 Column(Modifier.weight(1f)) {
                     Text(
                         "Media found",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                        style = PetalText.cardTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         "${media.size} source${if (media.size == 1) "" else "s"} on this page",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -183,8 +183,7 @@ fun PetalMediaSnifferOverlay(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_view),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+                        style = PetalText.button
                     )
                 }
                 IconButton(
@@ -273,14 +272,13 @@ private fun PetalMediaSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.ui_media_sources),
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                                style = PetalText.sheetTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
                                 stringResource(R.string.ui_detected_without_interrupting_playback),
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.pageSubtitle,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -346,19 +344,14 @@ private fun PetalMediaSheet(
                                             ) {
                                                 Text(
                                                     item.quality ?: item.type.name,
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    style = PetalText.listItemTitle,
                                                 )
                                             }
                                             Text(
                                                 item.title ?: item.url
                                                     .substringAfterLast('/').substringBefore('?')
                                                     .ifBlank { "Media stream" },
-                                                maxLines = 2,
-                                                overflow = TextOverflow.Ellipsis,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.listItemMeta,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -369,8 +362,7 @@ private fun PetalMediaSheet(
                                         ) {
                                             Text(
                                                 text = item.type.name + (if (sizeStr != null) " • $sizeStr" else ""),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+                                                style = PetalText.badge,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                                             )

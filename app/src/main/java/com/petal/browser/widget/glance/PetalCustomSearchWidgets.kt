@@ -196,15 +196,34 @@ private fun PetalWidgetCard(
 // ───────────────────────────── building blocks ─────────────────────────────
 
 @Composable
-private fun Hint(cfg: PetalWidgetConfig, color: Int, modifier: GlanceModifier) {
+private fun Hint(cfg: PetalWidgetConfig, plan: PetalLayoutPlan, color: Int, modifier: GlanceModifier) {
     val context = LocalContext.current
     val text = cfg.hint.trim().ifEmpty { context.getString(cfg.hintRes()) }
-    Text(
+    val bmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+        context = context,
         text = text,
-        maxLines = 1,
-        modifier = modifier,
-        style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = provider(color))
+        textSizeSp = 15f,
+        colorInt = color,
+        weight = 500,
+        maxWidthDp = plan.hintWidthDp
     )
+    if (bmp != null) {
+        val density = context.resources.displayMetrics.density.coerceAtLeast(1f)
+        Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+            Image(
+                provider = ImageProvider(bmp),
+                contentDescription = text,
+                modifier = GlanceModifier.size((bmp.width / density).dp, (bmp.height / density).dp)
+            )
+        }
+    } else {
+        Text(
+            text = text,
+            maxLines = 1,
+            modifier = modifier,
+            style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Medium, color = provider(color))
+        )
+    }
 }
 
 /** The cookie "P" badge. The whole [PetalLayoutPlan.badgeSize] box is the touch target. */
@@ -294,11 +313,29 @@ private fun CookieTile(
         }
         if (plan.showTileLabels) {
             Spacer(modifier = GlanceModifier.height(2.dp))
-            Text(
+            val labelBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+                context = context,
                 text = label,
-                maxLines = 1,
-                style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = provider(labelColor))
+                textSizeSp = 11f,
+                colorInt = labelColor,
+                weight = 500,
+                align = android.graphics.Paint.Align.CENTER,
+                maxWidthDp = plan.tileWidthDp
             )
+            if (labelBmp != null) {
+                val density = context.resources.displayMetrics.density.coerceAtLeast(1f)
+                Image(
+                    provider = ImageProvider(labelBmp),
+                    contentDescription = label,
+                    modifier = GlanceModifier.size((labelBmp.width / density).dp, (labelBmp.height / density).dp)
+                )
+            } else {
+                Text(
+                    text = label,
+                    maxLines = 1,
+                    style = TextStyle(fontSize = 11.sp, fontWeight = FontWeight.Medium, color = provider(labelColor))
+                )
+            }
         }
     }
 }
@@ -373,7 +410,7 @@ private fun SearchRow(
                 .padding(start = if (plan.showBadge) 10.dp else 14.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Hint(cfg, hintColor, GlanceModifier)
+            Hint(cfg, plan, hintColor, GlanceModifier)
         }
         plan.buttons.forEach { slot ->
             CookieButton(cfg, slot, pal.barTones[slot.index.coerceIn(0, 3)], plan)
@@ -409,7 +446,7 @@ private fun Petal2Content(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, plan:
                     colorFilter = tint(pal.primary)
                 )
                 Spacer(modifier = GlanceModifier.width(10.dp))
-                Hint(cfg, pal.onFieldMuted, GlanceModifier)
+                Hint(cfg, plan, pal.onFieldMuted, GlanceModifier)
             }
         }
 
@@ -443,7 +480,7 @@ private fun Petal3Content(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, plan:
                 .padding(start = if (plan.showBadge) 14.dp else 16.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Hint(cfg, pal.onBarMuted, GlanceModifier)
+            Hint(cfg, plan, pal.onBarMuted, GlanceModifier)
         }
         plan.buttons.forEach { slot ->
             CookieButton(cfg, slot, pal.barTones[slot.index.coerceIn(0, 3)], plan)

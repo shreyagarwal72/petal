@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.layout.UiExperience
 import com.petal.browser.ui.theme.layout.PetalLayoutState
 import com.petal.browser.ui.theme.layout.PetalLayoutSettings
@@ -274,13 +275,12 @@ fun AppearanceMotionPage(
                         ) {
                             Text(
                                 stringResource(R.string.ui_motion_blur_amount),
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.sectionHeader,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Text(
                                 String.format(java.util.Locale.getDefault(), "%.1fx", motionBlurScale),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.value,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -327,7 +327,7 @@ fun AppearanceMotionPage(
                     ) {
                         Text(
                             text = stringResource(R.string.ui_shape_change_mode),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
@@ -355,12 +355,12 @@ fun AppearanceMotionPage(
                                 ) {
                                     Text(
                                         text = stringResource(R.string.ui_auto_change_interval),
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.sectionHeader,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
                                         text = stringResource(R.string.ui_min, bgShapeRotationMin),
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.value,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }

@@ -191,7 +191,7 @@ object TabThumbnailCache {
     @Synchronized
     fun put(tabId: String?, bitmap: Bitmap?, isPrivate: Boolean, allowUniform: Boolean): Boolean {
         if (isBlank(tabId) || bitmap == null || bitmap.isRecycled) return false
-        if (if (allowUniform) isTransparentBitmap(bitmap) else isBlankBitmap(bitmap)) return false
+        if (isNearUniformOrDarkBitmap(bitmap, allowUniform)) return false
         val snapshot = makeSnapshot(bitmap) ?: return false
         if (snapshot.isRecycled) return false
         val cache = if (isPrivate) privateMemoryCache else regularMemoryCache
@@ -225,33 +225,79 @@ object TabThumbnailCache {
     }
 
     @JvmStatic
-    fun isBlankBitmap(bitmap: Bitmap?): Boolean {
+    fun isBlankBitmap(bitmap: Bitmap?): Boolean = isNearUniformOrDarkBitmap(bitmap, allowUniform = false)
+
+    /**
+     * Rejects transparent frames, nearly-black dead surfaces, and near-uniform blank frames so an
+     * incomplete render never replaces the previous good thumbnail in RAM or on disk.
+     */
+    @JvmStatic
+    fun isNearUniformOrDarkBitmap(bitmap: Bitmap?, allowUniform: Boolean): Boolean {
         if (bitmap == null || bitmap.isRecycled) return true
         val width = bitmap.width
         val height = bitmap.height
         if (width <= 0 || height <= 0) return true
-        val stepsX = Math.min(width, 48)
-        val stepsY = Math.min(height, 48)
-        try {
-            var first = 0
-            var initialized = false
+        val stepsX = Math.min(width, 16)
+        val stepsY = Math.min(height, 24)
+        return try {
+            val samples = IntArray(stepsX * stepsY)
+            var idx = 0
             for (yi in 0 until stepsY) {
                 val y = Math.min(height - 1, ((yi + 0.5f) * height / stepsY).toInt())
                 for (xi in 0 until stepsX) {
                     val x = Math.min(width - 1, ((xi + 0.5f) * width / stepsX).toInt())
-                    val pixel = bitmap.getPixel(x, y)
-                    if (!initialized) {
-                        first = pixel
-                        initialized = true
-                    } else if (pixel != first) {
-                        return false
-                    }
+                    samples[idx++] = bitmap.getPixel(x, y)
                 }
             }
-            return true
+            isNearUniformOrDarkSamples(samples, allowUniform)
         } catch (_: Throwable) {
-            return false
+            false
         }
+    }
+
+    @JvmStatic
+    internal fun isNearUniformOrDarkSamples(samples: IntArray, allowUniform: Boolean): Boolean {
+        if (samples.isEmpty()) return true
+        var baseColor = 0
+        var hasOpaque = false
+        var nearBlackCount = 0
+        var minR = 255; var maxR = 0
+        var minG = 255; var maxG = 0
+        var minB = 255; var maxB = 0
+        var differing = 0
+
+        for (c in samples) {
+            val a = c ushr 24
+            if (a != 0) {
+                if (!hasOpaque) {
+                    baseColor = c
+                    hasOpaque = true
+                }
+            }
+            val r = (c shr 16) and 0xFF
+            val g = (c shr 8) and 0xFF
+            val b = c and 0xFF
+            if (r < minR) minR = r; if (r > maxR) maxR = r
+            if (g < minG) minG = g; if (g > maxG) maxG = g
+            if (b < minB) minB = b; if (b > maxB) maxB = b
+            if (r < 16 && g < 16 && b < 16) nearBlackCount++
+
+            if (hasOpaque) {
+                val br = (baseColor shr 16) and 0xFF
+                val bg = (baseColor shr 8) and 0xFF
+                val bb = baseColor and 0xFF
+                if (kotlin.math.abs(r - br) > 12 || kotlin.math.abs(g - bg) > 12 || kotlin.math.abs(b - bb) > 12) {
+                    differing++
+                }
+            }
+        }
+        if (!hasOpaque) return true
+        val maxSpread = maxOf(maxR - minR, maxG - minG, maxB - minB)
+        val isDarkDeadFrame = nearBlackCount * 100 >= samples.size * 96 && maxSpread < 16
+        if (isDarkDeadFrame) return true
+        if (allowUniform) return false
+        val minDiffSamples = (samples.size * 2) / 100
+        return maxSpread < 16 || differing <= minDiffSamples
     }
 
     @JvmStatic
@@ -455,7 +501,10 @@ object TabThumbnailCache {
             if (width <= 0 || height <= 0) return null
             val cropHeight = Math.min(height, (width * MAX_PREVIEW_ASPECT).roundToInt())
             val scale = Math.min(1f, MAX_PREVIEW_WIDTH / width.toFloat())
-            val config = from.config ?: Bitmap.Config.ARGB_8888
+            val config = when (from.config) {
+                null, Bitmap.Config.RGB_565 -> Bitmap.Config.ARGB_8888
+                else -> from.config!!
+            }
             if (scale >= 1f && cropHeight == height) {
                 return from.copy(config, false)
             }

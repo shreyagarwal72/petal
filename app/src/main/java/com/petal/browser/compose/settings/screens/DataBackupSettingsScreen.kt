@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import com.petal.browser.ui.components.PetalSpring
 import com.petal.browser.ui.components.scrollMotionBlur
 
@@ -33,7 +35,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.sp
 import com.petal.browser.ui.components.petalTouchFeedback
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalHeroCard
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.unit.PetalBackupManager
@@ -165,7 +166,7 @@ fun DataBackupSettingsScreen(
             title = {
                 Text(
                     text = stringResource(R.string.ui_backup_options_json),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             },
@@ -182,8 +183,7 @@ fun DataBackupSettingsScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.ui_data_to_include),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.primary
                         )
                         TextButton(
@@ -200,8 +200,7 @@ fun DataBackupSettingsScreen(
                         ) {
                             Text(
                                 text = stringResource(if (allSelected) R.string.ui_deselect_all else R.string.ui_select_all),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
+                                style = PetalText.button
                             )
                         }
                     }
@@ -298,10 +297,7 @@ fun DataBackupSettingsScreen(
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 stringResource(R.string.ui_export_passwords),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                style = PetalText.rowTitle
                             )
                         }
                         FilledTonalButton(
@@ -320,10 +316,7 @@ fun DataBackupSettingsScreen(
                             Spacer(Modifier.width(6.dp))
                             Text(
                                 stringResource(R.string.ui_custom_folder),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                style = PetalText.rowTitle
                             )
                         }
                     }
@@ -350,7 +343,7 @@ fun DataBackupSettingsScreen(
                     Spacer(Modifier.width(6.dp))
                     Text(
                         stringResource(R.string.ui_download),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.button
                     )
                 }
             },
@@ -362,7 +355,7 @@ fun DataBackupSettingsScreen(
                 ) {
                     Text(
                         stringResource(R.string.ui_cancel),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                        style = PetalText.button
                     )
                 }
             }
@@ -395,7 +388,7 @@ fun DataBackupSettingsScreen(
             title = {
                 Text(
                     text = stringResource(R.string.ui_restore_options_json),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             },
@@ -412,8 +405,7 @@ fun DataBackupSettingsScreen(
                     ) {
                         Text(
                             text = stringResource(R.string.ui_data_to_restore),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.secondary
                         )
                         TextButton(
@@ -430,8 +422,7 @@ fun DataBackupSettingsScreen(
                         ) {
                             Text(
                                 text = stringResource(if (allRestoreSelected) R.string.ui_deselect_all else R.string.ui_select_all),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
+                                style = PetalText.button
                             )
                         }
                     }
@@ -519,7 +510,7 @@ fun DataBackupSettingsScreen(
                     Spacer(Modifier.width(6.dp))
                     Text(
                         stringResource(R.string.ui_choose_backup_file),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.button
                     )
                 }
             },
@@ -531,7 +522,7 @@ fun DataBackupSettingsScreen(
                 ) {
                     Text(
                         stringResource(R.string.ui_cancel),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                        style = PetalText.button
                     )
                 }
             }
@@ -547,7 +538,7 @@ fun DataBackupSettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         "Choose a password to protect the file. You will need the same password to import it. Petal cannot recover it.",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.dialogBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     OutlinedTextField(
@@ -603,7 +594,7 @@ fun DataBackupSettingsScreen(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "data_storage_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "data_storage_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,
@@ -631,7 +622,7 @@ fun DataBackupSettingsScreen(
                 ) {
                     Text(
                         stringResource(R.string.ui_export_backups_directly_to_downloads),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )
@@ -768,8 +759,7 @@ private fun BackupOptionRow(
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 14.sp,
+                style = PetalText.rowTitle.copy(
                     fontWeight = if (checked) FontWeight.SemiBold else FontWeight.Normal
                 ),
                 color = MaterialTheme.colorScheme.onSurface

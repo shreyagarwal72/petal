@@ -1,6 +1,7 @@
 package com.petal.browser.ui.glass
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.infiniteRepeatable
@@ -122,7 +123,7 @@ fun PetalGlassLab(
                 .padding(horizontal = 18.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            Text("Liquid Glass", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 18.sp)
+            Text("Liquid Glass", style = PetalText.cardTitle, color = Color.White)
             Text(
                 "Slide a setting below and watch this panel, the lens and the tabs change.",
                 color = Color.White.copy(alpha = 0.82f),

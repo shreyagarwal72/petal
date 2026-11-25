@@ -47,10 +47,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.R
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -214,8 +214,7 @@ fun PetalSearchOverlay(
                         Icon(Icons.Rounded.Search, null, tint = MaterialTheme.colorScheme.primary)
                         Text(
                             text = stringResource(R.string.ui_search_show_results, resultCount),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.primary,
                         )
                     }
@@ -227,10 +226,10 @@ fun PetalSearchOverlay(
                     ) {
                         Text(
                             text = stringResource(R.string.ui_search_recent),
-                            style = MaterialTheme.typography.titleSmall,
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        TextButton(onClick = onClearRecents) { Text(stringResource(R.string.ui_search_clear_recents)) }
+                        TextButton(onClick = onClearRecents) { Text(stringResource(R.string.ui_search_clear_recents), style = PetalText.button) }
                     }
                     LazyColumn(modifier = Modifier.fillMaxSize()) {
                         items(recents, key = { it }) { recent ->
@@ -245,9 +244,7 @@ fun PetalSearchOverlay(
                                 Icon(Icons.Rounded.History, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(22.dp))
                                 Text(
                                     text = recent,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
+                                    style = PetalText.listItemTitle,
                                     modifier = Modifier.weight(1f).padding(vertical = 14.dp),
                                 )
                                 IconButton(onClick = { onRemoveRecent(recent) }) {

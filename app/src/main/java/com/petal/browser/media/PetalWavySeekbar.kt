@@ -17,6 +17,7 @@
 package com.petal.browser.media
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -455,8 +456,7 @@ fun PetalSeekbarWithTimers(
                     Text(
                         text = formatTime(userPositionSeconds),
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.ExtraBold),
-                        fontFamily = FontFamily.Monospace,
+                        style = PetalText.badge.copy(fontFamily = FontFamily.Monospace),
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                     )
                 }
@@ -623,8 +623,7 @@ fun PetalVideoTimer(
         color = Color.White,
         textAlign = TextAlign.Center,
         fontFamily = FontFamily.Monospace,
-        fontWeight = FontWeight.SemiBold,
-        style = MaterialTheme.typography.labelMedium,
+        style = PetalText.caption,
         modifier = modifier
             .fillMaxHeight()
             .clickable(

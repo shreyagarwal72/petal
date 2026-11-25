@@ -99,9 +99,20 @@ object BarCollapseState {
         private set
 
     /**
-     * Kept for callers querying collapsed layout intent. Under dynamic-toolbar mode, Gecko's
-     * static padding does not change on collapse/expand flips; only translation and
-     * vertical clipping animate.
+     * Fallback preference: when true, restores the old padding-based viewport resize path instead of
+     * GeckoView's dynamic toolbar + vertical clipping API. Kept behind a hidden fallback pref until
+     * fixed-position bottom elements (e.g. YouTube bottom nav) are verified on device.
+     */
+    const val PREF_LEGACY_PADDING_VIEWPORT = "sp_legacy_padding_viewport"
+
+    @Volatile
+    @JvmField
+    var legacyPaddingViewport: Boolean = false
+
+    /**
+     * True while the web page is laid out for MINIMIZED bars (edge to edge) in the legacy
+     * padding-based viewport mode. Under dynamic-toolbar mode, Gecko's static padding does not
+     * change on collapse/expand flips; only translation and vertical clipping animate.
      */
     var viewportCollapsed by mutableStateOf(false)
         private set

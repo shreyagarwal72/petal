@@ -37,6 +37,7 @@ import com.petal.browser.ui.components.rememberAnimationActive
 import com.petal.browser.ui.components.rememberPullRefreshTimeline
 import com.petal.browser.ui.components.scaledMs
 import com.petal.browser.ui.theme.layout.PetalPullRefreshStyle
+import com.petal.browser.ui.theme.PetalText
 import kotlinx.coroutines.delay
 
 /** Previews must not buzz the phone every loop. */
@@ -150,7 +151,7 @@ fun PullRefreshStylePreview(
             )
             Text(
                 text = "Drag to try",
-                style = MaterialTheme.typography.labelSmall,
+                style = PetalText.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .align(Alignment.BottomEnd)

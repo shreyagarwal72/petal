@@ -25,6 +25,7 @@
 package com.petal.browser.compose.downloads
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.Context
@@ -199,16 +200,13 @@ object PetalImageViewerBridge {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName  = sp.getString("sp_app_font",    "GS_FLEX")       ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT")    ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id",  com.petal.browser.ui.theme.defaultPaletteId)
                     ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled     = sp.getBoolean("sp_amoled", false)
 
-                val appFont = remember(fontName) {
-                    com.petal.browser.ui.theme.AppFont.fromName(fontName)
-                }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) }
                     catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
@@ -217,7 +215,7 @@ object PetalImageViewerBridge {
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled    = isAmoled,
-                    appFont      = appFont,
+                    fontState    = fontState,
                     colorStyle   = colorStyle,
                     paletteId    = paletteId,
                 ) {
@@ -718,9 +716,7 @@ private fun ZoomableImagePage(
                         Text(
                             text     = entry.label,
                             color    = Color.White.copy(alpha = 0.5f),
-                            style    = MaterialTheme.typography.bodySmall,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
+                            style    = PetalText.caption,
                             modifier = Modifier.padding(horizontal = 32.dp),
                         )
                     }
@@ -739,7 +735,7 @@ private fun ZoomableImagePage(
                             Icon(Icons.Rounded.BrokenImage, contentDescription = null)
                         }
                         Spacer(Modifier.height(8.dp))
-                        Text(stringResource(R.string.ui_failed_to_load_image), color = Color.White.copy(alpha = 0.5f), style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.ui_failed_to_load_image), color = Color.White.copy(alpha = 0.5f), style = PetalText.caption)
                     }
                 }
             },
@@ -830,7 +826,7 @@ private fun ImageViewerTopBar(
                     Text(
                         text = fileName,
                         color = MaterialTheme.colorScheme.onSurface,
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                        style = PetalText.sheetTitle,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
@@ -846,7 +842,7 @@ private fun ImageViewerTopBar(
                             Text(
                                 text = "${currentIndex + 1} / $total",
                                 color = MaterialTheme.colorScheme.primary,
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                style = PetalText.badge,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )
                         }
@@ -1099,7 +1095,7 @@ private fun ExpressivePillActionChip(
             Text(
                 text = label,
                 color = contentColor,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                style = PetalText.chip
             )
         }
     }
@@ -1226,7 +1222,7 @@ private fun ImageInfoBottomSheet(
                 )
                 Text(
                     text = stringResource(R.string.ui_image_info),
-                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.sheetTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
             }
@@ -1268,17 +1264,15 @@ private fun InfoCardRow(label: String, value: String) {
     ) {
         Text(
             text  = label,
-            style = MaterialTheme.typography.labelSmall,
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
         )
         Spacer(Modifier.height(3.dp))
         Text(
             text     = value,
-            style    = MaterialTheme.typography.bodyMedium,
+            style    = PetalText.listItemTitle,
             color    = MaterialTheme.colorScheme.onSurface,
-            maxLines = 4,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }

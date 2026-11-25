@@ -2,6 +2,11 @@ package com.petal.browser.data.repository
 
 import com.petal.browser.ui.theme.AppFont
 import com.petal.browser.ui.theme.ColorStyle
+import com.petal.browser.ui.theme.CustomFontSettings
+import com.petal.browser.ui.theme.FontAccentMode
+import com.petal.browser.ui.theme.FontAxes
+import com.petal.browser.ui.theme.FontState
+import com.petal.browser.ui.theme.FontTier
 import com.petal.browser.ui.theme.GSFlexPreset
 import com.petal.browser.ui.theme.ThemeConfig
 import kotlinx.coroutines.flow.Flow
@@ -12,12 +17,14 @@ import kotlinx.coroutines.flow.Flow
  */
 interface SettingsRepository {
     // Appearance & Theming
+    val fontState: Flow<FontState>
     val appFont: Flow<AppFont>
-    val fontWidth: Flow<Float>
-    val fontWeight: Flow<Float>
-    val fontRoundness: Flow<Float>
     val gsFlexPreset: Flow<GSFlexPreset>
     val gsFlexSettings: Flow<com.petal.browser.ui.theme.GSFlexSettings>
+    val nunitoWeight: Flow<Int>
+    val customFontSettings: Flow<CustomFontSettings>
+    val fontAccentMode: Flow<FontAccentMode>
+    val readerFollowsAppFont: Flow<Boolean>
     val colorStyle: Flow<ColorStyle>
     val paletteId: Flow<String>
     val dynamicColor: Flow<Boolean>
@@ -143,14 +150,6 @@ interface SettingsRepository {
     val postDownloadActionsJson: Flow<String>
     val offerClipboardImport: Flow<Boolean>
 
-    // Petal NowBar & Live Actions Settings
-    val islandMode: Flow<String>
-    val islandAnimationStyle: Flow<String>
-    val islandAnimationSpeed: Flow<String>
-    val islandAnimationBounce: Flow<String>
-    val islandWavyProgress: Flow<Boolean>
-    val islandOverlay: Flow<Boolean>
-
     // Apple Duo (BETA) Animation
     val appleDuoEnabled: Flow<Boolean>
     val appleDuoWebsites: Flow<Boolean>
@@ -163,11 +162,18 @@ interface SettingsRepository {
 
     // Setters
     suspend fun setAppFont(font: AppFont)
-    suspend fun setFontWidth(width: Float)
-    suspend fun setFontWeight(weight: Float)
-    suspend fun setFontRoundness(roundness: Float)
     suspend fun setGsFlexPreset(preset: GSFlexPreset)
     suspend fun setGsFlexSettings(settings: com.petal.browser.ui.theme.GSFlexSettings)
+    suspend fun setGsFlexAxis(tier: FontTier, axis: FontAxes.Axis, value: Float)
+    suspend fun setAllGsFlexAxes(axis: FontAxes.Axis, value: Float)
+    suspend fun resetGsFlexToPreset(preset: GSFlexPreset)
+    suspend fun setNunitoWeight(weight: Int)
+    suspend fun setCustomFontAxis(tier: FontTier, axis: FontAxes.Axis, value: Float)
+    suspend fun setAllCustomFontAxes(axis: FontAxes.Axis, value: Float)
+    suspend fun setCustomFontSettings(settings: CustomFontSettings)
+    suspend fun setFontAccentMode(mode: FontAccentMode)
+    suspend fun setReaderFollowsAppFont(enabled: Boolean)
+    suspend fun resetAllFontSettings()
     suspend fun setColorStyle(style: ColorStyle)
     suspend fun setPaletteId(id: String)
     suspend fun setDynamicColor(enabled: Boolean)
@@ -286,13 +292,6 @@ interface SettingsRepository {
     suspend fun setDeleteDownloadFile(enabled: Boolean)
     suspend fun setAutoPreviewDownloadedImages(enabled: Boolean)
     suspend fun setLiveUpdates(enabled: Boolean)
-
-    suspend fun setIslandMode(mode: String)
-    suspend fun setIslandAnimationStyle(style: String)
-    suspend fun setIslandAnimationSpeed(speed: String)
-    suspend fun setIslandAnimationBounce(bounce: String)
-    suspend fun setIslandWavyProgress(enabled: Boolean)
-    suspend fun setIslandOverlay(enabled: Boolean)
 
     suspend fun setAppleDuoEnabled(enabled: Boolean)
     suspend fun setAppleDuoWebsites(enabled: Boolean)

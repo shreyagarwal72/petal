@@ -58,18 +58,13 @@ object PetalAiResearchBridge {
 
                 setContent {
                     val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                    val fontState = com.petal.browser.ui.theme.rememberFontState()
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                     val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                     val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                     val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                    val appFont = AppFont.fromName(fontName)
                     val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
-
-                    val fontWidthVal = sp.getFloat("sp_font_width", 100f)
-                    val fontWeightVal = sp.getInt("sp_font_weight", 400)
-                    val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
 
                     var isVisible by remember { mutableStateOf(true) }
                     val wallpaper = rememberPetalGlassWallpaper()
@@ -81,10 +76,7 @@ object PetalAiResearchBridge {
                         PetalExpressiveTheme(
                             dynamicColor = dynamicColor,
                             useAmoled = isAmoled,
-                            appFont = appFont,
-                            fontWidth = fontWidthVal,
-                            fontWeight = fontWeightVal,
-                            fontRoundness = fontRoundnessVal,
+                            fontState = fontState,
                             colorStyle = colorStyle,
                             paletteId = paletteId
                         ) {
@@ -169,18 +161,13 @@ object PetalAiResearchBridge {
 
                     setContent {
                         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                        val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                         val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                         val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                         val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                        val appFont = AppFont.fromName(fontName)
                         val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
-
-                        val fontWidthVal = sp.getFloat("sp_font_width", 100f)
-                        val fontWeightVal = sp.getInt("sp_font_weight", 400)
-                        val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
 
                         var isVisible by remember { mutableStateOf(true) }
                         val wallpaper = rememberPetalGlassWallpaper()
@@ -192,10 +179,7 @@ object PetalAiResearchBridge {
                             PetalExpressiveTheme(
                                 dynamicColor = dynamicColor,
                                 useAmoled = isAmoled,
-                                appFont = appFont,
-                                fontWidth = fontWidthVal,
-                                fontWeight = fontWeightVal,
-                                fontRoundness = fontRoundnessVal,
+                                fontState = fontState,
                                 colorStyle = colorStyle,
                                 paletteId = paletteId
                             ) {
@@ -254,18 +238,13 @@ object PetalAiResearchBridge {
 
                     setContent {
                         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                        val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                         val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                         val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                         val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                        val appFont = AppFont.fromName(fontName)
                         val colorStyle = try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
-
-                        val fontWidthVal = sp.getFloat("sp_font_width", 100f)
-                        val fontWeightVal = sp.getInt("sp_font_weight", 400)
-                        val fontRoundnessVal = sp.getFloat("sp_font_roundness", 0f)
 
                         var isVisible by remember { mutableStateOf(true) }
                         val wallpaper = rememberPetalGlassWallpaper()
@@ -277,10 +256,7 @@ object PetalAiResearchBridge {
                             PetalExpressiveTheme(
                                 dynamicColor = dynamicColor,
                                 useAmoled = isAmoled,
-                                appFont = appFont,
-                                fontWidth = fontWidthVal,
-                                fontWeight = fontWeightVal,
-                                fontRoundness = fontRoundnessVal,
+                                fontState = fontState,
                                 colorStyle = colorStyle,
                                 paletteId = paletteId
                             ) {

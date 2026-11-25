@@ -42,6 +42,12 @@ class BarScrollDecider(
     @Volatile private var touching = false
     @Volatile private var lastTouchEndMs = 0L
 
+    val isTouching: Boolean
+        get() = touching
+
+    fun isFlingCandidate(): Boolean =
+        touchTrackingAvailable && !touching && lastTouchEndMs > 0L && (nowMs() - lastTouchEndMs) < FLING_WINDOW_MS
+
     /** Set once a touch listener is installed. Without one every offset change is trusted. */
     @Volatile var touchTrackingAvailable = false
 
@@ -59,6 +65,9 @@ class BarScrollDecider(
     }
 
     fun isTouching(): Boolean = touching
+
+    fun isFlingCandidate(): Boolean =
+        !touching && touchTrackingAvailable && (nowMs() - lastTouchEndMs < FLING_WINDOW_MS)
 
     /** Tab switch, navigation or a new page: the next offset only rebases. */
     fun reset() {

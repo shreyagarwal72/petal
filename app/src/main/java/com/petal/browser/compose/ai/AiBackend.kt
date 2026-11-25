@@ -123,6 +123,10 @@ sealed class AiBackendException(
         val errorBody: String? = null,
         message: String = "AI client error (HTTP $code)."
     ) : AiBackendException(message)
+
+    class VisionUnsupportedException(
+        message: String = "This message includes an image, which needs a vision-capable model (Gemini, or a Custom endpoint model that supports images)."
+    ) : AiBackendException(message)
 }
 
 /**

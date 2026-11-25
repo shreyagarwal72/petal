@@ -33,7 +33,15 @@ object PetalAdBlockEngine {
     private val totalBlockedCount = java.util.concurrent.atomic.AtomicLong(0)
     private val _trackerRevision = MutableStateFlow(0L)
     val trackerRevision: StateFlow<Long> = _trackerRevision.asStateFlow()
+    private val _stateVersion = MutableStateFlow(0L)
+    @get:JvmStatic
+    val stateVersion: StateFlow<Long> = _stateVersion.asStateFlow()
     @Volatile private var isInitialized = false
+
+    private fun notifyStateChanged() {
+        _stateVersion.value = _stateVersion.value + 1L
+        _trackerRevision.value = _trackerRevision.value + 1L
+    }
 
     @JvmStatic
     fun ensureInitialized(context: Context) {
@@ -85,6 +93,7 @@ object PetalAdBlockEngine {
         try {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
         } catch (_: Throwable) {}
+        notifyStateChanged()
     }
 
     @JvmStatic
@@ -106,6 +115,7 @@ object PetalAdBlockEngine {
         } else {
             sp.edit().putString("sp_adblock_domain_mode_$cleanDomain", mode.id).apply()
         }
+        notifyStateChanged()
     }
 
     @JvmStatic
@@ -153,6 +163,7 @@ object PetalAdBlockEngine {
 
         val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
         sp.edit().putStringSet("sp_adblock_whitelisted_domains", whitelistedDomains.toSet()).apply()
+        notifyStateChanged()
     }
 
     @JvmStatic
@@ -167,6 +178,7 @@ object PetalAdBlockEngine {
 
         val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
         sp.edit().putStringSet("sp_adblock_whitelisted_domains", whitelistedDomains.toSet()).apply()
+        notifyStateChanged()
     }
 
     @JvmStatic
@@ -203,7 +215,7 @@ object PetalAdBlockEngine {
                 targetMap.computeIfAbsent(cleanHost) { java.util.concurrent.atomic.AtomicInteger(0) }.incrementAndGet()
             }
         }
-        _trackerRevision.value = _trackerRevision.value + 1L
+        notifyStateChanged()
     }
 
     @JvmStatic

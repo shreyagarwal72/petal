@@ -6,8 +6,7 @@ import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.Dp
-import com.petal.browser.ui.theme.ExpressiveButtonShape
-import kotlinx.coroutines.delay
+import com.petal.browser.ui.theme.GhostishSearchShape
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,8 +14,10 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.R
 import com.petal.browser.ui.glass.TabWeights
 import com.petal.browser.ui.glass.bouncyClickable
@@ -96,6 +98,8 @@ internal fun PetalPixelNavPill(
     onHistoryClick: () -> Unit = {},
     onBookmarksClick: () -> Unit = {},
     includeAi: Boolean = true,
+    enabled: Boolean = true,
+    showLabels: Boolean = true,
 ) {
     val scheme = MaterialTheme.colorScheme
     val PixelNavOrder = if (includeAi) PixelNavOrderWithAi else PixelNavOrderNoAi
@@ -113,31 +117,35 @@ internal fun PetalPixelNavPill(
     // Read through updated state so the long-lived pointerInput never calls a stale lambda.
     val currentSwipeLeft by androidx.compose.runtime.rememberUpdatedState(onSwipeTabLeft)
     val currentSwipeRight by androidx.compose.runtime.rememberUpdatedState(onSwipeTabRight)
+    val currentEnabled by androidx.compose.runtime.rememberUpdatedState(enabled)
 
     Surface(
         shape = RoundedCornerShape(32.dp),
         color = scheme.surfaceContainerHigh,
         contentColor = scheme.onSurface,
-        shadowElevation = 6.dp,
+        tonalElevation = 3.dp,
+        shadowElevation = 1.dp,
         modifier = modifier
             .height(64.dp)
             .graphicsLayer { translationX = dragOffsetPx }
             .pointerInput(Unit) {
                 detectHorizontalDragGestures(
-                    onDragStart = { isDragging = true },
+                    onDragStart = { if (currentEnabled) isDragging = true },
                     onDragEnd = {
+                        if (currentEnabled && isDragging) {
+                            // 90dp like AddressPill, so the threshold is the same distance on every density.
+                            val threshold = 90.dp.toPx()
+                            if (dragAccumulator > threshold) currentSwipeLeft()
+                            else if (dragAccumulator < -threshold) currentSwipeRight()
+                        }
                         isDragging = false
-                        // 90dp like AddressPill, so the threshold is the same distance on every density.
-                        val threshold = 90.dp.toPx()
-                        if (dragAccumulator > threshold) currentSwipeLeft()
-                        else if (dragAccumulator < -threshold) currentSwipeRight()
                         dragAccumulator = 0f
                     },
                     onDragCancel = {
                         isDragging = false
                         dragAccumulator = 0f
                     },
-                    onHorizontalDrag = { _, dragAmount -> dragAccumulator += dragAmount }
+                    onHorizontalDrag = { _, dragAmount -> if (currentEnabled) dragAccumulator += dragAmount }
                 )
             }
     ) {
@@ -231,6 +239,7 @@ internal fun PetalPixelNavPill(
                             }
                             .bouncyClickable(
                                 scaleDown = 0.90f,
+                                enabled = enabled,
                                 role = androidx.compose.ui.semantics.Role.Tab,
                                 onLongClick = onLongClick,
                                 onClick = onClick
@@ -246,6 +255,7 @@ internal fun PetalPixelNavPill(
                         Row(
                             modifier = Modifier
                                 .widthIn(min = 48.dp) // 48dp touch target; the capsule visual is unchanged
+                                .heightIn(min = 48.dp)
                                 .padding(horizontal = padH, vertical = 12.dp),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
@@ -276,37 +286,38 @@ internal fun PetalPixelNavPill(
                                     )
                                 }
                             }
-                            // Opens by its item's weight: measured at full width, laid out at that
-                            // fraction of it and clipped. Read in layout and draw only.
-                            // Uses BasicText with StepBased auto-sizing so custom variable fonts
-                            // or large display scaling adapt gracefully without truncating labels.
-                            BasicText(
-                                text = label,
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = scheme.onPrimary,
-                                    letterSpacing = 0.sp
-                                ),
-                                maxLines = 1,
-                                softWrap = false,
-                                overflow = TextOverflow.Ellipsis,
-                                autoSize = TextAutoSize.StepBased(
-                                    minFontSize = 9.sp,
-                                    maxFontSize = 13.sp,
-                                    stepSize = 0.5.sp
-                                ),
-                                modifier = Modifier
-                                    .graphicsLayer {
-                                        alpha = weight()
-                                        clip = true
-                                    }
-                                    .layout { measurable, _ ->
-                                        val text = measurable.measure(Constraints(maxWidth = labelMaxPx))
-                                        val gap = 6.dp.roundToPx()
-                                        val width = ((text.width + gap) * weight()).roundToInt()
-                                        layout(width, text.height) { text.placeRelative(gap, 0) }
-                                    }
-                            )
+                            if (showLabels) {
+                                // Opens by its item's weight: measured at full width, laid out at that
+                                // fraction of it and clipped. Read in layout and draw only.
+                                // Uses BasicText with StepBased auto-sizing so custom variable fonts
+                                // or large display scaling adapt gracefully without truncating labels.
+                                BasicText(
+                                    text = label,
+                                    style = PetalText.tabLabel.copy(
+                                        color = scheme.onPrimary,
+                                        letterSpacing = 0.sp
+                                    ),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                    autoSize = TextAutoSize.StepBased(
+                                        minFontSize = 9.sp,
+                                        maxFontSize = 13.sp,
+                                        stepSize = 0.5.sp
+                                    ),
+                                    modifier = Modifier
+                                        .graphicsLayer {
+                                            alpha = weight()
+                                            clip = true
+                                        }
+                                        .layout { measurable, _ ->
+                                            val text = measurable.measure(Constraints(maxWidth = labelMaxPx))
+                                            val gap = 6.dp.roundToPx()
+                                            val width = ((text.width + gap) * weight()).roundToInt()
+                                            layout(width, text.height) { text.placeRelative(gap, 0) }
+                                        }
+                                )
+                            }
                         }
                     }
                 }
@@ -316,29 +327,36 @@ internal fun PetalPixelNavPill(
 }
 
 /**
- * Separate ghost-shaped search button for the floating nav bar when liquid glass is off.
+ * Separate fixed ghost-shaped search button for the floating nav bar when liquid glass is off.
  *
- * Sits to the right of [PetalPixelNavPill] and morphs its corners to [ExpressiveButtonShape].
- * Uses a safe convex shadow hull to prevent HWUI concave shadow ANRs.
+ * Sits to the right of [PetalPixelNavPill] and always uses [GhostishSearchShape] regardless of
+ * the user's button shape preset or expressive-shapes-off setting.
  */
 @Composable
 internal fun PetalGhostSearchButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    size: Dp = 64.dp
+    size: Dp = 64.dp,
+    enabled: Boolean = true
 ) {
     val scheme = MaterialTheme.colorScheme
     val searchLabel = stringResource(R.string.bar_search)
     Surface(
-        shape = ExpressiveButtonShape,
+        shape = GhostishSearchShape,
         color = scheme.primaryContainer,
         contentColor = scheme.onPrimaryContainer,
-        shadowElevation = 0.dp,
+        tonalElevation = 2.dp,
+        shadowElevation = 1.dp,
         modifier = modifier
+            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
             .size(size)
-            .shadow(6.dp, ExpressiveButtonShape.shadowShape, clip = false)
-            .clip(ExpressiveButtonShape)
-            .bouncyClickable(scaleDown = 0.86f, role = androidx.compose.ui.semantics.Role.Button, onClick = onClick)
+            .clip(GhostishSearchShape)
+            .bouncyClickable(
+                scaleDown = 0.86f,
+                enabled = enabled,
+                role = androidx.compose.ui.semantics.Role.Button,
+                onClick = onClick
+            )
             .semantics { contentDescription = searchLabel }
     ) {
         Box(contentAlignment = Alignment.Center) {

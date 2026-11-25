@@ -43,10 +43,9 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.ui.theme.PetalExpressiveTheme
@@ -251,10 +250,7 @@ fun PetalNetworkStatusBanner(
 
                     Text(
                         text = if (isOffline) "You are Offline" else "You are Back Online",
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 13.sp
-                        ),
+                        style = PetalText.badge,
                         color = contentColor
                     )
 

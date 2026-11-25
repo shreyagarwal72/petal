@@ -1,6 +1,7 @@
 package com.petal.browser.account.progress
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
@@ -114,7 +115,7 @@ fun PetalProfileCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "PETAL EXPLORER",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 2.sp),
+                    style = PetalText.sectionHeader.copy(letterSpacing = 2.sp),
                     color = cs.onPrimaryContainer,
                     modifier = Modifier.weight(1f)
                 )
@@ -126,7 +127,7 @@ fun PetalProfileCard(
                     Text(
                         "LV $level",
                         Modifier.padding(horizontal = 12.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.ExtraBold)
+                        style = PetalText.badge
                     )
                 }
             }
@@ -188,7 +189,7 @@ fun PetalProfileCard(
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "${PetalXp.title(level)} • ${fmt(xp)} XP",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        style = PetalText.pageSubtitle,
                         color = cs.onPrimaryContainer.copy(alpha = 0.95f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -222,7 +223,7 @@ fun PetalProfileCard(
             Spacer(Modifier.height(6.dp))
             Text(
                 "${fmt(xp - PetalXp.start(level))} / ${fmt(PetalXp.step(level))} XP to level ${level + 1}",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                style = PetalText.caption,
                 color = cs.onPrimaryContainer.copy(alpha = 0.92f)
             )
             Spacer(Modifier.height(14.dp))
@@ -246,7 +247,7 @@ fun PetalProfileCard(
                             if (showcased.isEmpty()) {
                                 Text(
                                     stringResource(R.string.progress_pin_hint),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                    style = PetalText.caption,
                                     color = cs.onPrimaryContainer.copy(alpha = 0.90f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
@@ -269,7 +270,7 @@ fun PetalProfileCard(
                         }
                         Text(
                             sinceText,
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.badge,
                             color = cs.onPrimaryContainer,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -288,7 +289,7 @@ fun PetalProfileCard(
                             if (showcased.isEmpty()) {
                                 Text(
                                     stringResource(R.string.progress_pin_hint),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                    style = PetalText.caption,
                                     color = cs.onPrimaryContainer.copy(alpha = 0.90f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -312,7 +313,7 @@ fun PetalProfileCard(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 sinceText,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.badge,
                                 color = cs.onPrimaryContainer,
                                 maxLines = 1
                             )
@@ -343,8 +344,8 @@ fun PetalStatTiles(modifier: Modifier = Modifier) {
                             Icon(t.icon, null, Modifier.size(28.dp))
                             Spacer(Modifier.width(12.dp))
                             Column {
-                                Text(fmt(t.value), style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold), maxLines = 1)
-                                Text(t.label, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                                Text(fmt(t.value), style = PetalText.value, maxLines = 1)
+                                Text(t.label, style = PetalText.caption, maxLines = 1)
                             }
                         }
                     }
@@ -371,8 +372,8 @@ fun PetalRewardsCatalogCard(onOpen: () -> Unit, modifier: Modifier = Modifier) {
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("XP Rewards & Unlocks", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-                    Text("$unlockedCount of $total features unlocked", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+                    Text("XP Rewards & Unlocks", style = PetalText.cardTitle)
+                    Text("$unlockedCount of $total features unlocked", style = PetalText.cardBody, color = cs.onSurfaceVariant)
                 }
                 Surface(
                     shape = ExpressiveButtonShape,
@@ -461,7 +462,7 @@ fun PetalRewardsSheet(onDismiss: () -> Unit) {
             val unlockedCount = PetalUnlockable.values().count { PetalProgressStore.isUnlocked(ctx, it) }
             Text(
                 "XP Rewards & Features ($unlockedCount/$total)",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                style = PetalText.sheetTitle
             )
             Spacer(Modifier.height(12.dp))
 
@@ -489,17 +490,16 @@ fun PetalRewardsSheet(onDismiss: () -> Unit) {
                         }
                         Spacer(Modifier.width(12.dp))
                         Column {
-                            Text(focus.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                            Text(focus.title, style = PetalText.cardTitle)
                             Text(
                                 if (isUnlocked) "Unlocked & Active" else "Locked",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.badge,
                                 color = if (isUnlocked) cs.primary else cs.error
                             )
                         }
                     }
                     Spacer(Modifier.height(10.dp))
-                    Text(focus.description, style = MaterialTheme.typography.bodyMedium)
+                    Text(focus.description, style = PetalText.cardBody)
                     Spacer(Modifier.height(12.dp))
                     if (!isUnlocked) {
                         val remaining = PetalProgressStore.getRemainingRequirement(ctx, focus)
@@ -510,7 +510,7 @@ fun PetalRewardsSheet(onDismiss: () -> Unit) {
                         ) {
                             Text(
                                 remaining,
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                style = PetalText.caption,
                                 color = cs.onSurface,
                                 modifier = Modifier.padding(10.dp)
                             )
@@ -550,7 +550,7 @@ fun PetalRewardsSheet(onDismiss: () -> Unit) {
                         Spacer(Modifier.height(4.dp))
                         Text(
                             u.title,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.badge,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center
@@ -575,8 +575,8 @@ fun PetalBadgeCollectionCard(onOpen: () -> Unit, modifier: Modifier = Modifier) 
         Column(Modifier.padding(20.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Badge collection", style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
-                    Text("$got of $total unlocked", style = MaterialTheme.typography.bodyMedium, color = cs.onSurfaceVariant)
+                    Text("Badge collection", style = PetalText.cardTitle)
+                    Text("$got of $total unlocked", style = PetalText.cardBody, color = cs.onSurfaceVariant)
                 }
                 Surface(shape = ExpressiveButtonShape, color = cs.primaryContainer, contentColor = cs.onPrimaryContainer, modifier = Modifier.size(48.dp)) {
                     Box(contentAlignment = Alignment.Center) { Icon(Icons.AutoMirrored.Rounded.ArrowForward, "Open badges") }
@@ -601,14 +601,14 @@ fun PetalBadgesSheet(onDismiss: () -> Unit) {
     PetalSheet(onDismissRequest = onDismiss) {
         Column(Modifier.padding(horizontal = 20.dp).padding(bottom = 24.dp)) {
             val got = PETAL_BADGES.count { PetalProgressStore.isBadgeUnlocked(it.id) }
-            Text("Badges  $got/${PETAL_BADGES.size}", style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+            Text("Badges  $got/${PETAL_BADGES.size}", style = PetalText.sheetTitle)
             Spacer(Modifier.height(12.dp))
             val unlocked = PetalProgressStore.isBadgeUnlocked(focus.id)
             val (cur, goal) = PetalProgressStore.badgeProgress(focus)
             Surface(shape = RoundedCornerShape(28.dp), color = cs.secondaryContainer, contentColor = cs.onSecondaryContainer, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(18.dp)) {
-                    Text(focus.title, style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
-                    Text(focus.hint, style = MaterialTheme.typography.bodyMedium)
+                    Text(focus.title, style = PetalText.cardTitle)
+                    Text(focus.hint, style = PetalText.cardBody)
                     Spacer(Modifier.height(8.dp))
                     if (unlocked) {
                         val pinned = focus.id in PetalProgressStore.showcase
@@ -623,7 +623,7 @@ fun PetalBadgesSheet(onDismiss: () -> Unit) {
                             progress = { (cur.toFloat() / goal.coerceAtLeast(1)).coerceIn(0f, 1f) },
                             modifier = Modifier.fillMaxWidth().height(8.dp).clip(ExpressiveButtonShape)
                         )
-                        Text("${fmt(cur)} / ${fmt(goal)}", style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 4.dp))
+                        Text("${fmt(cur)} / ${fmt(goal)}", style = PetalText.caption, modifier = Modifier.padding(top = 4.dp))
                     }
                 }
             }
@@ -635,7 +635,7 @@ fun PetalBadgesSheet(onDismiss: () -> Unit) {
                 items(PETAL_BADGES, key = { it.id }) { b ->
                     Column(Modifier.bouncyClickable { focus = b }, horizontalAlignment = Alignment.CenterHorizontally) {
                         BadgeChip(b, 64.dp)
-                        Text(b.title, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
+                        Text(b.title, style = PetalText.badge, maxLines = 1, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -668,7 +668,7 @@ fun PetalBadgeUnlockHost() {
 
 /**
  * Expressive 'Fuel the Code' Developer Support Card.
- * Replaces commercial-style ad prompts with an indie developer quest hub inspired by Orion Store.
+ * Replaces commercial-style ad prompts with an indie developer quest hub in Petal Expressive style.
  */
 @Composable
 fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier) {
@@ -735,10 +735,8 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                     ) {
                         Text(
                             text = "Fuel the Code",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.cardTitle,
                             color = cs.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                         Surface(
                             shape = RoundedCornerShape(6.dp),
@@ -746,7 +744,7 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                         ) {
                             Text(
                                 text = "BETA",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.badge,
                                 color = cs.onSecondaryContainer,
                                 maxLines = 1,
                                 softWrap = false,
@@ -757,10 +755,8 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                     Spacer(Modifier.height(2.dp))
                     Text(
                         text = "$rankLabel · In Active Development",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = cs.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 if (consent) {
@@ -787,7 +783,7 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
             if (com.petal.browser.BuildConfig.IS_FDROID_BUILD) {
                 Text(
                     text = "F-Droid Edition: All features, custom fonts, liquid glass shaders, and supporter rewards are completely unlocked and 100% free forever!",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.cardBody,
                     color = cs.onSurfaceVariant
                 )
                 Spacer(Modifier.height(12.dp))
@@ -803,7 +799,7 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
             } else if (!consent) {
                 Text(
                     text = "Petal Browser is built independently without trackers or corporate paywalls. By watching optional sponsor videos, you directly support open-source development and earn cosmetic rewards like Liquid Glass.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.cardBody,
                     color = cs.onSurfaceVariant
                 )
                 Spacer(Modifier.height(12.dp))
@@ -846,16 +842,14 @@ fun PetalSupportCard(onMessage: (String) -> Unit, modifier: Modifier = Modifier)
                     Text(
                         text = nextMilestone?.let { "$adsWatched fueled · ${it.level - adsWatched} more to ${it.title}" }
                             ?: "$adsWatched fueled · all supporter ranks unlocked",
-                        style = MaterialTheme.typography.labelMedium,
+                        style = PetalText.caption,
                         color = cs.onSurfaceVariant,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f, fill = false)
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Tap to open",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.badge,
                         color = cs.primary,
                         maxLines = 1,
                         softWrap = false
@@ -935,7 +929,7 @@ fun PetalXpBackupRestoreDialog(
                 if (mode == null) {
                     Text(
                         "Safely export or restore your XP, levels, unlocked features, badges, and quest stats using AES-256-GCM encryption with your own dedicated password.",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = PetalText.dialogBody
                     )
                     Spacer(Modifier.height(4.dp))
                     PetalLiquidButton(
@@ -957,7 +951,7 @@ fun PetalXpBackupRestoreDialog(
                         Text("Restore from .pt Backup")
                     }
                 } else if (mode == "export") {
-                    Text("Enter a dedicated password to encrypt your .pt backup file:", style = MaterialTheme.typography.bodyMedium)
+                    Text("Enter a dedicated password to encrypt your .pt backup file:", style = PetalText.dialogBody)
                     com.petal.browser.ui.kit.TextField(
                         value = password,
                         onValueChange = { password = it; errorMessage = null },
@@ -977,7 +971,7 @@ fun PetalXpBackupRestoreDialog(
     colors = com.petal.browser.ui.containment.petalFilledTextFieldColors()
 )
                 } else if (mode == "restore") {
-                    Text("Enter the password used when this .pt backup was created:", style = MaterialTheme.typography.bodyMedium)
+                    Text("Enter the password used when this .pt backup was created:", style = PetalText.dialogBody)
                     com.petal.browser.ui.kit.TextField(
                         value = password,
                         onValueChange = { password = it; errorMessage = null },
@@ -990,7 +984,7 @@ fun PetalXpBackupRestoreDialog(
                 }
 
                 if (errorMessage != null) {
-                    Text(errorMessage!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(errorMessage!!, color = MaterialTheme.colorScheme.error, style = PetalText.caption)
                 }
             }
         },

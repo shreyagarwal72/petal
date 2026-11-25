@@ -34,9 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.browser.PetalTabHistoryState
 import com.petal.browser.engine.gecko.PetalEngineStore
@@ -67,7 +67,7 @@ fun PetalTabHistorySheet(
         if (history == null || history.entries.isEmpty()) {
             Text(
                 text = "No pages in this tab's history yet",
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.emptyState,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 24.dp, vertical = 24.dp)
             )
@@ -135,15 +135,13 @@ fun PetalTabHistorySheet(
                         Column(modifier = Modifier.weight(1f).padding(horizontal = 12.dp)) {
                             Text(
                                 text = entry.title.ifBlank { entry.uri },
-                                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.listItemTitle,
                                 color = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer
-                                else MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                else MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = entry.uri,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.listItemMeta,
                                 color = if (isCurrent) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                                 else MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,

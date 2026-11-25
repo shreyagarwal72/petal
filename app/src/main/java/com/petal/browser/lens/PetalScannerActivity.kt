@@ -24,6 +24,7 @@ class PetalScannerActivity : ComponentActivity() {
             PetalExpressiveTheme {
                 ScannerHost(
                     onDismiss = { finish() },
+                    wrapPredictive = false,
                     onResultDispatched = { value ->
                         if (value.startsWith("http://", ignoreCase = true) || value.startsWith("https://", ignoreCase = true)) {
                             val intent = Intent(this, MainActivity::class.java).apply {

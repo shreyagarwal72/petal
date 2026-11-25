@@ -36,7 +36,6 @@
             android:text="@string/widget_search_hint"
             android:textColor="#404945"
             android:textSize="15sp"
-            android:fontFamily="sans-serif"
             android:singleLine="true"
             android:ellipsize="end" />
 

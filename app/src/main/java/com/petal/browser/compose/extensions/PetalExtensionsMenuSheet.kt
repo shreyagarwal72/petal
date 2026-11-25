@@ -11,6 +11,7 @@
 package com.petal.browser.compose.extensions
 
 import android.net.Uri
+import com.petal.browser.ui.theme.PetalText
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
@@ -145,7 +146,6 @@ object PetalExtensionsMenuSheet {
                         val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
                         val isSystemDark = androidx.compose.foundation.isSystemInDarkTheme()
                         val themeConfigStr = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
-                        val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                         val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                         val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                         val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
@@ -158,7 +158,7 @@ object PetalExtensionsMenuSheet {
                                 else -> isSystemDark
                             }
                         }
-                        val appFont = remember(fontName) { AppFont.fromName(fontName) }
+                        val fontState = com.petal.browser.ui.theme.rememberFontState()
                         val colorStyle = remember(styleName) {
                             try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                         }
@@ -169,7 +169,7 @@ object PetalExtensionsMenuSheet {
                                 darkTheme = darkTheme,
                                 dynamicColor = dynamicColor,
                                 useAmoled = isAmoled,
-                                appFont = appFont,
+                                fontState = fontState,
                                 colorStyle = colorStyle,
                                 paletteId = paletteId
                             ) {
@@ -394,18 +394,14 @@ private fun ExtensionSheetRow(
         Column(Modifier.weight(1f)) {
             Text(
                 text = displayName,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
+                style = PetalText.rowTitle,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
             if (extension.version.isNotBlank()) {
                 Text(
                     text = "v${extension.version}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
                 )
             }
         }
@@ -420,8 +416,7 @@ private fun ExtensionSheetRow(
             ) {
                 Text(
                     text = badgeText,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.badge,
                     color = badgeFg,
                     maxLines = 1
                 )

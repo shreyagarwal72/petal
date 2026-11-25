@@ -1,6 +1,7 @@
 package com.petal.browser.ui.glass
 
 import androidx.compose.foundation.layout.Arrangement
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -35,7 +36,7 @@ fun GlassEffectsSettings() {
     ) {
         Text(
             text = "Liquid Glass Effects",
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.sectionHeader,
             color = MaterialTheme.colorScheme.onSurface
         )
         Column(

@@ -63,7 +63,9 @@ object BarInsets {
         pillCollapse: Boolean = false,
         pillHeight: Int = 0,
         navBarBottomInset: Int = 0,
-        isImmersive: Boolean = false
+        isImmersive: Boolean = false,
+        isFloatingNav: Boolean = false,
+        isFloatingBottomAddress: Boolean = false
     ): Result {
         if (!reserveBarSpace) return Result(0, 0, 0, 0)
 
@@ -76,23 +78,20 @@ object BarInsets {
         }
         val bottom = when {
             legacyUnderBottom -> 0
+            isBottom && isFloatingBottomAddress -> 0
+            !isBottom && isFloatingNav -> 0
             isBottom -> addressHeight + bottomNavHeight
             else -> bottomNavHeight
         }
 
         // Minimized:
-        // In HIDE mode: the nav and bottom address bar slide away; top address bar leaves statusBarGap.
-        // In PILL mode: the bar morphs into the compact floating pill over the web content.
-        // The page flows edge-to-edge under the floating pill without creating dead window space.
-        val hiddenTop: Int
-        val hiddenBottom: Int
-        if (pillCollapse && pillHeight > 0) {
-            hiddenTop = if (isImmersive) 0 else effectiveStatusBarGap
-            hiddenBottom = 0
+        // In HIDE and PILL modes: the page flows edge-to-edge at the bottom without creating dead window space.
+        val hiddenTop: Int = if (pillCollapse && pillHeight > 0) {
+            if (isImmersive) 0 else effectiveStatusBarGap
         } else {
-            hiddenTop = if (isBottom) (if (isImmersive) 0 else top) else minOf(top, effectiveStatusBarGap)
-            hiddenBottom = maxOf(0, bottom - (if (isBottom) addressHeight else 0) - bottomNavHeight)
+            if (isBottom) (if (isImmersive) 0 else top) else minOf(top, effectiveStatusBarGap)
         }
+        val hiddenBottom = 0
         return Result(top, bottom, hiddenTop, hiddenBottom)
     }
 }

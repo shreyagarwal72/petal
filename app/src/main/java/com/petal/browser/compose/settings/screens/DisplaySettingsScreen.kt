@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.components.scrollMotionBlur
 
 import com.petal.browser.ui.containment.PetalSettingsSection
@@ -29,7 +30,6 @@ import com.petal.browser.accessibility.PetalAccessibilityEngine
 import com.petal.browser.compose.settings.viewmodel.DisplaySettingsViewModel
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalSlider
 import com.petal.browser.ui.components.ScrollFadeRow
 import androidx.compose.ui.res.stringResource
@@ -208,7 +208,7 @@ fun DisplaySettingsScreenContent(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "display_zoom_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "display_zoom_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,
@@ -264,7 +264,7 @@ fun DisplaySettingsScreenContent(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_real_time_frosted_glass_fold),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -309,12 +309,12 @@ fun DisplaySettingsScreenContent(
                                     ) {
                                         Text(
                                             text = stringResource(R.string.ui_manual_tilt_angle),
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            style = PetalText.sectionHeader,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_1f_hinge_s).format(appleDuoManualTilt, if (appleDuoManualTilt >= 0f) "Right" else "Left"),
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.value,
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                     }
@@ -359,7 +359,7 @@ fun DisplaySettingsScreenContent(
                             ) {
                                 Text(
                                     text = stringResource(R.string.ui_physics_shader_tuning),
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sectionHeader,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
 
@@ -375,12 +375,12 @@ fun DisplaySettingsScreenContent(
                                     ) {
                                         Text(
                                             text = stringResource(R.string.ui_eye_distance),
-                                            style = MaterialTheme.typography.labelMedium,
+                                            style = PetalText.sectionHeader,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_0f_mm).format(appleDuoEyeDistance),
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.value,
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                     }
@@ -404,12 +404,12 @@ fun DisplaySettingsScreenContent(
                                     ) {
                                         Text(
                                             text = stringResource(R.string.ui_blur_spread_radius),
-                                            style = MaterialTheme.typography.labelMedium,
+                                            style = PetalText.sectionHeader,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
                                             text = "%.3f".format(appleDuoBlurSpread),
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.value,
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                     }
@@ -433,12 +433,12 @@ fun DisplaySettingsScreenContent(
                                     ) {
                                         Text(
                                             text = stringResource(R.string.ui_glass_frost_darkening),
-                                            style = MaterialTheme.typography.labelMedium,
+                                            style = PetalText.sectionHeader,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                         Text(
                                             text = "%.3f".format(appleDuoDarkening),
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.value,
                                             color = MaterialTheme.colorScheme.primary
                                         )
                                     }
@@ -542,12 +542,12 @@ fun DisplaySettingsScreenContent(
                             ) {
                                 Text(
                                     stringResource(R.string.ui_text_font_scale),
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    style = PetalText.rowTitle,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     "${(fontSizeScale * 100f).toInt()}%",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.value,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -567,7 +567,7 @@ fun DisplaySettingsScreenContent(
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         stringResource(R.string.ui_live_font_preview, (fontSizeScale * 100).toInt()),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.badge,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Spacer(Modifier.height(4.dp))
@@ -596,12 +596,12 @@ fun DisplaySettingsScreenContent(
                             ) {
                                 Text(
                                     stringResource(R.string.ui_default_page_zoom),
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    style = PetalText.rowTitle,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     "${(zoomLevelScale * 100f).toInt()}%",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.value,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -621,7 +621,7 @@ fun DisplaySettingsScreenContent(
                                 Column(modifier = Modifier.padding(12.dp)) {
                                     Text(
                                         stringResource(R.string.ui_live_zoom_preview, (zoomLevelScale * 100).toInt()),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.badge,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Spacer(Modifier.height(6.dp))

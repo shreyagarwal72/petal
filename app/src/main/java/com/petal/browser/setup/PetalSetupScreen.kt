@@ -1,6 +1,7 @@
 package com.petal.browser.setup
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import android.net.Uri
 import android.widget.Toast
@@ -68,7 +69,7 @@ import androidx.preference.PreferenceManager
 import com.petal.browser.R
 import com.petal.browser.account.progress.PetalProgressStore
 import com.petal.browser.browser.PetalAdBlockEngine
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalPageBackground
 import com.petal.browser.ui.components.allSearchEngines
 import com.petal.browser.ui.kit.Button
 import com.petal.browser.ui.kit.FilledTonalButton
@@ -107,7 +108,7 @@ fun PetalSetupFlow(activity: ComponentActivity, onFinished: () -> Unit) {
         )
     }
     var theme by remember { mutableStateOf(initialTheme) }
-    val appFont = remember { AppFont.fromName(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+    val fontState = com.petal.browser.ui.theme.rememberFontState()
     val colorStyle = remember {
         runCatching { ColorStyle.valueOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "") }.getOrDefault(ColorStyle.TONAL_SPOT)
     }
@@ -134,10 +135,7 @@ fun PetalSetupFlow(activity: ComponentActivity, onFinished: () -> Unit) {
         darkTheme = dark,
         dynamicColor = theme.dynamicColor,
         useAmoled = theme.amoled,
-        appFont = appFont,
-        fontWidth = sp.getFloat("sp_font_width", 92f),
-        fontWeight = sp.getInt("sp_font_weight", 750),
-        fontRoundness = sp.getFloat("sp_font_roundness", 100f),
+        fontState = fontState,
         colorStyle = colorStyle,
         paletteId = theme.paletteId
     ) {
@@ -232,7 +230,7 @@ private fun SetupScaffold(
         color = MaterialTheme.colorScheme.background
     ) {
         Box(Modifier.fillMaxSize()) {
-            M3ExpressiveVariableBackground(pageSeed = "petal_setup")
+            com.petal.browser.ui.components.PetalPageBackground(pageKey = "petal_setup")
 
             Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding().imePadding()) {
                 // ── Top: step label, skip, progress ──
@@ -243,8 +241,7 @@ private fun SetupScaffold(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             stringResource(R.string.petal_setup_step_of, stage + 1, titles.size) + "  ·  " + titles[stage],
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if (!isLast) {
@@ -385,7 +382,7 @@ private fun PrimaryAction(label: String, modifier: Modifier = Modifier, onClick:
             contentColor = MaterialTheme.colorScheme.onPrimary
         )
     ) {
-        Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(label, style = PetalText.button, maxLines = 1)
         Spacer(Modifier.width(8.dp))
         Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(20.dp))
     }

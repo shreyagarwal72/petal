@@ -51,7 +51,15 @@ fun rememberGlassBar(source: View?): GlassBar? {
  * rather than leaving its labels over sharp, busy content.
  */
 @Composable
-fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?, pressFx: Boolean = true, progressiveEdge: Int = 0): Modifier {
+fun Modifier.liquidGlass(
+    shape: Shape,
+    tint: Color,
+    bar: GlassBar?,
+    pressFx: Boolean = true,
+    progressiveEdge: Int = 0,
+    scrollSolidFallback: Boolean = false,
+    alphaProvider: (() -> Float)? = null
+): Modifier {
     val context = androidx.compose.ui.platform.LocalContext.current
     // Glass stays on during transitions: swapping to a flat fill while anything animates and back
     // afterwards is what produced the visible "glass not ready" frame. Only low-end devices skip it.
@@ -66,14 +74,25 @@ fun Modifier.liquidGlass(shape: Shape, tint: Color, bar: GlassBar?, pressFx: Boo
             com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") ||
             com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val glassActive = bar != null || sp.getBoolean("sp_liquid_glass_enabled", false) || themeGlass
-    if (!pressFx || !glassActive || !fx.any) return liquidGlassBase(shape, tint, bar, progressiveEdge)
+    if (!pressFx || !glassActive || !fx.any) {
+        return liquidGlassBase(shape, tint, bar, progressiveEdge, scrollSolidFallback, alphaProvider)
+    }
     // Kyant-style interaction: the glass swells under the finger and a light follows it.
     val press = rememberGlassPress(fx)
-    return this.glassPressScale(press).liquidGlassBase(shape, tint, bar, progressiveEdge).glassPressOverlay(press, shape)
+    return this.glassPressScale(press)
+        .liquidGlassBase(shape, tint, bar, progressiveEdge, scrollSolidFallback, alphaProvider)
+        .glassPressOverlay(press, shape)
 }
 
 @Composable
-private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?, progressiveEdge: Int = 0): Modifier {
+private fun Modifier.liquidGlassBase(
+    shape: Shape,
+    tint: Color,
+    bar: GlassBar?,
+    progressiveEdge: Int = 0,
+    scrollSolidFallback: Boolean = false,
+    alphaProvider: (() -> Float)? = null
+): Modifier {
     LocalPetalGlassRevision.current
     val tuning = rememberRefractionTuning()
     val wallpaper = LocalPetalGlassWallpaper.current
@@ -124,6 +143,12 @@ private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?, 
                         endY = 4.dp.toPx()
                     )
                     onDrawBehind {
+                        val layerAlpha = alphaProvider?.invoke() ?: 1f
+                        if (layerAlpha < 0.05f) return@onDrawBehind
+                        if (scrollSolidFallback && GeckoGlassBackend.isScrolling) {
+                            drawOutline(outline, tint)
+                            return@onDrawBehind
+                        }
                         drawOutline(outline, tint.copy(alpha = (fallbackAlpha * opacity).coerceIn(0.15f, 0.85f)))
                         drawRect(specBrush)
                         drawOutline(outline, rimBrush, style = Stroke((1.25.dp * (0.8f + baseEdge * 0.4f)).toPx()))
@@ -160,12 +185,18 @@ private fun Modifier.liquidGlassBase(shape: Shape, tint: Color, bar: GlassBar?, 
         .onGloballyPositioned { bar.coords = it }
         .drawWithCache {
             bar.setShape(size, shape, layoutDirection, this, look)
+            val fallbackOutline = shape.createOutline(size, layoutDirection, this)
             onDrawBehind {
+                val layerAlpha = alphaProvider?.invoke() ?: 1f
+                if (layerAlpha < 0.05f) return@onDrawBehind
+                if (scrollSolidFallback && GeckoGlassBackend.isScrolling) {
+                    drawOutline(fallbackOutline, tint)
+                    return@onDrawBehind
+                }
                 bar.record()
                 drawIntoCanvas { canvas ->
                     if (!bar.drawBar(canvas.nativeCanvas)) {
-                        drawOutline(shape.createOutline(size, layoutDirection, this), tint.copy(alpha = baseTintAlpha))
-                        val fallbackOutline = shape.createOutline(size, layoutDirection, this)
+                        drawOutline(fallbackOutline, tint.copy(alpha = baseTintAlpha))
                         val rimBrush = Brush.linearGradient(
                             listOf(
                                 Color.White.copy(alpha = ((if (dark) 0.55f else 0.85f) * baseEdge).coerceIn(0f, 1f)),
@@ -196,7 +227,8 @@ fun Modifier.glassTile(
     shape: Shape,
     tint: Color,
     bar: GlassBar?,
-    press: GlassPress? = null
+    press: GlassPress? = null,
+    alphaProvider: (() -> Float)? = null
 ): Modifier {
     val density = LocalDensity.current
     val tuning = rememberRefractionTuning()
@@ -226,6 +258,8 @@ fun Modifier.glassTile(
             .onGloballyPositioned { place[0] = it }
             .drawWithCache {
                 onDrawBehind {
+                    val layerAlpha = alphaProvider?.invoke() ?: 1f
+                    if (layerAlpha < 0.05f) return@onDrawBehind
                     val own = place[0]?.takeIf { it.isAttached }?.positionInRoot() ?: return@onDrawBehind
                     val r = target()?.translate(-own) ?: return@onDrawBehind
                     translate(r.left, r.top) {
@@ -249,9 +283,18 @@ fun Modifier.glassTile(
         .onGloballyPositioned { place[0] = it }
         .drawWithCache {
             onDrawBehind {
+                val layerAlpha = alphaProvider?.invoke() ?: 1f
+                if (layerAlpha < 0.05f) return@onDrawBehind
                 val barCoords = bar.coords?.takeIf { it.isAttached } ?: return@onDrawBehind
                 val own = place[0]?.takeIf { it.isAttached } ?: return@onDrawBehind
                 val barInRoot = barCoords.positionInRoot()
+                if (GeckoGlassBackend.isScrolling) {
+                    val rLocal = target()?.translate(-own.positionInRoot()) ?: return@onDrawBehind
+                    translate(rLocal.left, rLocal.top) {
+                        drawOutline(shape.createOutline(rLocal.size, layoutDirection, this), tint.copy(alpha = 0.22f))
+                    }
+                    return@onDrawBehind
+                }
                 val r = target()?.translate(-barInRoot)
 
                 // Kyant's slab interaction: while held the slab swells, its lens deepens, and

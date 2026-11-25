@@ -58,6 +58,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi
+import com.petal.browser.ui.theme.PetalText
 
 /**
  * List of Material 3 Expressive shapes used for password masking.
@@ -271,7 +272,7 @@ fun PetalShapedPasswordInput(
                 ) {
                     Text(
                         text = unlockButtonText,
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.button
                     )
                 }
             }

@@ -76,12 +76,10 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 import androidx.compose.ui.res.stringResource
@@ -268,25 +266,15 @@ fun PetalFloatingStatusCard(
                         ) {
                             Text(
                                 text = data.title,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 15.sp
-                                ),
-                                color = effectiveContentColor,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                style = PetalText.cardTitle,
+                                color = effectiveContentColor
                             )
 
                             if (!data.subtitle.isNullOrBlank()) {
                                 Spacer(Modifier.height(2.dp))
                                 Text(
                                     text = data.subtitle,
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontSize = 12.sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    style = PetalText.cardBody
                                 )
                             }
                         }
@@ -306,9 +294,7 @@ fun PetalFloatingStatusCard(
                             ) {
                                 Text(
                                     text = data.secondaryActionLabel,
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    style = PetalText.button
                                 )
                             }
                             Spacer(Modifier.width(6.dp))
@@ -329,9 +315,7 @@ fun PetalFloatingStatusCard(
                             ) {
                                 Text(
                                     text = data.primaryActionLabel,
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    style = PetalText.button
                                 )
                             }
                             Spacer(Modifier.width(4.dp))

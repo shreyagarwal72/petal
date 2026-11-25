@@ -1,6 +1,7 @@
 package com.petal.browser.compose.tabs
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
@@ -183,9 +184,8 @@ fun PetalWorkspaceCarousel(
 
                     Text(
                         text = workspace.name,
-                        style = MaterialTheme.typography.labelLarge.copy(
+                        style = PetalText.chip.copy(
                             fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Medium,
-                            fontSize = 13.sp
                         ),
                         color = contentColor,
                         maxLines = 1,
@@ -207,10 +207,7 @@ fun PetalWorkspaceCarousel(
                         ) {
                             Text(
                                 text = tabCount.toString(),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp
-                                ),
+                                style = PetalText.badge,
                                 color = if (isActive) roleOnContainer else roleAccent
                             )
                         }

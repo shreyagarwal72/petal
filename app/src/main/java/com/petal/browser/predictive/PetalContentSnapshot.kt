@@ -85,8 +85,8 @@ object PetalContentSnapshot {
     /** Oldest capture [current] will still return; a live surface should be used instead of anything older. */
     private const val SNAPSHOT_MAX_AGE_MS = 2500L
 
-    /** Max time the main thread waits for the pre-hide PixelCopy (typically a few ms). */
-    private const val PREVIEW_WAIT_MS = 60L
+    /** Max time any blocking wait gives PixelCopy when off-tap-path callers await the preview. */
+    private const val PREVIEW_WAIT_MS = 180L
 
     /** Cleanups that land right after a new capture belong to the screen that was just replaced. */
     private const val CLEAR_GRACE_MS = 600L
@@ -95,11 +95,50 @@ object PetalContentSnapshot {
     private const val SNAPSHOT_SCALE = 0.5f
 
     /**
-     * Captures the visible page BEFORE the host hides it (app bar, tab surfaces, home...) to show an
-     * overlay. Kicked off asynchronously on the background copy handler without blocking the main thread.
+     * Non-blocking PixelCopy preview capture: returns immediately without stalling the tap path.
+     * Results publish to [current]/[preview] on [copyHandler] once the GPU copy finishes.
      */
     @JvmStatic
-    fun capturePreview(rootView: View) {
+    @JvmOverloads
+    fun capturePreviewAsync(rootView: View, onCaptured: ((Bitmap?) -> Unit)? = null) {
+        val width = (rootView.width * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
+        val height = (rootView.height * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || !rootView.isAttachedToWindow) {
+            onCaptured?.invoke(null)
+            return
+        }
+        val window = findWindow(rootView)
+        if (window == null) {
+            onCaptured?.invoke(null)
+            return
+        }
+        try {
+            val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            PixelCopy.request(window, bitmap, { result ->
+                if (result == PixelCopy.SUCCESS) {
+                    val now = SystemClock.uptimeMillis()
+                    preview = bitmap
+                    previewAt = now
+                    _current = bitmap
+                    currentAt = now
+                    onCaptured?.invoke(bitmap)
+                } else {
+                    if (!bitmap.isRecycled) bitmap.recycle()
+                    onCaptured?.invoke(null)
+                }
+            }, copyHandler)
+        } catch (_: Throwable) {
+            onCaptured?.invoke(null)
+        }
+    }
+
+    /**
+     * Captures the visible page BEFORE the host hides it (app bar, tab surfaces, home...) to show an
+     * overlay. Kicked off on the background copy handler.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun capturePreview(rootView: View, allowSoftwareFallback: Boolean = true) {
         val width = (rootView.width * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
         val height = (rootView.height * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
 
@@ -107,13 +146,7 @@ object PetalContentSnapshot {
             val window = findWindow(rootView)
             if (window != null) {
                 try {
-                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
-                    // The host hides the page right after this call and the overlay's bridge calls
-                    // capture() immediately. With a purely async copy, capture() found no preview and
-                    // fell back to grab() on the ALREADY-HIDDEN view tree, producing a blank (white)
-                    // snapshot that the tab-switcher hero and the overlay underlay then displayed.
-                    // PixelCopy completes on its own thread without needing the main thread, so wait
-                    // briefly for the real pre-hide frame.
+                    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                     val done = java.util.concurrent.CountDownLatch(1)
                     PixelCopy.request(window, bitmap, { result ->
                         if (result == PixelCopy.SUCCESS) {
@@ -133,12 +166,14 @@ object PetalContentSnapshot {
                     }
                     return
                 } catch (t: Throwable) {
-                    // Fall back to immediate grab
+                    // Fall through only when software fallback is explicitly allowed
                 }
             }
         }
-        preview = try { grab(rootView) } catch (e: Throwable) { null }
-        previewAt = SystemClock.uptimeMillis()
+        if (allowSoftwareFallback) {
+            preview = try { grab(rootView) } catch (e: Throwable) { null }
+            previewAt = SystemClock.uptimeMillis()
+        }
     }
 
     /**
@@ -195,12 +230,21 @@ object PetalContentSnapshot {
     }
 
     /**
-     * @param forceFresh skip the cached transition snapshot. The tab switcher needs the page exactly
-     * as it is NOW; a snapshot left over from an earlier transition would morph the wrong picture.
+     * Returns only a real hardware-copied frame ([PixelCopy] preview or surface capture), never
+     * invoking the software [grab] fallback (which misses wallpaper, blur, and glass layers).
      */
     @JvmStatic
     @JvmOverloads
-    fun capture(rootView: View, forceFresh: Boolean = false): Bitmap {
+    fun captureHardwareOrNull(rootView: View, forceFresh: Boolean = false): Bitmap? =
+        captureOrNull(rootView, forceFresh = forceFresh, allowSoftwareFallback = false)
+
+    @JvmStatic
+    @JvmOverloads
+    fun captureOrNull(
+        rootView: View,
+        forceFresh: Boolean = false,
+        allowSoftwareFallback: Boolean = true
+    ): Bitmap? {
         val existing = if (forceFresh) null else com.petal.browser.motion.MotionGate.getTransitionSnapshot()
         if (existing != null && !existing.isRecycled) {
             _current = existing
@@ -211,7 +255,8 @@ object PetalContentSnapshot {
         val now = SystemClock.uptimeMillis()
         val pre = preview
         preview = null
-        val result = if (pre != null && !pre.isRecycled && now - previewAt <= PREVIEW_MAX_AGE_MS) pre else grab(rootView)
+        val freshPre = pre?.takeIf { !it.isRecycled && now - previewAt <= PREVIEW_MAX_AGE_MS }
+        val result = freshPre ?: if (allowSoftwareFallback) grab(rootView) else return null
         _current = result
         currentAt = now
 
@@ -221,12 +266,22 @@ object PetalContentSnapshot {
         return result
     }
 
+    /**
+     * @param forceFresh skip the cached transition snapshot. The tab switcher needs the page exactly
+     * as it is NOW; a snapshot left over from an earlier transition would morph the wrong picture.
+     */
+    @JvmStatic
+    @JvmOverloads
+    fun capture(rootView: View, forceFresh: Boolean = false): Bitmap =
+        captureOrNull(rootView, forceFresh = forceFresh, allowSoftwareFallback = true)
+            ?: Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
     private fun grab(rootView: View): Bitmap {
         val width = (rootView.width * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
         val height = (rootView.height * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
 
         return try {
-            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565)
+            val bmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
             // A software draw skips hardware surfaces and hidden views; start from the app's
             // background colour so a degraded snapshot is never a blank/white card.
             bmp.eraseColor(
@@ -239,11 +294,7 @@ object PetalContentSnapshot {
             rootView.draw(canvas)
             bmp
         } catch (e: Throwable) {
-            try {
-                Bitmap.createBitmap(1, 1, Bitmap.Config.RGB_565)
-            } catch (e2: Throwable) {
-                Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
-            }
+            Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
         }
     }
 

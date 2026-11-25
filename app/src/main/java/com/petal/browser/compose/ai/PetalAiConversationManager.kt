@@ -165,18 +165,25 @@ class PetalAiConversationManager(
         _conversations.value = _conversations.value + (tabId to updatedHistory)
         _streamingTabs.value = _streamingTabs.value + tabId
 
-        // Build messages payload for backend with optional system prompt
+        // Build messages payload for backend with optional system prompt.
+        // Keep images in visible chat history, but send the image part only for the newest user message that has one.
+        val newestImageMsgId = updatedHistory
+            .lastOrNull { it.id != assistantMessageId && it.role == AiRole.USER && it.imagePart != null }
+            ?.id
+
         val historyMessages = updatedHistory
             .filter { it.id != assistantMessageId && (it.text.isNotBlank() || it.imagePart != null) }
-            .map { msg ->
+            .mapNotNull { msg ->
                 val parts = mutableListOf<AiMessagePart>()
                 if (msg.text.isNotBlank()) {
                     parts.add(AiMessagePart.Text(msg.text))
+                } else if (msg.imagePart != null && msg.id != newestImageMsgId) {
+                    parts.add(AiMessagePart.Text("[Image]"))
                 }
-                if (msg.imagePart != null) {
+                if (msg.imagePart != null && msg.id == newestImageMsgId) {
                     parts.add(msg.imagePart)
                 }
-                AiChatMessage(role = msg.role, parts = parts)
+                if (parts.isEmpty()) null else AiChatMessage(role = msg.role, parts = parts)
             }
 
         val messagesForBackend = if (!systemPrompt.isNullOrBlank()) {
@@ -206,10 +213,9 @@ class PetalAiConversationManager(
                 }
                 _conversations.value = _conversations.value + (tabId to finalized)
 
-                val inChars = messagesForBackend.sumOf { it.textContent.length }
                 val outChars = finalized.firstOrNull { it.id == assistantMessageId }?.text?.length ?: 0
-                val inTok = (inChars / 4).coerceAtLeast(1)
-                val outTok = (outChars / 4).coerceAtLeast(1)
+                val inTok = PetalAiUsageTracker.estimateInputTokens(messagesForBackend).coerceAtLeast(1)
+                val outTok = PetalAiUsageTracker.estimateTokens(outChars).coerceAtLeast(1)
                 onComplete?.invoke(inTok, outTok)
             } catch (e: Exception) {
                 if (e !is CancellationException) {

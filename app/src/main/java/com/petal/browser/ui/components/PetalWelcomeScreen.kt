@@ -1,6 +1,7 @@
 package com.petal.browser.ui.components
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.view.PetalToast;
 import com.petal.browser.ui.containment.PetalGroup
 import com.petal.browser.ui.containment.PetalGroupIconBadge
@@ -95,11 +96,7 @@ object PetalWelcomeBridge {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
                 setContent {
                     val sp = PreferenceManager.getDefaultSharedPreferences(activity)
-                    var fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
-                    var fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
-                    var fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
-                    var fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
-                    var presetName by remember { mutableStateOf(sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL") }
+                    val fontState = com.petal.browser.ui.theme.rememberFontState()
                     var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                     var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId) }
                     var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
@@ -108,11 +105,6 @@ object PetalWelcomeBridge {
                     DisposableEffect(sp) {
                         val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                             when (key) {
-                                "sp_app_font" -> fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
-                                "sp_font_width" -> fontWidthVal = sp.getFloat("sp_font_width", 92f)
-                                "sp_font_weight" -> fontWeightVal = sp.getInt("sp_font_weight", 750)
-                                "sp_font_roundness" -> fontRoundnessVal = sp.getFloat("sp_font_roundness", 100f)
-                                "sp_gs_flex_preset" -> presetName = sp.getString("sp_gs_flex_preset", "PETAL") ?: "PETAL"
                                 "sp_color_style" -> styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                                 "sp_palette_id" -> paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                                 "sp_amoled" -> isAmoled = sp.getBoolean("sp_amoled", false)
@@ -123,15 +115,6 @@ object PetalWelcomeBridge {
                         onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
                     }
 
-                    val appFont = remember(fontName) {
-                        com.petal.browser.ui.theme.AppFont.fromName(fontName)
-                    }
-                    val resolvedPreset = remember(presetName) {
-                        com.petal.browser.ui.theme.GSFlexPreset.fromName(presetName)
-                    }
-                    val gsFlexSettings = remember(presetName) {
-                        com.petal.browser.ui.theme.loadGSFlexSettings(sp)
-                    }
                     val colorStyle = remember(styleName) {
                         try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                     }
@@ -139,11 +122,7 @@ object PetalWelcomeBridge {
                     PetalExpressiveTheme(
                         dynamicColor = dynamicColor,
                         useAmoled = isAmoled,
-                        appFont = appFont,
-                        fontWidth = fontWidthVal,
-                        fontWeight = fontWeightVal,
-                        fontRoundness = fontRoundnessVal,
-                        gsFlexSettings = gsFlexSettings,
+                        fontState = fontState,
                         colorStyle = colorStyle,
                         paletteId = paletteId
                     ) {
@@ -182,15 +161,20 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
 
     Surface(
-        color = MaterialTheme.colorScheme.background,
+        color = Color.Transparent,
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
             .navigationBarsPadding()
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize()
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            PetalPageBackground(
+                pageKey = "welcome_page",
+                modifier = Modifier.fillMaxSize()
+            )
+            Column(
+                modifier = Modifier.fillMaxSize()
+            ) {
             // Header Page Indicators (Pills)
             Row(
                 modifier = Modifier
@@ -226,7 +210,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
 
                 Text(
                     text = if (pagerState.currentPage == 0) "Welcome" else "${pagerState.currentPage} / 8",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.badge,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -275,6 +259,7 @@ fun PetalWelcomeScreen(onGetStarted: () -> Unit) {
                     onGetStarted()
                 }
             )
+        }
         }
     }
 }
@@ -338,13 +323,13 @@ private fun SetupBottomBar(
                 if (targetPage == 0) {
                     Text(
                         text = stringResource(R.string.ui_welcome_to_petal),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.primary
                     )
                 } else {
                     Text(
                         text = stringResource(R.string.ui_step_of_8, targetPage),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                        style = PetalText.cardTitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -448,14 +433,12 @@ private fun WelcomeStepPage() {
             ) {
                 Text(
                     text = "v1.7.7",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Black,
+                    style = PetalText.badge,
                     color = MaterialTheme.colorScheme.primary
                 )
                 Text(
                     text = stringResource(R.string.ui_official_release),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
+                    style = PetalText.badge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
@@ -497,7 +480,7 @@ private fun WelcomeStepPage() {
 
             Text(
                 text = stringResource(R.string.ui_fast_private_customizable_web_browser),
-                style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 22.sp),
+                style = PetalText.pageSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
@@ -568,7 +551,7 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
 
     Text(
         text = stringResource(R.string.ui_essential_permissions),
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        style = PetalText.pageTitle,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
@@ -577,7 +560,7 @@ private fun EssentialPermissionsStepPage(activity: Activity?, context: Context) 
 
     Text(
         text = stringResource(R.string.ui_grant_camera_microphone_and_location),
-        style = MaterialTheme.typography.bodyMedium,
+        style = PetalText.pageSubtitle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
@@ -656,8 +639,8 @@ private fun PermissionStatusRow(
             Icon(imageVector = icon, contentDescription = title, tint = if (isGranted) Color(0xFF2E7D32) else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
             Spacer(Modifier.width(12.dp))
             Column {
-                Text(text = title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(text = title, style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                Text(text = description, style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -667,11 +650,11 @@ private fun PermissionStatusRow(
             FilledTonalButton(onClick = {}, enabled = false, shape = ExpressiveButtonShape, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
                 Icon(Icons.Rounded.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(4.dp))
-                Text(stringResource(R.string.ui_granted), style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.ui_granted), style = PetalText.button)
             }
         } else {
             Button(onClick = onGrant, shape = ExpressiveButtonShape, contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)) {
-                Text(stringResource(R.string.ui_grant), style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.ui_grant), style = PetalText.button)
             }
         }
     }
@@ -706,7 +689,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
 
     Text(
         text = stringResource(R.string.ui_downloads_media_notifications),
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        style = PetalText.pageTitle,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
@@ -715,7 +698,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
 
     Text(
         text = stringResource(R.string.ui_allow_notifications_to_receive_real),
-        style = MaterialTheme.typography.bodyMedium,
+        style = PetalText.pageSubtitle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
@@ -742,7 +725,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
 
             Text(
                 text = if (hasNotification) "Notification Permission Enabled" else "Notification Permission Disabled",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.cardTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
 
@@ -761,7 +744,7 @@ private fun NotificationPermissionStepPage(activity: Activity?, context: Context
                     .fillMaxWidth()
                     .height(48.dp)
             ) {
-                Text(if (hasNotification) "Notifications Allowed" else "Allow Notifications", fontWeight = FontWeight.Bold)
+                Text(if (hasNotification) "Notifications Allowed" else "Allow Notifications", style = PetalText.button)
             }
         }
     }
@@ -812,7 +795,7 @@ private fun BackupFeatureStepPage(context: Context) {
 
     Text(
         text = stringResource(R.string.ui_restore_data_from_backup),
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        style = PetalText.pageTitle,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
@@ -821,7 +804,7 @@ private fun BackupFeatureStepPage(context: Context) {
 
     Text(
         text = stringResource(R.string.ui_have_a_previous_petal_browser),
-        style = MaterialTheme.typography.bodyMedium,
+        style = PetalText.pageSubtitle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
@@ -843,8 +826,8 @@ private fun BackupFeatureStepPage(context: Context) {
                 }
                 Spacer(Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.ui_restore_existing_backup), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text(stringResource(R.string.ui_select_a_json_backup_file), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_restore_existing_backup), style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.ui_select_a_json_backup_file), style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
             }
@@ -864,7 +847,7 @@ private fun BackupFeatureStepPage(context: Context) {
                     Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Text(
                         text = restoreSuccessMessage!!,
-                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                 }
@@ -928,7 +911,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
 
     Text(
         text = stringResource(R.string.ui_theme_language),
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        style = PetalText.pageTitle,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
@@ -937,7 +920,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
 
     Text(
         text = stringResource(R.string.ui_customize_your_visual_style_with),
-        style = MaterialTheme.typography.bodyMedium,
+        style = PetalText.pageSubtitle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
@@ -950,7 +933,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            Text(stringResource(R.string.ui_app_theme_mode), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.ui_app_theme_mode), style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
@@ -989,7 +972,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                         ) {
                             Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp), tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.width(6.dp))
-                            Text(label, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                            Text(label, style = PetalText.chip.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -1013,8 +996,8 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.ui_amoled_pure_black), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text(stringResource(R.string.ui_deep_oled_pitch_black_background), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.ui_amoled_pure_black), style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.ui_deep_oled_pitch_black_background), style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     IconSwitch(
                         checked = isAmoled,
@@ -1029,7 +1012,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
 
-            Text(stringResource(R.string.ui_display_language), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.ui_display_language), style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(8.dp))
 
             val languages = remember { com.petal.browser.unit.PetalLanguages.ALL_LANGUAGES }
@@ -1061,7 +1044,7 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
                                 Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                                 Spacer(Modifier.width(6.dp))
                             }
-                            Text(lang.displayLabel, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                            Text(lang.displayLabel, style = PetalText.chip.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -1094,7 +1077,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
 
     Text(
         text = stringResource(R.string.ui_petal_ai_deep_research),
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        style = PetalText.pageTitle,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
@@ -1103,7 +1086,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
 
     Text(
         text = stringResource(R.string.ui_configure_your_preferred_ai_api),
-        style = MaterialTheme.typography.bodyMedium,
+        style = PetalText.pageSubtitle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
@@ -1116,7 +1099,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp)) {
-            Text(stringResource(R.string.ui_select_ai_engine_provider), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.ui_select_ai_engine_provider), style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(10.dp))
 
             val providers = listOf("Gemini 2.5 Flash", "OpenAI GPT-4o", "DeepSeek R1", "Groq Llama 3")
@@ -1138,7 +1121,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
                         modifier = Modifier.height(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 14.dp)) {
-                            Text(provider, style = MaterialTheme.typography.labelMedium.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                            Text(provider, style = PetalText.chip.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -1168,7 +1151,7 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.ui_keys_are_securely_stored_in),
-                style = MaterialTheme.typography.labelSmall,
+                style = PetalText.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
@@ -1209,7 +1192,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 
     Text(
         text = stringResource(R.string.ui_default_search_engine),
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        style = PetalText.pageTitle,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
@@ -1218,7 +1201,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 
     Text(
         text = stringResource(R.string.ui_select_your_default_search_provider),
-        style = MaterialTheme.typography.bodyMedium,
+        style = PetalText.pageSubtitle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
@@ -1236,7 +1219,7 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
                 sp.edit().putString("sp_search_engine", indexStr).putBoolean("sp_search_engine_chosen", true).putBoolean("searchEngineSwitch", false).apply()
             },
             leading = { PetalGroupIconBadge(Icons.Rounded.Search, size = 40.dp, iconSize = 20.dp) },
-            content = { Text(name, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium) },
+            content = { Text(name, style = PetalText.rowTitle) },
             trailing = {
                 RadioButton(
                     selected = isSelected,
@@ -1255,7 +1238,36 @@ private fun SearchEngineStepPage(sp: SharedPreferences) {
 // ==========================================
 @Composable
 private fun DefaultFontStepPage(sp: SharedPreferences) {
-    var fontSelection by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
+    val context = LocalContext.current
+    val fontState = com.petal.browser.ui.theme.rememberFontState()
+    var showFontPicker by remember { mutableStateOf(false) }
+
+    val systemFontPicker = androidx.activity.compose.rememberLauncherForActivityResult(
+        contract = androidx.activity.result.contract.ActivityResultContracts.GetContent()
+    ) { uri: android.net.Uri? ->
+        uri?.let {
+            if (com.petal.browser.ui.theme.PetalFontHelper.saveCustomFontUri(context, it) != null) {
+                com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.CUSTOM)
+            }
+        }
+    }
+
+    if (showFontPicker) {
+        com.petal.browser.compose.file.PetalFilePickerScreen(
+            mimeTypes = arrayOf("font/ttf", "font/otf", "application/x-font-ttf", "application/x-font-otf", "*/*"),
+            onDismissRequest = { showFontPicker = false },
+            onFileSelected = { file ->
+                showFontPicker = false
+                if (com.petal.browser.ui.theme.PetalFontHelper.saveCustomFontUri(context, android.net.Uri.fromFile(file)) != null) {
+                    com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.CUSTOM)
+                }
+            },
+            onBrowseSystemFallback = {
+                showFontPicker = false
+                systemFontPicker.launch("*/*")
+            }
+        )
+    }
 
     Spacer(Modifier.height(12.dp))
 
@@ -1273,7 +1285,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
 
     Text(
         text = stringResource(R.string.ui_typography_font_family),
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        style = PetalText.pageTitle,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
@@ -1282,7 +1294,7 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
 
     Text(
         text = "Choose your preferred typography style or import a custom font file.",
-        style = MaterialTheme.typography.bodyMedium,
+        style = PetalText.pageSubtitle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
@@ -1295,12 +1307,10 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            val isFlexSelected = fontSelection == "PETAL" || fontSelection == "GS_FLEX"
+            val isFlexSelected = fontState.appFont == com.petal.browser.ui.theme.AppFont.PETAL
             Surface(
                 onClick = {
-                    fontSelection = "PETAL"
-                    sp.edit().putString("sp_app_font", "PETAL").apply()
-                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                    com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.PETAL)
                 },
                 color = if (isFlexSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
@@ -1310,19 +1320,17 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     Icon(Icons.Rounded.FontDownload, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Google Sans Flex", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text(stringResource(R.string.ui_google_sans_flex_variable_font), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Google Sans Flex", style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                        Text(stringResource(R.string.ui_google_sans_flex_variable_font), style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isFlexSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
-            val isNunitoSelected = fontSelection == "NUNITO"
+            val isNunitoSelected = fontState.appFont == com.petal.browser.ui.theme.AppFont.NUNITO
             Surface(
                 onClick = {
-                    fontSelection = "NUNITO"
-                    sp.edit().putString("sp_app_font", "NUNITO").apply()
-                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                    com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.NUNITO)
                 },
                 color = if (isNunitoSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
@@ -1332,19 +1340,17 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Nunito", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text("Zenith soft geometric rounded variable font", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("Nunito", style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Soft geometric rounded variable font", style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isNunitoSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
-            val isSystemSelected = fontSelection == "SYSTEM"
+            val isSystemSelected = fontState.appFont == com.petal.browser.ui.theme.AppFont.SYSTEM
             Surface(
                 onClick = {
-                    fontSelection = "SYSTEM"
-                    sp.edit().putString("sp_app_font", "SYSTEM").apply()
-                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                    com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.SYSTEM)
                 },
                 color = if (isSystemSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
@@ -1354,19 +1360,22 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     Icon(Icons.Rounded.Android, contentDescription = null, tint = MaterialTheme.colorScheme.outline, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("System Default", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text("Follows device OS typography and accessibility scale", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("System Default", style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Follows device OS typography and accessibility scale", style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     if (isSystemSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 }
             }
 
-            val isCustomSelected = fontSelection == "CUSTOM"
+            val isCustomSelected = fontState.appFont == com.petal.browser.ui.theme.AppFont.CUSTOM
+            val hasCustomFile = com.petal.browser.ui.theme.PetalFontHelper.resolveReadableCustomFontFile(fontState.customFont) != null
             Surface(
                 onClick = {
-                    fontSelection = "CUSTOM"
-                    sp.edit().putString("sp_app_font", "CUSTOM").apply()
-                    com.petal.browser.ui.theme.PetalThemePrefs.bump()
+                    if (hasCustomFile) {
+                        com.petal.browser.ui.theme.PetalFontPrefs.setAppFont(sp, com.petal.browser.ui.theme.AppFont.CUSTOM)
+                    } else {
+                        showFontPicker = true
+                    }
                 },
                 color = if (isCustomSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHighest,
                 shape = RoundedCornerShape(16.dp),
@@ -1376,10 +1385,20 @@ private fun DefaultFontStepPage(sp: SharedPreferences) {
                     Icon(Icons.Rounded.FolderZip, contentDescription = null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(24.dp))
                     Spacer(Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text(stringResource(R.string.ui_custom_font_file), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                        Text(stringResource(R.string.ui_import_custom_ttf_otf_variable), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.ui_custom_font_file), style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                        Text(
+                            text = if (hasCustomFile) fontState.customFont.name else stringResource(R.string.ui_import_custom_ttf_otf_variable),
+                            style = PetalText.rowSubtitle,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    if (isCustomSelected) Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                    if (isCustomSelected) {
+                        Icon(Icons.Rounded.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(8.dp))
+                    }
+                    FilledTonalButton(onClick = { showFontPicker = true }) {
+                        Text(stringResource(R.string.ui_browse), style = PetalText.button)
+                    }
                 }
             }
         }
@@ -1409,7 +1428,7 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
 
     Text(
         text = stringResource(R.string.ui_ad_tracker_shield),
-        style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+        style = PetalText.pageTitle,
         color = MaterialTheme.colorScheme.onSurface,
         textAlign = TextAlign.Center
     )
@@ -1418,7 +1437,7 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
 
     Text(
         text = stringResource(R.string.ui_block_intrusive_web_ads_popups),
-        style = MaterialTheme.typography.bodyMedium,
+        style = PetalText.pageSubtitle,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         textAlign = TextAlign.Center
     )
@@ -1446,8 +1465,8 @@ private fun AdBlockerStepPage(sp: SharedPreferences) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(stringResource(R.string.ui_enable_petal_shield), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                    Text(stringResource(R.string.ui_block_ads_trackers_popups_across), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_enable_petal_shield), style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.ui_block_ads_trackers_popups_across), style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 IconSwitch(
                     checked = isAdBlockEnabled,

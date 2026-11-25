@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import com.petal.browser.ui.components.PetalSpring
 
 import android.graphics.drawable.AdaptiveIconDrawable
@@ -47,7 +49,6 @@ import com.petal.browser.R
 import com.petal.browser.appicon.PetalAppIcon
 import com.petal.browser.appicon.PetalAppIcons
 import com.petal.browser.ui.components.ExpressiveHeader
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.PetalSettingsSection
 
@@ -75,7 +76,7 @@ fun AppIconSettingsScreen(
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { com.petal.browser.ui.components.M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "app_icon_settings") },
+            pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "app_icon_settings", modifier = Modifier.fillMaxSize()) },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,
@@ -105,7 +106,7 @@ fun AppIconSettingsScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.app_icon_choose_hint),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                     )
@@ -137,7 +138,7 @@ fun AppIconSettingsScreen(
                     }
                     Text(
                         text = stringResource(selected.descriptionRes),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp)
                     )
@@ -233,7 +234,7 @@ private fun IconChoice(icon: PetalAppIcon, selected: Boolean, onClick: () -> Uni
         Spacer(Modifier.height(6.dp))
         Text(
             text = stringResource(icon.labelRes),
-            style = MaterialTheme.typography.labelMedium.copy(
+            style = PetalText.chip.copy(
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
             ),
             color = if (selected) scheme.primary else scheme.onSurfaceVariant,
@@ -267,7 +268,7 @@ private fun IntroPreviewDialog(icon: PetalAppIcon, onDismiss: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 Text(
                     text = stringResource(icon.labelRes),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = PetalText.cardTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Spacer(Modifier.height(12.dp))

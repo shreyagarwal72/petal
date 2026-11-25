@@ -108,6 +108,21 @@ object PetalPredictiveJunction {
     private val _backExitDirection = MutableStateFlow(PetalBackExitDirection.AlwaysRight)
     val backExitDirection: StateFlow<PetalBackExitDirection> = _backExitDirection.asStateFlow()
 
+    /**
+     * Set immediately before calling `onBack()` on a committed predictive back dismissal so host
+     * containers (e.g. `PetalRootApp`'s `AnimatedVisibility`) skip their redundant exit animation.
+     */
+    var gestureDismissed by mutableStateOf(false)
+        private set
+
+    fun markGestureDismissed() {
+        gestureDismissed = true
+    }
+
+    fun clearGestureDismissed() {
+        gestureDismissed = false
+    }
+
     @JvmStatic
     fun setBackStyle(prefs: SharedPreferences, style: PetalBackStyle) {
         _backStyle.value = style
@@ -232,7 +247,8 @@ data class PredictiveBackState(
 
 val LocalPredictiveBackState = compositionLocalOf { PredictiveBackState.Idle }
 
-private const val HOLD_DISMISSED_MS = 500L
+private const val DISMISS_SAFETY_CAP_MS = 650L
+private const val SNAPSHOT_DISSOLVE_MS = 90
 
 /**
  * Wraps [content] with a [PredictiveBackHandler] and republishes gesture progress
@@ -256,10 +272,23 @@ fun PetalPredictiveBackSurface(
     val isUnderlayPreview = LocalIsUnderlayPreview.current
     val progressAnim = remember { Animatable(0f) }
     var backState by remember { mutableStateOf(PredictiveBackState.Idle) }
+    val disposedSignal = remember { kotlinx.coroutines.CompletableDeferred<Unit>() }
+    var activeLiveUnderlay by remember { mutableStateOf(false) }
+    var liveCommitSucceeded by remember { mutableStateOf(false) }
     val configuration = LocalConfiguration.current
     val density = LocalDensity.current.density
     val screenWidthPx = configuration.screenWidthDp * density
     val screenHeightPx = configuration.screenHeightDp * density
+
+    DisposableEffect(Unit) {
+        onDispose {
+            disposedSignal.complete(Unit)
+            if (activeLiveUnderlay) {
+                PetalLiveUnderlay.end(liveCommitSucceeded)
+                activeLiveUnderlay = false
+            }
+        }
+    }
 
     if (!isUnderlayPreview && enabled) {
         if (junctionPredictiveEnabled) {
@@ -269,13 +298,13 @@ fun PetalPredictiveBackSurface(
                 val exitDirection = PetalPredictiveJunction.backExitDirection.value
                 val holdPose = holdDismissedPose
                 val wantsLive = useLiveUnderlay
-                var committedDone = false
-                var gestureStarted = false
                 var liveUnderlay = false
+                var gestureStarted = false
                 var initialTouchY = 0f
                 var lastProgress = 0f
                 var lastNanos = 0L
                 var velocity = 0f
+                var cancelled = false
 
                 fun publishUnderlay(state: PredictiveBackState) {
                     if (!liveUnderlay) return
@@ -296,6 +325,8 @@ fun PetalPredictiveBackSurface(
                             lastProgress = backEvent.progress
                             lastNanos = now
                             liveUnderlay = wantsLive && PetalLiveUnderlay.begin(backEvent.swipeEdge)
+                            activeLiveUnderlay = liveUnderlay
+                            liveCommitSucceeded = false
                         } else {
                             val dt = (now - lastNanos) / 1_000_000_000f
                             if (dt > 0.001f) {
@@ -318,7 +349,7 @@ fun PetalPredictiveBackSurface(
                         publishUnderlay(backState)
                     }
 
-                    // Finger lifted and the system committed the back: settle the dismissal.
+                    // Finger lifted and the system committed the back: settle the dismissal to progress=1.
                     val release = backState.progress
                     backState = backState.copy(committing = true, releaseProgress = release, settleTime = 0f)
                     if (style.usesSpringCommit) {
@@ -347,19 +378,8 @@ fun PetalPredictiveBackSurface(
                     }
                     backState = backState.copy(progress = 1f, settleTime = 1f)
                     publishUnderlay(backState)
-                    try {
-                        onBack()
-                        committedDone = true
-                        if (holdPose) {
-                            backState = PredictiveBackState.Idle.copy(dismissed = true)
-                            kotlinx.coroutines.delay(HOLD_DISMISSED_MS)
-                        }
-                    } finally {
-                        if (liveUnderlay) PetalLiveUnderlay.end(true)
-                        progressAnim.snapTo(0f)
-                        backState = PredictiveBackState.Idle
-                    }
-                } catch (e: CancellationException) {
+                } catch (_: CancellationException) {
+                    cancelled = true
                     val from = backState.progress
                     backState = backState.copy(committing = false)
                     progressAnim.snapTo(from)
@@ -374,8 +394,41 @@ fun PetalPredictiveBackSurface(
                         backState = backState.copy(isActive = true, progress = value)
                         publishUnderlay(backState)
                     }
-                    if (liveUnderlay) PetalLiveUnderlay.end(false)
+                    if (liveUnderlay) {
+                        PetalLiveUnderlay.end(false)
+                        liveUnderlay = false
+                        activeLiveUnderlay = false
+                    }
                     backState = PredictiveBackState.Idle
+                }
+
+                if (!cancelled) {
+                    try {
+                        liveCommitSucceeded = true
+                        if (holdPose) {
+                            PetalPredictiveJunction.markGestureDismissed()
+                            backState = backState.copy(
+                                isActive = true,
+                                progress = 1f,
+                                settleTime = 1f,
+                                dismissed = true,
+                            )
+                        }
+                        onBack()
+                        if (holdPose) {
+                            kotlinx.coroutines.withTimeoutOrNull(DISMISS_SAFETY_CAP_MS) {
+                                disposedSignal.await()
+                            }
+                        }
+                    } finally {
+                        if (liveUnderlay && activeLiveUnderlay) {
+                            PetalLiveUnderlay.end(true)
+                            activeLiveUnderlay = false
+                        }
+                        liveUnderlay = false
+                        progressAnim.snapTo(0f)
+                        backState = PredictiveBackState.Idle
+                    }
                 }
             }
         } else {
@@ -564,17 +617,34 @@ fun PetalScreenWrapper(
         }
     } else 0.dp
 
+    val snapshotDismissAlpha = remember { Animatable(1f) }
+    androidx.compose.runtime.LaunchedEffect(predictiveBackState.dismissed) {
+        if (predictiveBackState.dismissed) {
+            snapshotDismissAlpha.snapTo(1f)
+            snapshotDismissAlpha.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(durationMillis = SNAPSHOT_DISSOLVE_MS, easing = LinearEasing),
+            )
+        } else {
+            snapshotDismissAlpha.snapTo(1f)
+        }
+    }
+
     CompositionLocalProvider(LocalIsUnderlayPreview provides (isBehindTopScreen || LocalIsUnderlayPreview.current)) {
         Box(
             modifier = modifier.fillMaxSize()
         ) {
-            // Layer 0: Background snapshot underlay (rendered when gesture is active or behind top screen)
-            if (backgroundSnapshot != null && (isActive || isBehindTopScreen) && !(isActive && predictiveBackState.liveUnderlay) && !predictiveBackState.dismissed) {
+            // Layer 0: Background snapshot underlay (stays at final settled pose after commit, dissolving smoothly <= 90ms)
+            if (backgroundSnapshot != null &&
+                (isActive || isBehindTopScreen || predictiveBackState.dismissed) &&
+                !(isActive && predictiveBackState.liveUnderlay) &&
+                snapshotDismissAlpha.value > 0.001f
+            ) {
                 // At rest (not mid-gesture) the snapshot keeps the original Petal pose.
                 val snapshotFrame = frame ?: PetalBackMotion.frame(
                     PetalBackStyle.Petal,
                     PetalBackInput(
-                        progress = 0f,
+                        progress = if (predictiveBackState.dismissed) 1f else 0f,
                         swipeEdge = predictiveBackState.swipeEdge,
                         touchY = 0f,
                         initialTouchY = 0f,
@@ -582,6 +652,8 @@ fun PetalScreenWrapper(
                         heightPx = configuration.screenHeightDp * screenDensity,
                         density = screenDensity,
                         blurEnabled = blurEnabled,
+                        committing = predictiveBackState.dismissed,
+                        settleTime = if (predictiveBackState.dismissed) 1f else 0f,
                     ),
                 )
                 val snapshotBlurRadius = snapshotFrame.behindBlurDp.dp
@@ -600,7 +672,7 @@ fun PetalScreenWrapper(
                             scaleY = behindLayer.scale
                             translationX = behindLayer.translationX
                             translationY = behindLayer.translationY
-                            alpha = behindLayer.alpha
+                            alpha = (behindLayer.alpha * snapshotDismissAlpha.value).coerceIn(0f, 1f)
                         }
                 ) {
                     Image(

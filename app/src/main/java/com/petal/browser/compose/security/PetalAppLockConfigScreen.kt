@@ -10,6 +10,7 @@
 package com.petal.browser.compose.security
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import android.content.Context
 import androidx.appcompat.app.AppCompatActivity
@@ -46,7 +47,6 @@ import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.security.BiometricLockManager
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.IconSwitch
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.components.PetalShapedPasswordInput
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.LocalPetalBadgeShapeKey
@@ -199,9 +199,9 @@ fun PetalAppLockConfigScreen(
                 com.petal.browser.ui.components.PetalGlassHeaderLayout(
                     modifier = Modifier.fillMaxSize(),
                     pageBackground = {
-                        M3ExpressiveVariableBackground(
+                        com.petal.browser.ui.components.PetalPageBackground(
                             modifier = Modifier.fillMaxSize(),
-                            pageSeed = "app_lock_config"
+                            pageKey = "app_lock_config"
                         )
                     },
                     header = { headerModifier, headerBackdrop ->
@@ -280,9 +280,7 @@ fun PetalAppLockConfigScreen(
                                     content = {
                                         Text(
                                             text = if (isBiometric) stringResource(R.string.ui_biometric_device_lock) else stringResource(R.string.ui_custom_passcode_lock),
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Medium,
-                                            maxLines = 2
+                                            style = PetalText.rowTitle,
                                         )
                                         Text(
                                             text = if (isBiometric) {
@@ -292,9 +290,8 @@ fun PetalAppLockConfigScreen(
                                             } else {
                                                 "Set custom shaped-mask password for Petal"
                                             },
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 2
                                         )
                                     },
                                     trailing = { RadioButton(selected = selected, onClick = null) }
@@ -343,7 +340,7 @@ fun PetalAppLockConfigScreen(
                                         )
                                         Text(
                                             text = "If you forget your passcode, the only way back in is to erase all Petal data. Keep it somewhere safe.",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.cardBody,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -375,13 +372,12 @@ fun PetalAppLockConfigScreen(
                             ) {
                                 Text(
                                     stringResource(R.string.ui_set_app_password),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
+                                    style = PetalText.dialogTitle,
                                     textAlign = TextAlign.Center
                                 )
                                 Text(
                                     stringResource(R.string.ui_enter_password_for_petal_browser),
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = PetalText.dialogBody,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
                                 )

@@ -1,6 +1,7 @@
 package com.petal.browser.compose.tabs
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
@@ -57,7 +58,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.rounded.*
 import androidx.compose.material3.*
 import com.petal.browser.ui.kit.TextField
@@ -77,7 +77,12 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.layer.GraphicsLayer
+import androidx.compose.ui.graphics.layer.drawLayer
 import com.petal.browser.ui.components.PetalConfirmSheetContent
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -101,7 +106,6 @@ import com.petal.browser.ui.components.AnimatedCounterBadge
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.ExpressiveTabGroupPill
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.PetalSnackbarHost
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -204,6 +208,10 @@ fun PetalTabGridSwitcher(
     onCreateGroup: (PetalTabItem) -> Unit = {},
     onDuplicateTab: (PetalTabItem) -> Unit = {},
     onCloseOtherTabs: (PetalTabItem) -> Unit = {},
+    homeLiveLayer: GraphicsLayer? = null,
+    homeLiveLayerTabId: String? = null,
+    onHeroCloseStart: () -> Unit = {},
+    onHeroCloseEnd: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -489,7 +497,14 @@ fun PetalTabGridSwitcher(
 
     val reduceMotion = rememberReduceMotion()
     val isLowEnd = rememberLowEndDevice()
-    val hero = remember { TabHeroState(startVisible = backgroundSnapshot != null).also { it.image = backgroundSnapshot } }
+    val initialHeroImage = remember {
+        tabs.firstOrNull { it.isSelected }?.let { active ->
+            active.previewBitmap?.takeUnless { it.isRecycled }
+                ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(active.id, active.isIncognito)?.takeUnless { it.isRecycled }
+                ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(active.thumbnailKey, active.isIncognito)?.takeUnless { it.isRecycled }
+        }?.asImageBitmap() ?: backgroundSnapshot
+    }
+    val hero = remember { TabHeroState(startVisible = initialHeroImage != null).also { it.image = initialHeroImage } }
     var currentHeroJob by remember { mutableStateOf<Job?>(null) }
     var newTabButtonBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
     val closingTabIds = remember { mutableStateListOf<String>() }
@@ -631,19 +646,24 @@ fun PetalTabGridSwitcher(
     }
 
     // ── Chrome-style hero transition (page <-> tile) ─────────────────────────────
-    // Seed the page snapshot immediately: the overlay is presented without the generic fade-in now, so
-    // the very first frame must already show the page (otherwise it flashes blank before the morph).
-    fun heroImageFor(tab: PetalTabItem?): androidx.compose.ui.graphics.ImageBitmap? {
-        val thumb = tab?.previewBitmap?.takeIf { !it.isRecycled }?.asImageBitmap()
-        return if (tab?.isSelected == true) (backgroundSnapshot ?: thumb) else (thumb ?: backgroundSnapshot)
+    // Hero and tile always share the tab's cached thumbnail bitmap (falling back to
+    // backgroundSnapshot only when no cached thumbnail exists).
+    fun cachedThumbFor(tab: PetalTabItem?): Bitmap? {
+        if (tab == null) return null
+        return tab.previewBitmap?.takeUnless { it.isRecycled }
+            ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tab.id, tab.isIncognito)?.takeUnless { it.isRecycled }
+            ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tab.thumbnailKey, tab.isIncognito)?.takeUnless { it.isRecycled }
     }
+
+    fun heroImageFor(tab: PetalTabItem?): androidx.compose.ui.graphics.ImageBitmap? =
+        cachedThumbFor(tab)?.asImageBitmap() ?: backgroundSnapshot
 
     // Open: the page shrinks into the selected tile.
     LaunchedEffect(Unit) {
         if (!hero.visible) return@LaunchedEffect
         val current = tabs.firstOrNull { it.isSelected }
         hero.tabId = current?.id
-        hero.image = backgroundSnapshot
+        hero.image = heroImageFor(current)
         // Wait (briefly) for the tile to be laid out so we know where to land.
         // Tile bounds normally land within 1-2 frames; never make the user wait half a second for them.
         kotlinx.coroutines.withTimeoutOrNull(150) {
@@ -662,39 +682,48 @@ fun PetalTabGridSwitcher(
         hero.visible = false
     }
 
-    // Select: the tapped tile expands to the full page, then the tab is shown.
+    // Select: selectTab runs right when the morph starts so the incoming page renders underneath
+    // while the opaque hero expands to fill the screen, staying opaque until the first frame is drawn.
     val heroSelect: (PetalTabItem) -> Unit = { tab ->
         currentHeroJob?.cancel()
         val image = heroImageFor(tab)
         if (image == null || tabCardBounds[tab.id] == null) {
+            onHeroCloseStart()
             onTabSelect(tab)
+            onHeroCloseEnd()
         } else {
             currentHeroJob = coroutineScope.launch {
+                onHeroCloseStart()
                 hero.busy = true
                 hero.tabId = tab.id
                 hero.image = image
                 hero.customOriginBounds = null
                 hero.customOriginRadius = null
                 hero.visible = true
-                if (!hero.visible || hero.progress.value >= 1f) {
+                if (hero.progress.value >= 1f) {
                     hero.progress.snapTo(1f)
                 }
-                com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
-                    if (reduceMotion) {
-                        hero.progress.snapTo(0f)
-                    } else {
-                        hero.progress.animateTo(0f, TabHeroState.spec())
-                    }
-                }
+                // Switch tabs immediately so Gecko / Home prepares its first frame during the morph.
                 onTabSelect(tab)
-                // Safety net: if the host did not tear this screen down, don't leave the overlay stuck.
-                kotlinx.coroutines.delay(700)
-                hero.dock()
+                try {
+                    com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
+                        if (reduceMotion) {
+                            hero.progress.snapTo(0f)
+                        } else {
+                            hero.progress.animateTo(0f, TabHeroState.spec())
+                        }
+                    }
+                } finally {
+                    // Keep hero.visible = true at progress = 0f (full screen, opaque) until the host
+                    // fades out the switcher layer once the incoming page's first frame is ready.
+                    hero.busy = false
+                    onHeroCloseEnd()
+                }
             }
         }
     }
 
-    // Predictive back: the tile grows with the gesture; commit expands fully, cancel docks it back.
+    // Predictive back: the tile grows with the gesture; commit expands fully while the page prepares underneath.
     val predictiveBackOn by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
     androidx.activity.compose.PredictiveBackHandler(
         enabled = tabs.isNotEmpty() && !hasSubOverlay
@@ -720,16 +749,20 @@ fun PetalTabGridSwitcher(
             }
             hero.busy = true
             currentHeroJob = coroutineScope.launch {
-                com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
-                    if (reduceMotion) {
-                        hero.progress.snapTo(0f)
-                    } else {
-                        hero.progress.animateTo(0f, TabHeroState.spec())
-                    }
-                }
+                onHeroCloseStart()
                 effectiveOnBack()
-                kotlinx.coroutines.delay(700)
-                hero.dock()
+                try {
+                    com.petal.browser.motion.MotionGate.withMotion("tab_switcher_close") {
+                        if (reduceMotion) {
+                            hero.progress.snapTo(0f)
+                        } else {
+                            hero.progress.animateTo(0f, TabHeroState.spec())
+                        }
+                    }
+                } finally {
+                    hero.busy = false
+                    onHeroCloseEnd()
+                }
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
             currentHeroJob = coroutineScope.launch {
@@ -775,7 +808,7 @@ fun PetalTabGridSwitcher(
         ) {
             com.petal.browser.ui.components.PetalGlassHeaderLayout(
                 modifier = Modifier.fillMaxSize(),
-                pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "tabs_page") },
+                pageBackground = { com.petal.browser.ui.components.PetalPageBackground(pageKey = "tabs_page", modifier = Modifier.fillMaxSize()) },
                 header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,
@@ -982,7 +1015,7 @@ fun PetalTabGridSwitcher(
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     stringResource(R.string.ui_sleeping_tabs_badge, sleepingCount),
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = PetalText.badge,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             }
@@ -1102,7 +1135,7 @@ fun PetalTabGridSwitcher(
                                 )
                                 Text(
                                     text = if (isThresholdReached) "Release to open Vault" else "Pull to reveal Vault",
-                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.chip,
                                     maxLines = 1,
                                     softWrap = false
                                 )
@@ -1336,8 +1369,9 @@ fun PetalTabGridSwitcher(
                                                     val cardScale = TAB_CARD_MIN_SCALE + (1f - TAB_CARD_MIN_SCALE) * presence
                                                     scaleX = cardScale
                                                     scaleY = cardScale
-                                                    // Real tile fades in as the hero docks onto it.
-                                                    alpha = cardPresence.value * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
+                                                    // Real tile stays hidden under the opaque hero until the hero finishes docking,
+                                                    // then reveals identically with zero crossfade.
+                                                    alpha = if (hero.visible && hero.tabId == tab.id) 0f else cardPresence.value
                                                 }
                                                 .onGloballyPositioned { coordinates ->
                                                     tabCardBounds[tab.id] = coordinates.boundsInWindow()
@@ -1423,7 +1457,9 @@ fun PetalTabGridSwitcher(
                                                     onSelectForSelection = { enterSelection(tab) },
                                                     onTogglePin = { togglePinned(tab) },
                                                     onDuplicateTab = { onDuplicateTab(tab) },
-                                                    onCloseOtherTabs = { onCloseOtherTabs(tab) }
+                                                    onCloseOtherTabs = { onCloseOtherTabs(tab) },
+                                                    homeLiveLayer = homeLiveLayer,
+                                                    homeLiveLayerTabId = homeLiveLayerTabId
                                                 )
                                             }
                                         }
@@ -1500,8 +1536,9 @@ fun PetalTabGridSwitcher(
                                                     val cardScale = TAB_CARD_MIN_SCALE + (1f - TAB_CARD_MIN_SCALE) * presence
                                                     scaleX = cardScale
                                                     scaleY = cardScale
-                                                    // Real tile fades in as the hero docks onto it.
-                                                    alpha = cardPresence.value * (if (hero.visible && hero.tabId == tab.id) 1f - hero.heroAlpha() else 1f)
+                                                    // Real tile stays hidden under the opaque hero until the hero finishes docking,
+                                                    // then reveals identically with zero crossfade.
+                                                    alpha = if (hero.visible && hero.tabId == tab.id) 0f else cardPresence.value
                                                 }
                                                 .onGloballyPositioned { coordinates ->
                                                     tabCardBounds[tab.id] = coordinates.boundsInWindow()
@@ -1718,7 +1755,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             Icon(Icons.Rounded.FolderCopy, contentDescription = stringResource(R.string.ui_group), tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_group), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.ui_group), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.onSurface)
                         }
 
                         // Bookmark All
@@ -1731,7 +1768,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             Icon(Icons.Rounded.BookmarkAdd, contentDescription = stringResource(R.string.ui_bookmark), tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_bookmark), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.ui_bookmark), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.onSurface)
                         }
 
                         // Share All (URLs joined by newline)
@@ -1750,7 +1787,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.ui_share), tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_share), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.ui_share), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.onSurface)
                         }
 
                         // Close Selected
@@ -1763,7 +1800,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_close), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.ui_close), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -1877,7 +1914,7 @@ fun PetalTabGridSwitcher(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_add_tabs_to_group, selectedTabs.size),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = { showAddToGroupDialog = false }) {
@@ -1888,7 +1925,7 @@ fun PetalTabGridSwitcher(
                 if (!isCreatingNew) {
                     Text(
                         text = stringResource(R.string.ui_select_an_existing_group_or),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -1919,14 +1956,14 @@ fun PetalTabGridSwitcher(
                                 content = {
                                     Text(
                                         text = group.title,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
                                 trailing = {
                                     Text(
                                         text = stringResource(R.string.ui_tabs_2, group.tabIds.size),
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
@@ -2201,7 +2238,7 @@ private fun TabManagerEmptyState(
 
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.emptyState,
             color = textColor,
             textAlign = TextAlign.Center
         )
@@ -2210,7 +2247,7 @@ private fun TabManagerEmptyState(
 
         Text(
             text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
+            style = PetalText.pageSubtitle,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -2282,7 +2319,10 @@ private fun rememberTabCardPresence(isClosing: Boolean, popIn: Boolean): State<F
 @Composable
 private fun rememberTabThumbnail(tab: PetalTabItem): State<android.graphics.Bitmap?> {
     val state = remember(tab.id, tab.thumbnailKey, tab.isIncognito) {
-        mutableStateOf(tab.previewBitmap?.takeUnless { it.isRecycled })
+        val seed = tab.previewBitmap?.takeUnless { it.isRecycled }
+            ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tab.id, tab.isIncognito)?.takeUnless { it.isRecycled }
+            ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tab.thumbnailKey, tab.isIncognito)?.takeUnless { it.isRecycled }
+        mutableStateOf(seed)
     }
     LaunchedEffect(tab.previewBitmap) {
         tab.previewBitmap?.takeUnless { it.isRecycled }?.let { state.value = it }
@@ -2331,7 +2371,9 @@ private fun PetalTabCard(
     onSelectForSelection: () -> Unit = {},
     onTogglePin: () -> Unit = {},
     onDuplicateTab: () -> Unit = {},
-    onCloseOtherTabs: () -> Unit = {}
+    onCloseOtherTabs: () -> Unit = {},
+    homeLiveLayer: GraphicsLayer? = null,
+    homeLiveLayerTabId: String? = null
 ) {
     val cachedPreview by rememberTabThumbnail(tab)
     val cardBg = MaterialTheme.colorScheme.surfaceContainerLow
@@ -2419,7 +2461,7 @@ private fun PetalTabCard(
                     TabFavicon(tab = tab, accentColor = accentColor, size = 16.dp)
                     Text(
                         text = if (tab.title.isBlank()) "New Tab" else tab.title,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
+                        style = PetalText.tabLabel,
                         color = textColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -2487,27 +2529,47 @@ private fun PetalTabCard(
                 }
             }
 
-            // Tab WebView preview thumbnail
+            // Tab WebView / Home preview thumbnail
             Box(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.surface),
                 contentAlignment = Alignment.Center
             ) {
-                Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, animationSpec = PetalSpring.calm(), label = "tabPreviewLoad") { preview ->
-                    if (preview != null) {
-                        Image(
-                            bitmap = preview.asImageBitmap(),
-                            contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
-                            // Firefox/Fenix: fill the width and keep the TOP of the page, crop the bottom.
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                            alignment = Alignment.TopCenter,
-                            filterQuality = androidx.compose.ui.graphics.FilterQuality.Medium,
-                            modifier = Modifier.fillMaxSize()
-                        )
-                    } else {
-                        PetalHomePreviewCard(tab = tab, accentColor = accentColor)
+                val preview = cachedPreview?.takeUnless { it.isRecycled }
+                val isHomeTile = tab.url == "Petal Home" || com.petal.browser.unit.PetalBrowserUtils.isHomePage(tab.url)
+                val liveLayerReady = isHomeTile &&
+                    tab.id == homeLiveLayerTabId &&
+                    homeLiveLayer != null &&
+                    !homeLiveLayer.isReleased &&
+                    homeLiveLayer.size.width > 0 &&
+                    homeLiveLayer.size.height > 0
+                if (liveLayerReady && homeLiveLayer != null) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val layerW = homeLiveLayer.size.width.toFloat().coerceAtLeast(1f)
+                        val layerH = homeLiveLayer.size.height.toFloat().coerceAtLeast(1f)
+                        val cropScale = maxOf(size.width / layerW, size.height / layerH)
+                        val offsetX = (size.width - layerW * cropScale) / 2f
+                        clipRect {
+                            scale(scaleX = cropScale, scaleY = cropScale, pivot = Offset.Zero) {
+                                translate(left = offsetX / cropScale, top = 0f) {
+                                    drawLayer(homeLiveLayer)
+                                }
+                            }
+                        }
                     }
+                } else if (preview != null) {
+                    Image(
+                        bitmap = preview.asImageBitmap(),
+                        contentDescription = stringResource(R.string.ui_live_preview_of, tab.title),
+                        // Firefox/Fenix: fill the width and keep the TOP of the page, crop the bottom.
+                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        alignment = Alignment.TopCenter,
+                        filterQuality = androidx.compose.ui.graphics.FilterQuality.Medium,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    PetalHomePreviewCard(tab = tab, accentColor = accentColor)
                 }
             }
         }
@@ -2572,7 +2634,7 @@ private fun PetalHomePreviewCard(
                 Spacer(Modifier.height(10.dp))
                 Text(
                     text = if (tab.title.isBlank() || tab.title == "about:blank") "Website" else tab.title,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                    style = PetalText.listItemTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -2587,7 +2649,7 @@ private fun PetalHomePreviewCard(
                 }
                 Text(
                     text = domain,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                    style = PetalText.listItemMeta,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     maxLines = 1,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -2740,25 +2802,24 @@ private fun PetalTabListItem(
             .entrance(),
         selected = isSelectedForSelection || tab.isSelected || isDragging || isHoveredForMerge,
         leading = {
-                    Crossfade(targetState = cachedPreview?.takeUnless { it.isRecycled }, animationSpec = PetalSpring.quick(), label = "tabListThumbnail") { preview ->
-                        if (preview != null) {
-                            Image(
-                                bitmap = preview.asImageBitmap(),
-                                contentDescription = stringResource(R.string.ui_thumbnail),
-                                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                                alignment = Alignment.TopCenter,
-                                modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
-                            )
-                        } else {
-                            PetalGroupIconBadge(icon = Icons.Rounded.Public, size = 44.dp)
-                        }
+                    val preview = cachedPreview?.takeUnless { it.isRecycled }
+                    if (preview != null) {
+                        Image(
+                            bitmap = preview.asImageBitmap(),
+                            contentDescription = stringResource(R.string.ui_thumbnail),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                            alignment = Alignment.TopCenter,
+                            modifier = Modifier.size(44.dp).clip(RoundedCornerShape(14.dp))
+                        )
+                    } else {
+                        PetalGroupIconBadge(icon = Icons.Rounded.Public, size = 44.dp)
                     }
         },
         content = {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             text = if (tab.title.isBlank() || tab.title.equals("about:blank", true) || tab.title.equals("Petal Start", true)) "Petal Home" else tab.title,
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.listItemTitle,
                             color = textColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -2770,7 +2831,7 @@ private fun PetalTabListItem(
                     }
                     Text(
                         text = if (tab.url.isBlank() || tab.url.equals("about:blank", true)) "Petal Home" else tab.url,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.listItemMeta,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -2895,7 +2956,7 @@ private fun PetalTabGroupCard(
             ) {
                 if (tabs.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.ui_empty_group), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.ui_empty_group), style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     val previewItems = tabs.take(4)
@@ -3088,13 +3149,13 @@ private fun PetalTabGroupInspectionDialog(
                             content = {
                                         Text(
                                             text = tab.title.ifBlank { "New Tab" },
-                                            style = MaterialTheme.typography.titleSmall,
+                                            style = PetalText.listItemTitle,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = tab.url.ifBlank { "about:blank" },
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.listItemMeta,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
@@ -3137,7 +3198,7 @@ private fun TabFavicon(tab: PetalTabItem, accentColor: Color, size: androidx.com
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = tab.title.take(1).uppercase().ifBlank { "?" },
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.badge,
                     color = accentColor
                 )
             }
@@ -3177,15 +3238,12 @@ object PetalTabGridBridge {
                     }
                 }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "PETAL") ?: "PETAL"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                 val isAmoled = sp.getBoolean("sp_amoled", false)
                 val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-                val appFont = remember(fontName) {
-                    com.petal.browser.ui.theme.AppFont.fromName(fontName)
-                }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 }
@@ -3193,7 +3251,7 @@ object PetalTabGridBridge {
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    appFont = appFont,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -3286,10 +3344,7 @@ fun ExpressiveTabUndoBanner(
                 ) { _ ->
                     Text(
                         text = "Closed $tabTitle",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -3307,7 +3362,7 @@ fun ExpressiveTabUndoBanner(
             ) {
                 Text(
                     text = stringResource(R.string.ui_undo),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    style = PetalText.button
                 )
             }
         }

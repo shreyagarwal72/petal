@@ -1,6 +1,7 @@
 package com.petal.browser.media.subtitle
 
 import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.containment.PetalSheetActionRow
 import com.petal.browser.ui.containment.PetalSheetTone
 import com.petal.browser.ui.containment.petalSheetSurface
@@ -102,8 +103,7 @@ fun PetalSubtitleConfigSheet(
                     )
                     Text(
                         text = "Subtitles & Sync",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = Color.White
                     )
                 }
@@ -133,14 +133,13 @@ fun PetalSubtitleConfigSheet(
                         Text(
                             text = if (hasActiveSubtitles) (activeSubtitleName ?: "Active Subtitles") else "No Subtitle Loaded",
                             color = Color.White,
-                            fontWeight = FontWeight.SemiBold,
-                            fontSize = 15.sp
+                            style = PetalText.rowTitle
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = if (hasActiveSubtitles) "Synchronized with playback" else "Select .srt or .vtt file to load",
-                            color = Color.White.copy(alpha = 0.6f),
-                            fontSize = 13.sp
+                            style = PetalText.rowSubtitle,
+                            color = Color.White.copy(alpha = 0.6f)
                         )
                     }
 
@@ -166,14 +165,12 @@ fun PetalSubtitleConfigSheet(
                     Text(
                         text = stringResource(R.string.ui_subtitle_delay),
                         color = Color.White,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
+                        style = PetalText.rowTitle
                     )
                     Text(
                         text = "${String.format(java.util.Locale.US, "%.1f", subtitleDelayMs / 1000f)}s",
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        style = PetalText.value
                     )
                 }
 
@@ -196,14 +193,12 @@ fun PetalSubtitleConfigSheet(
                     Text(
                         text = "Subtitle Font Size",
                         color = Color.White,
-                        fontWeight = FontWeight.Medium,
-                        fontSize = 14.sp
+                        style = PetalText.rowTitle
                     )
                     Text(
                         text = "${subtitleFontSizeSp.toInt()} sp",
                         color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 14.sp
+                        style = PetalText.value
                     )
                 }
 
@@ -221,8 +216,7 @@ fun PetalSubtitleConfigSheet(
                 Text(
                     text = "Text Color",
                     color = Color.White,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 14.sp
+                    style = PetalText.rowTitle
                 )
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),

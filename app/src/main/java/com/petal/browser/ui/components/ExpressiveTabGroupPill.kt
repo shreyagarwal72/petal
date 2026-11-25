@@ -12,9 +12,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.glass.rememberGlassSheen
@@ -62,10 +61,7 @@ fun ExpressiveTabGroupPill(
             Spacer(Modifier.width(6.dp))
             Text(
                 text = groupName,
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                )
+                style = PetalText.badge
             )
         }
     }

@@ -8,6 +8,7 @@
 
 package com.petal.browser.compose.history
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
@@ -64,7 +65,7 @@ import com.petal.browser.ui.components.PetalGroupRole
 import com.petal.browser.ui.components.ExpressiveHeader
 import com.petal.browser.ui.components.PetalExpressiveAlertDialog
 import com.petal.browser.ui.components.HeaderActionIcon
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
+import com.petal.browser.ui.components.PetalPageBackground
 import com.petal.browser.ui.components.entrance
 import com.petal.browser.ui.containment.PetalGroupListRow
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -246,15 +247,12 @@ object PetalHistoryBridge {
                     }
                 }
                 val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-                val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                 val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                 val paletteId = sp.getString("sp_palette_id", com.petal.browser.ui.theme.defaultPaletteId) ?: com.petal.browser.ui.theme.defaultPaletteId
                 val dynamicColor = sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported)
                 val isAmoled = sp.getBoolean("sp_amoled", false)
 
-                val appFont = remember(fontName) {
-                    com.petal.browser.ui.theme.AppFont.fromName(fontName)
-                }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (e: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 }
@@ -262,7 +260,7 @@ object PetalHistoryBridge {
                 PetalExpressiveTheme(
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    appFont = appFont,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -459,7 +457,7 @@ fun PetalHistoryScreen(
         }
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
             modifier = Modifier.fillMaxSize(),
-            pageBackground = { M3ExpressiveVariableBackground(modifier = Modifier.fillMaxSize(), pageSeed = "history_page") },
+            pageBackground = { PetalPageBackground("history_page") },
             header = { headerModifier, headerBackdrop ->
                 ExpressiveHeader(
                     modifier = headerModifier,
@@ -548,7 +546,7 @@ fun PetalHistoryScreen(
                                             // Firefox-style date group label
                                             Text(
                                                 text = listItem.label,
-                                                style = MaterialTheme.typography.labelMedium,
+                                                style = PetalText.sectionHeader,
                                                 color = MaterialTheme.colorScheme.primary,
                                                 fontWeight = FontWeight.SemiBold,
                                                 modifier = Modifier
@@ -652,11 +650,10 @@ fun PetalHistoryScreen(
                                                 },
                                                 content = {
                                                     Text(record.title?.takeIf { it.isNotBlank() } ?: record.domain ?: "Web Page",
-                                                        style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-                                                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                    Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
+                                                        style = PetalText.listItemTitle)
+                                                    Text(record.url ?: "", style = PetalText.listItemMeta,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                    if (timeFormatted.isNotEmpty()) Text(timeFormatted, style = MaterialTheme.typography.labelSmall,
+                                                    if (timeFormatted.isNotEmpty()) Text(timeFormatted, style = PetalText.caption,
                                                         color = MaterialTheme.colorScheme.primary)
                                                 },
                                                 trailing = {

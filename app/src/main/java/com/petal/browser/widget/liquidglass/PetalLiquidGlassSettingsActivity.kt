@@ -1,6 +1,7 @@
 package com.petal.browser.widget.liquidglass
 
 import android.app.WallpaperManager
+import com.petal.browser.ui.theme.PetalText
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -159,10 +160,10 @@ private fun LiquidGlassSettingsScreen(
     val context = LocalContext.current
     val defaults = remember { PetalBlurConfig() }
 
-    var blurRadius by remember { mutableFloatStateOf(initialConfig.blurRadius) }
-    var refractionHeight by remember { mutableFloatStateOf(initialConfig.refractionHeight) }
-    var refractionOffset by remember { mutableFloatStateOf(initialConfig.refractionOffset) }
-    var cornerRadius by remember { mutableFloatStateOf(initialConfig.cornerRadius) }
+    var blurRadius by remember { mutableFloatStateOf(initialConfig.blurRadius.coerceIn(0f, 50f)) }
+    var refractionHeight by remember { mutableFloatStateOf(initialConfig.refractionHeight.coerceIn(12f, 50f)) }
+    var refractionOffset by remember { mutableFloatStateOf(initialConfig.refractionOffset.coerceIn(20f, 120f)) }
+    var cornerRadius by remember { mutableFloatStateOf(initialConfig.cornerRadius.coerceIn(12f, 50f)) }
     var edgeAlpha by remember { mutableIntStateOf(initialConfig.edgeAlpha) }
     var darkLightMode by remember { mutableIntStateOf(initialConfig.darkLightMode) }
     var darkLightIntensity by remember { mutableIntStateOf(initialConfig.darkLightIntensity) }
@@ -303,13 +304,13 @@ private fun LiquidGlassSettingsScreen(
             PetalSettingsSection(title = "Glass optics") {
                 val rows = 5
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                    GlassSliderRow("Bevel height", "${refractionHeight.toInt()} dp", refractionHeight, 5f..50f,
+                    GlassSliderRow("Bevel height", "${refractionHeight.toInt()} dp", refractionHeight, 12f..50f,
                         petalGroupPositionFor(0, rows)) { refractionHeight = it }
-                    GlassSliderRow("Refraction strength", "${refractionOffset.toInt()} dp", refractionOffset, 10f..120f,
+                    GlassSliderRow("Refraction strength", "${refractionOffset.toInt()} dp", refractionOffset, 20f..120f,
                         petalGroupPositionFor(1, rows)) { refractionOffset = it }
-                    GlassSliderRow("Frosted blur", "${"%.1f".format(blurRadius)} px", blurRadius, 0f..35f,
+                    GlassSliderRow("Frosted blur", "${"%.1f".format(blurRadius)} px", blurRadius, 0f..50f,
                         petalGroupPositionFor(2, rows)) { blurRadius = it }
-                    GlassSliderRow("Corner radius", "${cornerRadius.toInt()} dp", cornerRadius, 12f..36f,
+                    GlassSliderRow("Corner radius", "${cornerRadius.toInt()} dp", cornerRadius, 12f..50f,
                         petalGroupPositionFor(3, rows)) { cornerRadius = it }
                     GlassSliderRow("Rim highlight", "$edgeAlpha%", edgeAlpha.toFloat(), 0f..100f,
                         petalGroupPositionFor(4, rows)) { edgeAlpha = it.toInt() }
@@ -321,7 +322,7 @@ private fun LiquidGlassSettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     GlassContainer(petalGroupPositionFor(0, if (darkLightMode != PetalBlurConfig.DARK_LIGHT_OFF) 2 else 1)) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text("Glass tint", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                            Text("Glass tint", style = PetalText.rowTitle)
                             ExpressiveButtonGroup(
                                 items = listOf(
                                     ExpressiveSegmentItem("off", "Auto", Icons.Rounded.AutoAwesome),
@@ -344,7 +345,7 @@ private fun LiquidGlassSettingsScreen(
                             )
                             Text(
                                 "Auto leaves the glass clear and picks light or dark text from your wallpaper.",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -400,15 +401,12 @@ private fun GlassSliderRow(
             ) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    style = PetalText.rowTitle,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     valueText,
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.value,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -513,7 +511,7 @@ private fun GlassPreview(config: PetalBlurConfig, wallpaperRevision: Int) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(Icons.Rounded.Search, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
-                    Text("Search or type URL", color = ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1)
+                    Text("Search or type URL", style = PetalText.rowTitle, color = ink, modifier = Modifier.weight(1f), maxLines = 1)
                     Icon(Icons.Rounded.Mic, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
                     Icon(Icons.Rounded.CameraAlt, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
                 }

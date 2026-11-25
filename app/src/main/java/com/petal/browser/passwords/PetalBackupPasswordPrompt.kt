@@ -1,6 +1,7 @@
 package com.petal.browser.passwords
 
 import android.app.Activity
+import com.petal.browser.ui.theme.PetalText
 import android.app.Dialog
 import android.graphics.Color as AndroidColor
 import android.graphics.drawable.ColorDrawable
@@ -242,12 +243,11 @@ private fun BackupPasswordContent(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Unlock backup",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        style = PetalText.dialogTitle
                     )
                     Text(
                         text = "Password-protected Petal backup",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.dialogBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -296,7 +296,7 @@ private fun BackupPasswordContent(
                         )
                         Text(
                             text = "Enter the password you chose when you exported this backup. If it is forgotten, the backup cannot be opened.",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

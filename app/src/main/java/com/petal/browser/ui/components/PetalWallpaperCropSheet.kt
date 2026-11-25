@@ -33,10 +33,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.haptics.PetalHapticEngine
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -136,12 +136,12 @@ fun PetalWallpaperCropSheet(
                 Column {
                     Text(
                         text = title ?: stringResource(R.string.ui_crop_wallpaper),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = stringResource(R.string.ui_scale_and_position_for_your),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -293,7 +293,7 @@ fun PetalWallpaperCropSheet(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = buttonLabel ?: stringResource(R.string.ui_set_as_home_wallpaper),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.button
                     )
                 }
             }

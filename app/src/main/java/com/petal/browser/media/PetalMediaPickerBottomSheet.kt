@@ -1,6 +1,7 @@
 package com.petal.browser.media
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.view.PetalToast;
@@ -239,12 +240,12 @@ fun PetalMediaPickerBottomSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = if (initialFilter == MediaFilterType.VIDEOS) "Select Video" else if (initialFilter == MediaFilterType.PHOTOS) "Select Photo" else "Select Photos & Videos",
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (allowMultiple) "Select one or more items to upload" else "Tap a photo or video to select",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -306,7 +307,7 @@ fun PetalMediaPickerBottomSheet(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.ui_camera),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.button,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
                         )
@@ -346,7 +347,7 @@ fun PetalMediaPickerBottomSheet(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.ui_photo_picker),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.button,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
                         )
@@ -376,7 +377,7 @@ fun PetalMediaPickerBottomSheet(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.ui_files_2),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.button,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
                         )
@@ -446,13 +447,13 @@ fun PetalMediaPickerBottomSheet(
 
                         Text(
                             text = stringResource(R.string.ui_media_access_required),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.cardTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Text(
                             text = stringResource(R.string.ui_grant_storage_permission_so_you),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
@@ -501,7 +502,7 @@ fun PetalMediaPickerBottomSheet(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_loading_media_gallery),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -537,13 +538,13 @@ fun PetalMediaPickerBottomSheet(
 
                         Text(
                             text = stringResource(R.string.ui_no_indexed_media_found),
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.emptyState,
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
                         Text(
                             text = stringResource(R.string.ui_mediastore_has_not_indexed_recent),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
                         )
@@ -635,7 +636,7 @@ fun PetalMediaPickerBottomSheet(
                                             )
                                             Text(
                                                 text = PetalMediaPickerManager.formatDuration(item.durationMs),
-                                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                                style = PetalText.badge,
                                                 color = Color.White,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -696,7 +697,7 @@ fun PetalMediaPickerBottomSheet(
                     ) {
                         Text(
                             text = stringResource(R.string.ui_item_selected, selectedUris.size, if (selectedUris.size > 1) "s" else ""),
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.badge,
                             color = MaterialTheme.colorScheme.onSurface
                         )
 

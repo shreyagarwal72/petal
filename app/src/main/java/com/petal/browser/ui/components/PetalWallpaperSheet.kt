@@ -41,10 +41,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
@@ -819,12 +817,12 @@ fun PetalWallpaperSheet(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_home_wallpaper),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = stringResource(R.string.ui_customize_your_home_background_style),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -888,7 +886,7 @@ fun PetalWallpaperSheet(
                             com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
                             selectedCategory = cat
                         },
-                        label = { Text(cat, fontSize = 12.sp) },
+                        label = { Text(cat, style = PetalText.chip) },
                         shape = RoundedCornerShape(12.dp),
                         border = null,
                         colors = FilterChipDefaults.filterChipColors(
@@ -1009,7 +1007,7 @@ fun PetalWallpaperSheet(
             if (activeUri != null) {
                 Text(
                     text = stringResource(R.string.ui_dimming_overlay, (currentDim * 100).toInt()),
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(6.dp))
@@ -1027,7 +1025,7 @@ fun PetalWallpaperSheet(
 
                 Text(
                     text = stringResource(R.string.ui_frosted_glass_blur_dp, currentBlur.toInt()),
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(6.dp))

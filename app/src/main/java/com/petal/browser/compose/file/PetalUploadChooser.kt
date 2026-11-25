@@ -17,6 +17,7 @@
 package com.petal.browser.compose.file
 
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.net.Uri
 import android.webkit.ValueCallback
@@ -221,18 +222,12 @@ object PetalUploadChooser {
 
             setContent {
                 val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                val fontName by remember { mutableStateOf(sp.getString("sp_app_font", "PETAL") ?: "PETAL") }
                 val styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
                 val paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
                 val dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
                 val isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
-                val fontWidthVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_width", 92f)) }
-                val fontWeightVal by remember { mutableIntStateOf(sp.getInt("sp_font_weight", 750)) }
-                val fontRoundnessVal by remember { mutableFloatStateOf(sp.getFloat("sp_font_roundness", 100f)) }
 
-                val appFont = remember(fontName) {
-                    try { AppFont.valueOf(fontName) } catch (_: Exception) { AppFont.PETAL }
-                }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                 }
@@ -241,10 +236,7 @@ object PetalUploadChooser {
                     darkTheme = isSystemInDarkTheme(),
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
-                    appFont = appFont,
-                    fontWidth = fontWidthVal,
-                    fontWeight = fontWeightVal,
-                    fontRoundness = fontRoundnessVal,
+                    fontState = fontState,
                     colorStyle = colorStyle,
                     paletteId = paletteId
                 ) {
@@ -319,7 +311,7 @@ private fun ChoiceContent(onPickFiles: () -> Unit, onPickMedia: () -> Unit) {
         ) {
             Text(
                 text = stringResource(R.string.upload_chooser_title),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sheetTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(4.dp))
@@ -369,12 +361,12 @@ private fun ChoiceRow(icon: ImageVector, title: String, subtitle: String, onClic
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.rowTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

@@ -1,6 +1,7 @@
 package com.petal.browser.passwords
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.app.Dialog
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -28,9 +29,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -43,8 +42,8 @@ import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
-import com.petal.browser.unit.CutoutMetrics
 import com.petal.browser.live.PetalLiveActionBus
+import com.petal.browser.ui.components.rememberReduceMotion
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.glass.*
 import kotlinx.coroutines.delay
@@ -141,64 +140,35 @@ private fun SavePasswordSheetContent(
             .substringBefore(':')
     }
 
-    var isMorphing by remember { mutableStateOf(false) }
     var isClosing by remember { mutableStateOf(false) }
 
-    val view = LocalView.current
     val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    val screenHeightDp = configuration.screenHeightDp.dp
-    val cutoutOffsetXDp = remember(view) {
-        CutoutMetrics.cutoutHorizontalOffsetDp(view)
-    }
+    val reduceMotion = rememberReduceMotion()
 
     // Scrim fade animation
     val scrimAlpha by animateFloatAsState(
-        targetValue = if (isMorphing || isClosing) 0f else 0.52f,
+        targetValue = if (isClosing) 0f else 0.52f,
         animationSpec = PetalSpring.calm(),
         label = "scrimAlpha"
     )
 
-    // Morph animations towards Petal NowBar coordinates
     val scale by animateFloatAsState(
-        targetValue = if (isMorphing) 0.16f else if (isClosing) 0.92f else 1f,
+        targetValue = if (isClosing && !reduceMotion) 0.92f else 1f,
         animationSpec = PetalSpring.calm(),
         label = "scale"
     )
 
-    val targetTranslationY = with(density) { (-screenHeightDp + 52.dp).toPx() }
     val translationY by animateFloatAsState(
-        targetValue = if (isMorphing) targetTranslationY else if (isClosing) with(density) { 320.dp.toPx() } else 0f,
+        targetValue = if (isClosing && !reduceMotion) with(density) { 320.dp.toPx() } else 0f,
         animationSpec = PetalSpring.calm(),
         label = "transY"
     )
 
-    val targetTranslationX = with(density) { cutoutOffsetXDp.dp.toPx() }
-    val translationX by animateFloatAsState(
-        targetValue = if (isMorphing) targetTranslationX else 0f,
-        animationSpec = PetalSpring.calm(),
-        label = "transX"
-    )
-
     val alpha by animateFloatAsState(
-        targetValue = if (isMorphing) 0f else if (isClosing) 0f else 1f,
+        targetValue = if (isClosing) 0f else 1f,
         animationSpec = PetalSpring.calm(),
         label = "alpha"
     )
-
-    val cornerRadius by animateDpAsState(
-        targetValue = if (isMorphing) 50.dp else 32.dp,
-        animationSpec = PetalSpring.calm(),
-        label = "corner"
-    )
-
-    LaunchedEffect(isMorphing) {
-        if (isMorphing) {
-            delay(320L)
-            onSave(username, password)
-            onExitAnimationFinished()
-        }
-    }
 
     LaunchedEffect(isClosing) {
         if (isClosing) {
@@ -210,10 +180,10 @@ private fun SavePasswordSheetContent(
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = rememberGlassSheen(isGlass)
     val sheetShape = RoundedCornerShape(
-        topStart = cornerRadius,
-        topEnd = cornerRadius,
-        bottomStart = if (isMorphing) cornerRadius else 0.dp,
-        bottomEnd = if (isMorphing) cornerRadius else 0.dp
+        topStart = 32.dp,
+        topEnd = 32.dp,
+        bottomStart = 0.dp,
+        bottomEnd = 0.dp
     )
 
     Box(
@@ -229,21 +199,20 @@ private fun SavePasswordSheetContent(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
-                    if (!isMorphing && !isClosing) {
+                    if (!isClosing) {
                         isClosing = true
                         onDismiss()
                     }
                 }
         )
 
-        // Morphing Sheet Container
+        // Sheet Container
         PetalGlassContainer(
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer {
                     this.scaleX = scale
                     this.scaleY = scale
-                    this.translationX = translationX
                     this.translationY = translationY
                     this.alpha = alpha
                 },
@@ -302,12 +271,12 @@ private fun SavePasswordSheetContent(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Save password?",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.sheetTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = cleanDomain,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = PetalText.pageSubtitle,
                                 color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -316,7 +285,7 @@ private fun SavePasswordSheetContent(
 
                         IconButton(
                             onClick = {
-                                if (!isMorphing && !isClosing) {
+                                if (!isClosing) {
                                     isClosing = true
                                     onDismiss()
                                 }
@@ -402,11 +371,11 @@ private fun SavePasswordSheetContent(
                         // Secondary action: "Never for this site"
                         com.petal.browser.ui.kit.FilledTonalButton(
                             onClick = {
-                                if (!isMorphing && !isClosing) {
+                                if (!isClosing) {
                                     onNever()
                                 }
                             },
-                            enabled = !isMorphing && !isClosing,
+                            enabled = !isClosing,
                             shape = RoundedCornerShape(16.dp),
                             modifier = Modifier
                                 .weight(1f)
@@ -420,26 +389,26 @@ private fun SavePasswordSheetContent(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Never",
-                                fontWeight = FontWeight.SemiBold,
+                                style = PetalText.button,
                                 maxLines = 1
                             )
                         }
 
-                        // Primary action: "Save" with seamless morph handoff to Petal NowBar
+                        // Primary action: "Save"
                         Button(
                             onClick = {
-                                if (!isMorphing && !isClosing) {
-                                    // Fluid spatial handoff: dispatch live event directly to Petal NowBar
+                                if (!isClosing) {
                                     PetalLiveActionBus.postCredentialSaved(
                                         domain = cleanDomain,
                                         username = username,
                                         password = password,
                                         isUpdate = false
                                     )
-                                    isMorphing = true
+                                    onSave(username, password)
+                                    isClosing = true
                                 }
                             },
-                            enabled = !isMorphing && !isClosing,
+                            enabled = !isClosing,
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
@@ -457,7 +426,7 @@ private fun SavePasswordSheetContent(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Save",
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.button,
                                 maxLines = 1
                             )
                         }

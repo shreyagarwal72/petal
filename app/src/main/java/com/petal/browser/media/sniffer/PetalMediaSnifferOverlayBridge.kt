@@ -50,14 +50,12 @@ object PetalMediaSnifferOverlayBridge {
             var expressive by remember { mutableStateOf(sp.getBoolean("sp_expressive_colors", false)) }
             val darkTheme = if (themeName == "LIGHT") false else if (themeName == "DARK") true else dark
             val pageUrl by currentPageUrl
+            val fontState = com.petal.browser.ui.theme.rememberFontState()
             PetalExpressiveTheme(
                 darkTheme        = darkTheme,
                 dynamicColor     = dynamic,
                 expressiveColors = expressive,
-                appFont          = AppFont.fromName(sp.getString("sp_app_font", "PETAL") ?: "PETAL"),
-                fontWidth        = sp.getFloat("sp_font_width", 92f),
-                fontWeight       = sp.getInt("sp_font_weight", 750),
-                fontRoundness    = sp.getFloat("sp_font_roundness", 100f),
+                fontState        = fontState,
                 colorStyle       = runCatching {
                     ColorStyle.valueOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT")
                 }.getOrDefault(ColorStyle.TONAL_SPOT),

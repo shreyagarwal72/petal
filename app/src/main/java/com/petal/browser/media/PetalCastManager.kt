@@ -1,6 +1,7 @@
 package com.petal.browser.media
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -473,13 +474,12 @@ fun PetalCastDeviceSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.ui_cast_to_device),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
                         text = videoTitle,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -525,7 +525,7 @@ fun PetalCastDeviceSheet(
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = stringResource(R.string.ui_searching_for_devices),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
@@ -546,7 +546,7 @@ fun PetalCastDeviceSheet(
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
                         text = stringResource(R.string.ui_no_cast_devices_found),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.emptyState,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
                     )
@@ -605,14 +605,13 @@ fun PetalCastDeviceSheet(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = device.friendlyName,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold,
+                                        style = PetalText.listItemTitle,
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                     if (device.modelName.isNotBlank() || device.manufacturer.isNotBlank()) {
                                         Text(
                                             text = listOf(device.manufacturer, device.modelName).filter { it.isNotBlank() }.joinToString(" • "),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.listItemMeta,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }

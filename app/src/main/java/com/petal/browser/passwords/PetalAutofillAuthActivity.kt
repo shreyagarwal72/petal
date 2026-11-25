@@ -124,7 +124,8 @@ class PetalAutofillAuthActivity : FragmentActivity() {
         val presentation = PetalAutofillService.buildPresentation(
             packageName,
             cred.username.ifBlank { friendlyTarget },
-            friendlyTarget
+            friendlyTarget,
+            applicationContext
         )
         val dataset = Dataset.Builder(presentation)
         var fieldCount = 0

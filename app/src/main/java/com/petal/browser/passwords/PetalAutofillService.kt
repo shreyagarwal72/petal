@@ -67,11 +67,45 @@ class PetalAutofillService : AutofillService() {
          * Material 3 Expressive suggestion chip.
          * Used for dropdown / autofill dropdown rows and reused by PetalAutofillAuthActivity.
          */
-        fun buildPresentation(packageName: String, title: String, subtitle: String): RemoteViews {
+        fun buildPresentation(
+            packageName: String,
+            title: String,
+            subtitle: String,
+            context: Context? = null
+        ): RemoteViews {
             return try {
                 RemoteViews(packageName, R.layout.petal_autofill_chip).apply {
                     setTextViewText(R.id.petal_autofill_username, title)
                     setTextViewText(R.id.petal_autofill_domain, subtitle)
+                    if (context != null) {
+                        val titleColor = context.getColor(R.color.petal_autofill_title)
+                        val subColor = context.getColor(R.color.petal_autofill_subtitle)
+                        val accentColor = context.getColor(R.color.petal_autofill_accent)
+                        val titleBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+                            context, title, textSizeSp = 15f, colorInt = titleColor, weight = 700, maxWidthDp = 190
+                        )
+                        if (titleBmp != null) {
+                            setImageViewBitmap(R.id.petal_autofill_username_img, titleBmp)
+                            setViewVisibility(R.id.petal_autofill_username_img, View.VISIBLE)
+                            setViewVisibility(R.id.petal_autofill_username, View.GONE)
+                        }
+                        val subBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+                            context, subtitle, textSizeSp = 12f, colorInt = subColor, weight = 400, maxWidthDp = 190
+                        )
+                        if (subBmp != null) {
+                            setImageViewBitmap(R.id.petal_autofill_domain_img, subBmp)
+                            setViewVisibility(R.id.petal_autofill_domain_img, View.VISIBLE)
+                            setViewVisibility(R.id.petal_autofill_domain, View.GONE)
+                        }
+                        val brandBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+                            context, context.getString(R.string.petal_autofill_brand), textSizeSp = 11f, colorInt = accentColor, weight = 600, maxWidthDp = 70
+                        )
+                        if (brandBmp != null) {
+                            setImageViewBitmap(R.id.petal_autofill_brand_img, brandBmp)
+                            setViewVisibility(R.id.petal_autofill_brand_img, View.VISIBLE)
+                            setViewVisibility(R.id.petal_autofill_brand, View.GONE)
+                        }
+                    }
                 }
             } catch (_: Throwable) {
                 // Fallback to AOSP default if layout is missing at runtime
@@ -148,6 +182,35 @@ class PetalAutofillService : AutofillService() {
                 RemoteViews(packageName, R.layout.petal_autofill_save_dialog).apply {
                     setTextViewText(R.id.petal_save_title, titleText)
                     setTextViewText(R.id.petal_save_domain, displayDomain)
+                    if (context != null) {
+                        val titleBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+                            context, titleText, textSizeSp = 22f, colorInt = context.getColor(R.color.petal_autofill_title),
+                            weight = 700, align = android.graphics.Paint.Align.CENTER, maxWidthDp = 260
+                        )
+                        if (titleBmp != null) {
+                            setImageViewBitmap(R.id.petal_save_title_img, titleBmp)
+                            setViewVisibility(R.id.petal_save_title_img, View.VISIBLE)
+                            setViewVisibility(R.id.petal_save_title, View.GONE)
+                        }
+                        val domainBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+                            context, displayDomain, textSizeSp = 13f, colorInt = context.getColor(R.color.petal_autofill_caption),
+                            weight = 400, maxWidthDp = 160
+                        )
+                        if (domainBmp != null) {
+                            setImageViewBitmap(R.id.petal_save_domain_img, domainBmp)
+                            setViewVisibility(R.id.petal_save_domain_img, View.VISIBLE)
+                            setViewVisibility(R.id.petal_save_domain, View.GONE)
+                        }
+                        val badgeBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
+                            context, context.getString(R.string.petal_autofill_encryption_badge), textSizeSp = 11f,
+                            colorInt = context.getColor(R.color.petal_autofill_accent), weight = 600, maxWidthDp = 180
+                        )
+                        if (badgeBmp != null) {
+                            setImageViewBitmap(R.id.petal_save_badge_img, badgeBmp)
+                            setViewVisibility(R.id.petal_save_badge_img, View.VISIBLE)
+                            setViewVisibility(R.id.petal_save_badge, View.GONE)
+                        }
+                    }
                     if (usernameId == null) {
                         setViewVisibility(R.id.petal_save_username, View.GONE)
                         setViewVisibility(R.id.petal_save_dot, View.GONE)
@@ -247,7 +310,7 @@ class PetalAutofillService : AutofillService() {
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 val presBuilder = android.service.autofill.Presentations.Builder()
-                    .setMenuPresentation(buildPresentation(packageName, title, subtitle))
+                    .setMenuPresentation(buildPresentation(packageName, title, subtitle, applicationContext))
                 buildInlinePresentation(request, index, title, subtitle)?.let {
                     presBuilder.setInlinePresentation(it)
                 }
@@ -268,7 +331,7 @@ class PetalAutofillService : AutofillService() {
                 datasetBuilder.setAuthentication(pending.intentSender)
                 response.addDataset(datasetBuilder.build())
             } else {
-                val dataset = Dataset.Builder(buildPresentation(packageName, title, subtitle))
+                val dataset = Dataset.Builder(buildPresentation(packageName, title, subtitle, applicationContext))
                 if (usernameId != null) dataset.setValue(usernameId, null)
                 if (passwordId != null) dataset.setValue(passwordId, null)
                 dataset.setAuthentication(pending.intentSender)

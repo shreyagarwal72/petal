@@ -15,6 +15,7 @@
 package com.petal.browser.compose.splash
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -302,10 +303,8 @@ private fun PetalSplashContent(
             // Subtitle Tagline
             Text(
                 text = "Personal Window to the Web",
+                style = PetalText.pageSubtitle.copy(letterSpacing = 0.5.sp),
                 color = subtitleColor,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.5.sp
             )
         }
     }

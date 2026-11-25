@@ -1,6 +1,7 @@
 package com.petal.browser.compose.mlkit
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -255,15 +256,12 @@ object PetalImageScannerBridge {
                 setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnDetachedFromWindowOrReleasedFromPool)
                 setContent {
                     val sp = remember { PreferenceManager.getDefaultSharedPreferences(activity) }
-                    val fontName = sp.getString("sp_app_font", "GS_FLEX") ?: "GS_FLEX"
                     val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
                     val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
                     val isAmoled = sp.getBoolean("sp_amoled", false)
                     val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
 
-                    val appFont = remember(fontName) {
-                        AppFont.fromName(fontName)
-                    }
+                    val fontState = com.petal.browser.ui.theme.rememberFontState()
                     val colorStyle = remember(styleName) {
                         try { ColorStyle.valueOf(styleName) } catch (_: Exception) { ColorStyle.TONAL_SPOT }
                     }
@@ -274,7 +272,7 @@ object PetalImageScannerBridge {
                         PetalExpressiveTheme(
                             dynamicColor = dynamicColor,
                             useAmoled = isAmoled,
-                            appFont = appFont,
+                            fontState = fontState,
                             colorStyle = colorStyle,
                             paletteId = paletteId
                         ) {
@@ -391,12 +389,12 @@ fun PetalImageScanResultSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = stringResource(R.string.ui_image_recognition),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.ui_google_ml_kit_on_device),
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -420,7 +418,7 @@ fun PetalImageScanResultSheet(
                         Spacer(Modifier.height(16.dp))
                         Text(
                             text = stringResource(R.string.ui_scanning_image_for_text_barcodes),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -436,14 +434,14 @@ fun PetalImageScanResultSheet(
                                 Spacer(Modifier.width(8.dp))
                                 Text(
                                     stringResource(R.string.ui_recognition_error),
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.cardTitle,
                                     color = MaterialTheme.colorScheme.onErrorContainer
                                 )
                             }
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 text = errorMessage ?: "Failed to process image.",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
@@ -469,13 +467,13 @@ fun PetalImageScanResultSheet(
                             Spacer(Modifier.height(10.dp))
                             Text(
                                 text = stringResource(R.string.ui_nothing_recognized),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.emptyState,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 text = stringResource(R.string.ui_no_text_or_qr_barcodes),
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -485,7 +483,7 @@ fun PetalImageScanResultSheet(
                     if (!detectedBarcodes.isNullOrEmpty()) {
                         Text(
                             text = stringResource(R.string.ui_barcodes_qr_codes),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.height(8.dp))
@@ -511,7 +509,7 @@ fun PetalImageScanResultSheet(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = barcode.displayValue,
-                                            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            style = PetalText.listItemTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                     }
@@ -542,7 +540,7 @@ fun PetalImageScanResultSheet(
                     if (!detectedText.isNullOrBlank()) {
                         Text(
                             text = stringResource(R.string.ui_detected_text),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.height(8.dp))
@@ -554,7 +552,7 @@ fun PetalImageScanResultSheet(
                             Column(modifier = Modifier.padding(14.dp)) {
                                 Text(
                                     text = detectedText!!,
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = PetalText.cardBody,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(Modifier.height(12.dp))

@@ -12,6 +12,7 @@
 package com.petal.browser.compose.security
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Activity
@@ -64,7 +65,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.security.BiometricLockManager
-import com.petal.browser.ui.components.M3ExpressiveVariableBackground
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.layout.LiquidRippleEffect
@@ -149,9 +149,9 @@ fun PetalBiometricExpressiveSheet(
                 .fillMaxWidth()
                 .wrapContentHeight()
         ) {
-            M3ExpressiveVariableBackground(
+            com.petal.browser.ui.components.PetalPageBackground(
                 modifier = Modifier.matchParentSize(),
-                pageSeed = "biometric_auth"
+                pageKey = "biometric_auth"
             )
 
             Column(
@@ -213,8 +213,7 @@ fun PetalBiometricExpressiveSheet(
 
                 Text(
                     text = if (isSuccess) "Authenticated" else title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.sheetTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center
                 )
@@ -223,7 +222,7 @@ fun PetalBiometricExpressiveSheet(
 
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.pageSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
@@ -243,7 +242,7 @@ fun PetalBiometricExpressiveSheet(
                         ) {
                             Text(
                                 text = errorMessage!!,
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
@@ -302,7 +301,7 @@ fun PetalBiometricExpressiveSheet(
                     Text(
                         stringResource(R.string.ui_cancel),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge
+                        style = PetalText.button
                     )
                 }
             }
@@ -352,13 +351,9 @@ object PetalBiometricOverlayBridge {
                 val isAmoled = remember { sp.getBoolean("sp_amoled", false) }
                 val isExpressiveColors = remember { sp.getBoolean("sp_expressive_colors", false) }
                 val useDynamic = remember { sp.getBoolean("useDynamicColor", com.petal.browser.ui.theme.isDynamicColorSupported) }
-                val fontName = remember { sp.getString("sp_app_font", "PETAL") ?: "PETAL" }
                 val styleName = remember { sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT" }
-                val fontWidthVal = remember { sp.getFloat("sp_font_width", 92f) }
-                val fontWeightVal = remember { sp.getInt("sp_font_weight", 750) }
-                val fontRoundnessVal = remember { sp.getFloat("sp_font_roundness", 100f) }
 
-                val appFont = remember(fontName) { com.petal.browser.ui.theme.AppFont.fromName(fontName) }
+                val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { com.petal.browser.ui.theme.ColorStyle.valueOf(styleName) } catch (_: Exception) { com.petal.browser.ui.theme.ColorStyle.TONAL_SPOT }
                 }
@@ -368,11 +363,8 @@ object PetalBiometricOverlayBridge {
                     useAmoled = isAmoled,
                     dynamicColor = useDynamic,
                     expressiveColors = isExpressiveColors,
-                    appFont = appFont,
-                    colorStyle = colorStyle,
-                    fontWidth = fontWidthVal,
-                    fontWeight = fontWeightVal,
-                    fontRoundness = fontRoundnessVal
+                    fontState = fontState,
+                    colorStyle = colorStyle
                 ) {
                     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
                     val hostSource = appCompat.findViewById<android.view.View>(com.petal.browser.R.id.main)
