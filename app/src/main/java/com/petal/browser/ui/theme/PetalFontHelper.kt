@@ -401,33 +401,54 @@ object PetalFontHelper {
         return try {
             val dm = context.resources.displayMetrics
             val textSizePx = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, textSizeSp, dm)
+            val padX = (3f * dm.density).coerceAtLeast(4f)
+            val padY = (2f * dm.density).coerceAtLeast(3f)
             val maxW = (maxWidthDp * dm.density).roundToInt().coerceAtLeast(32)
             val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.SUBPIXEL_TEXT_FLAG).apply {
                 color = colorInt
                 textSize = textSizePx
                 typeface = getAppTypeface(context, weight = weight)
             }
+            val availTextPx = (maxW - 2f * padX).coerceAtLeast(16f)
             var drawText = text
-            var measuredW = paint.measureText(drawText)
-            if (measuredW > maxW) {
+            val bounds = android.graphics.Rect()
+            fun measureVisualWidth(s: String): Float {
+                paint.getTextBounds(s, 0, s.length, bounds)
+                val adv = paint.measureText(s)
+                val inked = (bounds.right - kotlin.math.min(0, bounds.left)).toFloat()
+                return kotlin.math.max(adv, inked)
+            }
+            var measuredW = measureVisualWidth(drawText)
+            if (measuredW > availTextPx) {
                 val ell = "\u2026"
-                val avail = (maxW - paint.measureText(ell)).coerceAtLeast(1f)
-                val count = paint.breakText(drawText, true, avail, null)
+                val ellW = measureVisualWidth(ell)
+                val targetAvail = (availTextPx - ellW).coerceAtLeast(1f)
+                var count = paint.breakText(drawText, true, targetAvail, null)
+                while (count > 0 && measureVisualWidth(drawText.substring(0, count).trimEnd() + ell) > availTextPx) {
+                    count--
+                }
                 drawText = if (count > 0) drawText.substring(0, count).trimEnd() + ell else ell
-                measuredW = paint.measureText(drawText)
+                measuredW = measureVisualWidth(drawText)
+            } else {
+                paint.getTextBounds(drawText, 0, drawText.length, bounds)
             }
             val fm = paint.fontMetrics
-            val wPx = ceil(measuredW + 2f).toInt().coerceIn(4, maxW)
-            val hPx = ceil(fm.descent - fm.ascent + 2f).toInt().coerceAtLeast(4)
-            val bmp = Bitmap.createBitmap(wPx, hPx, Bitmap.Config.ARGB_8888)
+            val leftBear = kotlin.math.min(0, bounds.left)
+            val topY = kotlin.math.min(fm.ascent, bounds.top.toFloat())
+            val botY = kotlin.math.max(fm.descent, bounds.bottom.toFloat())
+            val wPx = ceil(measuredW + 2f * padX).toInt().coerceIn(4, maxW)
+            val hPx = ceil(botY - topY + 2f * padY).toInt().coerceAtLeast(4)
+            val bmp = Bitmap.createBitmap(wPx, hPx, Bitmap.Config.ARGB_8888).apply {
+                density = dm.densityDpi
+            }
             val canvas = Canvas(bmp)
             paint.textAlign = align
             val x = when (align) {
                 Paint.Align.CENTER -> wPx / 2f
-                Paint.Align.RIGHT -> wPx - 1f
-                else -> 1f
+                Paint.Align.RIGHT -> wPx - padX
+                else -> padX - leftBear
             }
-            canvas.drawText(drawText, x, -fm.ascent + 1f, paint)
+            canvas.drawText(drawText, x, -topY + padY, paint)
             bmp
         } catch (_: Throwable) {
             null

@@ -89,13 +89,16 @@ object PetalLiquidGlassWidgetBinder {
 
         val ink = PetalWallpaperBlurHelper.getContentColor(context, id, config)
         val hintText = context.getString(R.string.widget_search_hint)
+        val minW = mgr.getAppWidgetOptions(id)?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
+        val iconsOverheadDp = if (isPill) 130 else 174
+        val computedMaxDp = if (minW > 0) (minW - iconsOverheadDp).coerceIn(72, 280) else if (isPill) 140 else 160
         val hintBmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
             context = context,
             text = hintText,
             textSizeSp = if (isPill) 13f else 14f,
             colorInt = ink,
             weight = 500,
-            maxWidthDp = if (isPill) 140 else 160
+            maxWidthDp = computedMaxDp
         )
         if (hintBmp != null) {
             views.setImageViewBitmap(R.id.btn_search_bar_img, hintBmp)

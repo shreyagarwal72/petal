@@ -196,7 +196,7 @@ private fun PetalWidgetCard(
 // ───────────────────────────── building blocks ─────────────────────────────
 
 @Composable
-private fun Hint(cfg: PetalWidgetConfig, color: Int, modifier: GlanceModifier) {
+private fun Hint(cfg: PetalWidgetConfig, plan: PetalLayoutPlan, color: Int, modifier: GlanceModifier) {
     val context = LocalContext.current
     val text = cfg.hint.trim().ifEmpty { context.getString(cfg.hintRes()) }
     val bmp = com.petal.browser.ui.theme.PetalFontHelper.renderTextBitmap(
@@ -205,11 +205,11 @@ private fun Hint(cfg: PetalWidgetConfig, color: Int, modifier: GlanceModifier) {
         textSizeSp = 15f,
         colorInt = color,
         weight = 500,
-        maxWidthDp = 220
+        maxWidthDp = plan.hintWidthDp
     )
     if (bmp != null) {
         val density = context.resources.displayMetrics.density.coerceAtLeast(1f)
-        Box(modifier = modifier, contentAlignment = Alignment.CenterStart) {
+        Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
             Image(
                 provider = ImageProvider(bmp),
                 contentDescription = text,
@@ -320,7 +320,7 @@ private fun CookieTile(
                 colorInt = labelColor,
                 weight = 500,
                 align = android.graphics.Paint.Align.CENTER,
-                maxWidthDp = 72
+                maxWidthDp = plan.tileWidthDp
             )
             if (labelBmp != null) {
                 val density = context.resources.displayMetrics.density.coerceAtLeast(1f)
@@ -410,7 +410,7 @@ private fun SearchRow(
                 .padding(start = if (plan.showBadge) 10.dp else 14.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Hint(cfg, hintColor, GlanceModifier)
+            Hint(cfg, plan, hintColor, GlanceModifier)
         }
         plan.buttons.forEach { slot ->
             CookieButton(cfg, slot, pal.barTones[slot.index.coerceIn(0, 3)], plan)
@@ -446,7 +446,7 @@ private fun Petal2Content(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, plan:
                     colorFilter = tint(pal.primary)
                 )
                 Spacer(modifier = GlanceModifier.width(10.dp))
-                Hint(cfg, pal.onFieldMuted, GlanceModifier)
+                Hint(cfg, plan, pal.onFieldMuted, GlanceModifier)
             }
         }
 
@@ -480,7 +480,7 @@ private fun Petal3Content(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, plan:
                 .padding(start = if (plan.showBadge) 14.dp else 16.dp),
             contentAlignment = Alignment.CenterStart
         ) {
-            Hint(cfg, pal.onBarMuted, GlanceModifier)
+            Hint(cfg, plan, pal.onBarMuted, GlanceModifier)
         }
         plan.buttons.forEach { slot ->
             CookieButton(cfg, slot, pal.barTones[slot.index.coerceIn(0, 3)], plan)

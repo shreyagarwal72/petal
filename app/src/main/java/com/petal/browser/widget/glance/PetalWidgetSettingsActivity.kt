@@ -526,7 +526,7 @@ private fun PreviewBadge(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, size: 
 private fun PreviewHint(cfg: PetalWidgetConfig, color: Int) {
     Text(
         cfg.hint.trim().ifEmpty { stringResource(cfg.hintRes()) },
-        style = PetalText.rowTitle,
+        style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium),
         color = Color(color),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
@@ -562,7 +562,13 @@ private fun WidgetPreview(cfg: PetalWidgetConfig, pal: PetalWidgetPalette, width
                             Column(Modifier.weight(1f).fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                                 CookieIcon(cfg.tileShape, plan.tileCookie, pal.tileTones[slot.index.coerceIn(0, 3)], slot.action.iconRes, (slot.index * 20).toFloat(), 0.46f)
                                 if (plan.showTileLabels) {
-                                    Text(stringResource(slot.action.labelRes), style = PetalText.tabLabel, color = Color(pal.onBar), maxLines = 1)
+                                    Text(
+                                        stringResource(slot.action.labelRes),
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                                        color = Color(pal.onBar),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
                                 }
                             }
                         }
