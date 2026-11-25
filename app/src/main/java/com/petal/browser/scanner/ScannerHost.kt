@@ -65,7 +65,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.petal.browser.R
 import com.petal.browser.compose.composable.PetalContainedLoadingIndicator
-import com.petal.browser.predictive.PetalPredictiveBackSurface
+import com.petal.browser.predictive.PetalPredictiveShell
+import com.petal.browser.predictive.PetalSubPageHost
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -106,7 +107,8 @@ enum class CameraErrorState {
 fun ScannerHost(
     onDismiss: () -> Unit,
     onResultDispatched: ((String) -> Unit)? = null,
-    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null
+    backgroundSnapshot: androidx.compose.ui.graphics.ImageBitmap? = null,
+    wrapPredictive: Boolean = true
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -300,37 +302,10 @@ fun ScannerHost(
     val isLiquidGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
     val glassWallpaper = rememberPetalGlassWallpaper()
 
-    // ── Sub-screens (History / Settings) ───────────────────────────────────
-    if (showSettingsScreen) {
-        PetalScannerSettingsScreen(onBack = { showSettingsScreen = false })
-        return
-    }
-
-    if (activeMode == ScannerMode.HISTORY) {
-        PetalScannerHistoryScreen(
-            onBack = { activeMode = ScannerMode.SCAN },
-            onSelectEntry = { entry ->
-                val payload = ScanParser.parse(entry.rawValue, entry.formatName)
-                val safety = if (payload is ScanPayload.Url) LinkInspector.inspect(payload.url, payload.host) else null
-                detectedResults = listOf(
-                    PetalScanResult(
-                        rawValue = entry.rawValue,
-                        formatName = entry.formatName,
-                        payload = payload,
-                        safetyReport = safety,
-                        timestamp = entry.timestamp
-                    )
-                )
-                selectedResultIndex = 0
-                scanLocked = true
-            }
-        )
-        return
-    }
-
-    // ── Predictive Back ────────────────────────────────────────────────────
+    // ── Predictive Back & Sub-pages ────────────────────────────────────────
+    val hasSubPage = showSettingsScreen || activeMode == ScannerMode.HISTORY
     val hasSubOverlay = detectedResults.isNotEmpty() || isDecodingGallery
-    if (hasSubOverlay) {
+    if (hasSubOverlay && !hasSubPage) {
         androidx.activity.compose.BackHandler(enabled = true) {
             detectedResults = emptyList()
             scanLocked = false
@@ -338,24 +313,36 @@ fun ScannerHost(
         }
     }
 
-    PetalPredictiveBackSurface(
-        enabled = !hasSubOverlay,
-        onBack = onDismiss
+    PetalPredictiveShell(
+        wrap = wrapPredictive,
+        enabled = !hasSubOverlay && !hasSubPage,
+        onBack = onDismiss,
+        backgroundSnapshot = backgroundSnapshot
     ) {
         CompositionLocalProvider(
             LocalPetalGlassWallpaper provides (if (isLiquidGlass) glassWallpaper else null)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF090A0F))
-                    .semantics {
-                        liveRegion = LiveRegionMode.Polite
-                        if (talkBackText.isNotEmpty()) {
-                            contentDescription = talkBackText
-                        }
+            PetalSubPageHost(
+                visible = hasSubPage,
+                onBack = {
+                    if (showSettingsScreen) {
+                        showSettingsScreen = false
+                    } else {
+                        activeMode = ScannerMode.SCAN
                     }
-            ) {
+                },
+                parent = {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xFF090A0F))
+                            .semantics {
+                                liveRegion = LiveRegionMode.Polite
+                                if (talkBackText.isNotEmpty()) {
+                                    contentDescription = talkBackText
+                                }
+                            }
+                    ) {
                 // ── Full-Bleed Camera Surface ──────────────────────────────────
                 if (hasCameraPermission && cameraError == CameraErrorState.NONE) {
                     key(lensFacing, bindTrigger) {
@@ -942,6 +929,33 @@ fun ScannerHost(
                     )
                 }
             }
+                },
+                subPage = {
+                    if (showSettingsScreen) {
+                        PetalScannerSettingsScreen(onBack = { showSettingsScreen = false })
+                    } else if (activeMode == ScannerMode.HISTORY) {
+                        PetalScannerHistoryScreen(
+                            onBack = { activeMode = ScannerMode.SCAN },
+                            onSelectEntry = { entry ->
+                                val payload = ScanParser.parse(entry.rawValue, entry.formatName)
+                                val safety = if (payload is ScanPayload.Url) LinkInspector.inspect(payload.url, payload.host) else null
+                                detectedResults = listOf(
+                                    PetalScanResult(
+                                        rawValue = entry.rawValue,
+                                        formatName = entry.formatName,
+                                        payload = payload,
+                                        safetyReport = safety,
+                                        timestamp = entry.timestamp
+                                    )
+                                )
+                                selectedResultIndex = 0
+                                scanLocked = true
+                                activeMode = ScannerMode.SCAN
+                            }
+                        )
+                    }
+                }
+            )
         }
     }
 }

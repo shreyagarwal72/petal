@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -40,8 +39,7 @@ fun PetalScannerSettingsScreen(
     var historyEnabled by remember { mutableStateOf(PetalScannerSettings.isHistoryEnabled(context)) }
     var safetyWarnings by remember { mutableStateOf(PetalScannerSettings.isSafetyWarningsEnabled(context)) }
 
-    PetalPredictiveBackSurface(onBack = onBack) {
-        Scaffold(
+    Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
@@ -142,7 +140,6 @@ fun PetalScannerSettingsScreen(
             }
         }
     }
-}
 
 @Composable
 private fun SettingsCard(

@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.petal.browser.predictive.PetalPredictiveBackSurface
 import com.petal.browser.ui.components.bouncyClickable
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -52,8 +51,7 @@ fun PetalScannerHistoryScreen(
         reload()
     }
 
-    PetalPredictiveBackSurface(onBack = onBack) {
-        Scaffold(
+    Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
@@ -158,7 +156,6 @@ fun PetalScannerHistoryScreen(
             }
         }
     }
-}
 
 @Composable
 private fun HistoryItemRow(
