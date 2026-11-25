@@ -37,3 +37,10 @@ The `petal` and `petal_browser` repositories have been consolidated into this si
 - **One command per invocation**, no command chaining (`&&` / `||`).
 - **Zero local Gradle builds on Termux**. Verification is performed through static code analysis and tests.
 - Keep edits small, modular, and reviewable.
+
+## 4. Git Branching, Release Base & CI Verification
+
+- **Check all branch heads before branching or editing**: Never assume `main` / `origin/main` holds the latest app code. Before creating any working branch, fetch remotes and inspect all local and remote refs sorted by committer date (`git for-each-ref --sort=-committerdate refs/heads refs/remotes/origin`) to check whether any unmerged branch is ahead of `main`.
+- **Never branch from a stale base**: If an active `feat/*` or `fix/*` branch contains newer commits not yet in `main`, do NOT silently branch from an older `main`. Merge/base from the true latest head or confirm the intended base commit with the user first.
+- **Guard `main` against downgrades before merging or pushing**: Because pushing `main` triggers release/CI APK builds, verify before every merge or push to `main` that no newer active branch/version stack is being excluded or reverted (`git log` comparison against newest remote/local refs).
+- **Always push major changes and verify GitHub CI**: After committing significant code changes or merges, push to `origin` to trigger `Android CI/CD Build` and verify the run finishes with `conclusion: success` via `gh run` (never report success until CI passes).

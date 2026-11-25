@@ -66,9 +66,6 @@ class BarScrollDecider(
 
     fun isTouching(): Boolean = touching
 
-    fun isFlingCandidate(): Boolean =
-        !touching && touchTrackingAvailable && (nowMs() - lastTouchEndMs < FLING_WINDOW_MS)
-
     /** Tab switch, navigation or a new page: the next offset only rebases. */
     fun reset() {
         needsRebase = true
