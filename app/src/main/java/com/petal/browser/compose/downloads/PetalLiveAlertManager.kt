@@ -28,6 +28,10 @@ object PetalLiveAlertManager {
     private val lastNotifTimeMap = ConcurrentHashMap<Long, Long>()
     private val handledTerminalStatusMap = ConcurrentHashMap<Long, Int>()
 
+    // Row ids that currently have a live (progress / paused) notification posted by this manager.
+    // Used to dismiss that notification when its row disappears or is replaced by the real download.
+    private val liveNotifiedIds: MutableSet<Long> = ConcurrentHashMap.newKeySet()
+
     // Single collector job — kept so we can cancel + relaunch it reliably.
     @Volatile private var collectorJob: Job? = null
     private val observerLock = Any()
@@ -57,6 +61,13 @@ object PetalLiveAlertManager {
                         // Mozilla-owned downloads are notified by PetalMozillaDownloadService
                         // (official Firefox notifications). Posting here too would duplicate them.
                         val items = allItems.filter { !PetalFetchDownloadBridge.isMozillaOwned(it.id) }
+
+                        // A row that left the list (queue entry handed to the engine, cancelled, cleared)
+                        // must not leave its live notification behind.
+                        if (liveNotifiedIds.isNotEmpty()) {
+                            val presentIds = items.mapTo(HashSet()) { it.id }
+                            liveNotifiedIds.filter { it !in presentIds }.forEach { dismissLive(context, it) }
+                        }
                         val activeItems = items.filter {
                             it.status == DownloadStatus.STATUS_RUNNING ||
                             it.status == DownloadStatus.STATUS_PENDING ||
@@ -65,6 +76,17 @@ object PetalLiveAlertManager {
 
                         val now = System.currentTimeMillis()
                         items.forEach { item ->
+                            // A queued row is only a placeholder: it has no engine download yet. Once the
+                            // queue starts it, the engine posts the one real notification. Posting one
+                            // here as well shows two cards for one download, and this one never updates.
+                            if (item.queued && (
+                                    item.status == DownloadStatus.STATUS_RUNNING ||
+                                    item.status == DownloadStatus.STATUS_PENDING ||
+                                    item.status == DownloadStatus.STATUS_PAUSED)
+                            ) {
+                                if (item.id in liveNotifiedIds) dismissLive(context, item.id)
+                                return@forEach
+                            }
                             when (item.status) {
                                 DownloadStatus.STATUS_RUNNING, DownloadStatus.STATUS_PENDING -> {
                                     handledTerminalStatusMap.remove(item.id)
@@ -83,6 +105,7 @@ object PetalLiveAlertManager {
                                 DownloadStatus.STATUS_SUCCESSFUL -> {
                                     if (handledTerminalStatusMap[item.id] != DownloadStatus.STATUS_SUCCESSFUL) {
                                         handledTerminalStatusMap[item.id] = DownloadStatus.STATUS_SUCCESSFUL
+                                        liveNotifiedIds.remove(item.id)
                                         lastNotifTimeMap.remove(item.id)
                                         showCompletionNotification(context, item.id, item.fileName, item.totalSize)
                                     }
@@ -90,6 +113,7 @@ object PetalLiveAlertManager {
                                 DownloadStatus.STATUS_FAILED -> {
                                     if (handledTerminalStatusMap[item.id] != DownloadStatus.STATUS_FAILED) {
                                         handledTerminalStatusMap[item.id] = DownloadStatus.STATUS_FAILED
+                                        liveNotifiedIds.remove(item.id)
                                         lastNotifTimeMap.remove(item.id)
                                         showFailureNotification(context, item.id, item.fileName, item.failureReason, item.source.isMozillaOwned.not() && item.source != com.petal.browser.download.DownloadSource.BLOB)
                                     }
@@ -114,6 +138,12 @@ object PetalLiveAlertManager {
     fun stopTracking(context: Context, downloadId: Long) {
         trackingJobs[downloadId]?.cancel()
         trackingJobs.remove(downloadId)
+        dismissLive(context, downloadId)
+    }
+
+    /** Cancels this manager's notification for [downloadId] and forgets everything tracked for it. */
+    private fun dismissLive(context: Context, downloadId: Long) {
+        liveNotifiedIds.remove(downloadId)
         lastNotifTimeMap.remove(downloadId)
         handledTerminalStatusMap.remove(downloadId)
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
@@ -212,11 +242,14 @@ object PetalLiveAlertManager {
     private fun showPausedNotification(context: Context, downloadId: Long) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
         val item = PetalFetchDownloadBridge.downloadItems.value.firstOrNull { it.id == downloadId } ?: return
+        if (item.queued) return // queue placeholders never get a notification of their own
+        liveNotifiedIds.add(downloadId)
         nm.notify(LiveUpdateNotificationManager.NOTIF_TAG, downloadId.toInt(), buildActiveNotification(context, item.copy(status = DownloadStatus.STATUS_PAUSED)))
     }
 
     private fun showLiveNotification(context: Context, item: DownloadItem) {
         val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager ?: return
+        liveNotifiedIds.add(item.id)
         nm.notify(LiveUpdateNotificationManager.NOTIF_TAG, item.id.toInt(), buildActiveNotification(context, item))
     }
 

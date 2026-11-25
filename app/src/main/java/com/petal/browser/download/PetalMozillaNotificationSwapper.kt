@@ -9,6 +9,7 @@ import com.petal.browser.compose.downloads.DownloadStatus
 import com.petal.browser.compose.downloads.LiveUpdateNotificationManager
 import com.petal.browser.compose.downloads.PetalFetchDownloadBridge
 import com.petal.browser.compose.downloads.PetalLiveAlertManager
+import mozilla.components.browser.state.state.content.DownloadState
 import java.lang.reflect.Method
 import java.util.concurrent.ConcurrentHashMap
 
@@ -67,14 +68,25 @@ object PetalMozillaNotificationSwapper {
         if (args[idx - 2] != null) return args
         if (!LiveUpdateNotificationManager.isLiveUpdatesEnabled(ctx)) return args
 
-        val item = resolveItem(ctx, notifId) ?: return args
-        val active = item.status == DownloadStatus.STATUS_RUNNING ||
-            item.status == DownloadStatus.STATUS_PENDING ||
-            item.status == DownloadStatus.STATUS_PAUSED
-        if (!active) {
+        val row = resolveItem(ctx, notifId) ?: return args
+        // Decide from the BrowserStore, which Mozilla's service updates BEFORE it posts a notification.
+        // The bridge row is debounced (about 250 ms behind): going by it, a "completed" post could be
+        // swapped for a stale "Downloading" card (or dropped), and nothing would ever replace that card.
+        val live = com.petal.browser.engine.gecko.PetalEngineStore.getStore(ctx).state.downloads[row.downloadId]
+        val liveStatus = when (live?.status) {
+            DownloadState.Status.DOWNLOADING, DownloadState.Status.INITIATED -> DownloadStatus.STATUS_RUNNING
+            DownloadState.Status.PAUSED -> DownloadStatus.STATUS_PAUSED
+            else -> null
+        }
+        if (live == null || liveStatus == null) {
             clear(notifId)
             return args
         }
+        val item = row.copy(
+            status = liveStatus,
+            bytesDownloaded = live.currentBytesCopied,
+            totalSize = live.contentLength ?: row.totalSize
+        )
 
         val now = SystemClock.elapsedRealtime()
         val prevAt = lastPostAt[notifId]
