@@ -25,11 +25,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.boundsInWindow
-import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -42,7 +39,6 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.live.PetalLiveActionBus
-import com.petal.browser.now.PetalNowAnchor
 import com.petal.browser.ui.components.rememberReduceMotion
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.glass.*
@@ -133,75 +129,35 @@ private fun UpdatePasswordSheetContent(
             .substringBefore(':')
     }
 
-    var isMorphing by remember { mutableStateOf(false) }
     var isClosing by remember { mutableStateOf(false) }
-    var sheetRestingBounds by remember { mutableStateOf<Rect?>(null) }
 
     val density = LocalDensity.current
     val reduceMotion = rememberReduceMotion()
-    val morphDelta = remember(isMorphing, sheetRestingBounds, reduceMotion) {
-        if (isMorphing && !reduceMotion && PetalNowAnchor.isVisible) {
-            PetalNowAnchor.computeMorphDelta(sheetRestingBounds)
-        } else {
-            null
-        }
-    }
-    val hasAnchorTarget = morphDelta != null
 
     // Scrim fade animation
     val scrimAlpha by animateFloatAsState(
-        targetValue = if (isMorphing || isClosing) 0f else 0.52f,
+        targetValue = if (isClosing) 0f else 0.52f,
         animationSpec = PetalSpring.calm(),
         label = "scrimAlpha"
     )
 
-    // Morph animations towards the live Petal Now anchor (falls back to clean fade/scale dismiss)
     val scale by animateFloatAsState(
-        targetValue = when {
-            isMorphing && hasAnchorTarget -> 0.18f
-            isMorphing || isClosing -> if (reduceMotion) 1f else 0.92f
-            else -> 1f
-        },
+        targetValue = if (isClosing && !reduceMotion) 0.92f else 1f,
         animationSpec = PetalSpring.calm(),
         label = "scale"
     )
 
-    val fallbackDismissY = with(density) { (if (isMorphing) 48.dp else 320.dp).toPx() }
     val translationY by animateFloatAsState(
-        targetValue = when {
-            isMorphing && morphDelta != null -> morphDelta.y
-            isMorphing || isClosing -> if (reduceMotion) 0f else fallbackDismissY
-            else -> 0f
-        },
+        targetValue = if (isClosing && !reduceMotion) with(density) { 320.dp.toPx() } else 0f,
         animationSpec = PetalSpring.calm(),
         label = "transY"
     )
 
-    val translationX by animateFloatAsState(
-        targetValue = if (isMorphing && morphDelta != null) morphDelta.x else 0f,
-        animationSpec = PetalSpring.calm(),
-        label = "transX"
-    )
-
     val alpha by animateFloatAsState(
-        targetValue = if (isMorphing || isClosing) 0f else 1f,
+        targetValue = if (isClosing) 0f else 1f,
         animationSpec = PetalSpring.calm(),
         label = "alpha"
     )
-
-    val cornerRadius by animateDpAsState(
-        targetValue = if (isMorphing && hasAnchorTarget) 44.dp else 32.dp,
-        animationSpec = PetalSpring.calm(),
-        label = "corner"
-    )
-
-    LaunchedEffect(isMorphing) {
-        if (isMorphing) {
-            delay(320L)
-            onUpdate()
-            onExitAnimationFinished()
-        }
-    }
 
     LaunchedEffect(isClosing) {
         if (isClosing) {
@@ -213,10 +169,10 @@ private fun UpdatePasswordSheetContent(
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val sheen = rememberGlassSheen(isGlass)
     val sheetShape = RoundedCornerShape(
-        topStart = cornerRadius,
-        topEnd = cornerRadius,
-        bottomStart = if (isMorphing) cornerRadius else 0.dp,
-        bottomEnd = if (isMorphing) cornerRadius else 0.dp
+        topStart = 32.dp,
+        topEnd = 32.dp,
+        bottomStart = 0.dp,
+        bottomEnd = 0.dp
     )
 
     Box(
@@ -232,30 +188,20 @@ private fun UpdatePasswordSheetContent(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null
                 ) {
-                    if (!isMorphing && !isClosing) {
+                    if (!isClosing) {
                         isClosing = true
                         onDismiss()
                     }
                 }
         )
 
-        // Morphing Sheet Container
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .onGloballyPositioned { coords ->
-                    if (!isMorphing && !isClosing) {
-                        sheetRestingBounds = coords.boundsInWindow()
-                    }
-                }
-        ) {
+        // Sheet Container
         PetalGlassContainer(
             modifier = Modifier
                 .fillMaxWidth()
                 .graphicsLayer {
                     this.scaleX = scale
                     this.scaleY = scale
-                    this.translationX = translationX
                     this.translationY = translationY
                     this.alpha = alpha
                 },
@@ -408,18 +354,18 @@ private fun UpdatePasswordSheetContent(
 
                         Button(
                             onClick = {
-                                if (!isMorphing && !isClosing) {
-                                    // Fluid spatial handoff: dispatch live event directly to Petal NowBar
+                                if (!isClosing) {
                                     PetalLiveActionBus.postCredentialSaved(
                                         domain = cleanDomain,
                                         username = username,
                                         password = newPassword,
                                         isUpdate = true
                                     )
-                                    isMorphing = true
+                                    onUpdate()
+                                    isClosing = true
                                 }
                             },
-                            enabled = !isMorphing && !isClosing,
+                            enabled = !isClosing,
                             shape = RoundedCornerShape(16.dp),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = MaterialTheme.colorScheme.primary,
@@ -444,7 +390,6 @@ private fun UpdatePasswordSheetContent(
                     }
                 }
             }
-        }
         }
     }
 }

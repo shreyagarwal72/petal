@@ -159,8 +159,6 @@ object PetalBackupManager {
                 "sp_bar_collapse_style" == key ||
                 "sp_liquid_glass_bg_mode" == key || "sp_liquid_glass_bg_image_uri" == key ||
                 "sp_liquid_glass_tint" == key || "sp_blur_method" == key ||
-                "sp_island_mode" == key || "sp_island_anim_style" == key ||
-                "sp_island_anim_speed" == key || "sp_island_anim_bounce" == key ||
                 "sp_adblock_protection_mode" == key ||
                 "sp_app_lock_passcode" == key || "sp_app_lock_type" == key ||
                 "sp_private_dns_mode" == key || "sp_custom_doh_url" == key ||

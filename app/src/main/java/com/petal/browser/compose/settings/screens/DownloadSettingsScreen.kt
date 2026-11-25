@@ -52,12 +52,6 @@ fun DownloadSettingsScreen(
     val deleteDownloadFile by viewModel.deleteDownloadFile.collectAsStateWithLifecycle()
     val autoPreviewDownloadedImages by viewModel.autoPreviewDownloadedImages.collectAsStateWithLifecycle()
     val liveUpdates by viewModel.liveUpdates.collectAsStateWithLifecycle()
-    val islandMode by viewModel.islandMode.collectAsStateWithLifecycle()
-    val islandAnimationStyle by viewModel.islandAnimationStyle.collectAsStateWithLifecycle()
-    val islandAnimationSpeed by viewModel.islandAnimationSpeed.collectAsStateWithLifecycle()
-    val islandAnimationBounce by viewModel.islandAnimationBounce.collectAsStateWithLifecycle()
-    val islandWavyProgress by viewModel.islandWavyProgress.collectAsStateWithLifecycle()
-    val islandOverlay by viewModel.islandOverlay.collectAsStateWithLifecycle()
 
     DownloadSettingsScreenContent(
         downloadManagerMode = downloadManagerMode,
@@ -65,23 +59,11 @@ fun DownloadSettingsScreen(
         deleteFromStorage = deleteDownloadFile,
         autoPreviewDownloadedImages = autoPreviewDownloadedImages,
         liveUpdates = liveUpdates,
-        islandMode = islandMode,
-        islandAnimationStyle = islandAnimationStyle,
-        islandAnimationSpeed = islandAnimationSpeed,
-        islandAnimationBounce = islandAnimationBounce,
-        islandWavyProgress = islandWavyProgress,
-        islandOverlay = islandOverlay,
         onDownloadManagerModeChange = viewModel::setDownloadManagerMode,
         onConfirmFileDeleteChange = viewModel::setConfirmDownloadDelete,
         onDeleteFromStorageChange = viewModel::setDeleteDownloadFile,
         onAutoPreviewDownloadedImagesChange = viewModel::setAutoPreviewDownloadedImages,
         onLiveUpdatesChange = viewModel::setLiveUpdates,
-        onIslandModeChange = viewModel::setIslandMode,
-        onIslandAnimationStyleChange = viewModel::setIslandAnimationStyle,
-        onIslandAnimationSpeedChange = viewModel::setIslandAnimationSpeed,
-        onIslandAnimationBounceChange = viewModel::setIslandAnimationBounce,
-        onIslandWavyProgressChange = viewModel::setIslandWavyProgress,
-        onIslandOverlayChange = viewModel::setIslandOverlay,
         onNavigateBack = onNavigateBack,
         targetHighlightItemId = targetHighlightItemId,
         modifier = modifier,
@@ -96,23 +78,11 @@ fun DownloadSettingsScreenContent(
     deleteFromStorage: Boolean,
     autoPreviewDownloadedImages: Boolean,
     liveUpdates: Boolean,
-    islandMode: String,
-    islandAnimationStyle: String,
-    islandAnimationSpeed: String,
-    islandAnimationBounce: String,
-    islandWavyProgress: Boolean,
-    islandOverlay: Boolean,
     onDownloadManagerModeChange: (String) -> Unit,
     onConfirmFileDeleteChange: (Boolean) -> Unit,
     onDeleteFromStorageChange: (Boolean) -> Unit,
     onAutoPreviewDownloadedImagesChange: (Boolean) -> Unit,
     onLiveUpdatesChange: (Boolean) -> Unit,
-    onIslandModeChange: (String) -> Unit,
-    onIslandAnimationStyleChange: (String) -> Unit,
-    onIslandAnimationSpeedChange: (String) -> Unit,
-    onIslandAnimationBounceChange: (String) -> Unit,
-    onIslandWavyProgressChange: (Boolean) -> Unit,
-    onIslandOverlayChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier,
@@ -560,199 +530,6 @@ fun DownloadSettingsScreenContent(
                             }
                         }
                     }
-                }
-
-                // Petal Now Live Capsule Settings
-                PetalSettingsSection(
-                    title = "Petal Now",
-                    icon = Icons.Rounded.AutoAwesome,
-                    cardId = "misc_download_petal_now",
-                    targetHighlightId = targetHighlightItemId
-                ) {
-                    val nowPrefs = com.petal.browser.now.rememberPetalNowPrefs()
-                    val modeList = com.petal.browser.now.PetalNowMode.entries
-                    val currentMode = com.petal.browser.now.PetalNowMode.fromPref(islandMode)
-                    val styleList = com.petal.browser.now.PetalNowAnimStyle.entries
-                    val currentStyle = com.petal.browser.now.PetalNowAnimStyle.fromPref(islandAnimationStyle)
-                    val speedList = com.petal.browser.now.PetalNowAnimSpeed.entries
-                    val currentSpeed = com.petal.browser.now.PetalNowAnimSpeed.fromPref(islandAnimationSpeed)
-                    val bounceList = com.petal.browser.now.PetalNowAnimBounce.entries
-                    val currentBounce = com.petal.browser.now.PetalNowAnimBounce.fromPref(islandAnimationBounce)
-                    var showCategoryToggles by remember { mutableStateOf(false) }
-
-                    val modeSummary = "${currentMode.label} — ${currentMode.description}"
-                    val baseRowCount = 6 + if (showCategoryToggles) com.petal.browser.live.LiveEventCategory.entries.size else 0
-
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = baseRowCount) { idx, rowPos ->
-                        when (idx) {
-                            0 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                title = "Enable Petal Now events",
-                                subtitle = "Show interactive live capsules for downloads, media, ad blocker, sync & alerts",
-                                icon = Icons.Rounded.NotificationsActive,
-                                checked = nowPrefs.eventsMaster,
-                                position = rowPos,
-                                onCheckedChange = {
-                                    com.petal.browser.now.PetalNowSettingsStore.setEventsMaster(context, it)
-                                }
-                            )
-                            1 -> com.petal.browser.ui.containment.PetalGroupListRow(
-                                position = rowPos,
-                                onClick = {
-                                    val next = modeList[(modeList.indexOf(currentMode) + 1) % modeList.size]
-                                    onIslandModeChange(next.prefValue)
-                                },
-                                leading = {
-                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                        icon = Icons.Rounded.AutoAwesome,
-                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY
-                                    )
-                                },
-                                content = {
-                                    Text(
-                                        text = "Display mode",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = modeSummary,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                trailing = {
-                                    Text(
-                                        text = currentMode.label,
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            )
-                            2 -> com.petal.browser.ui.containment.PetalGroupListRow(
-                                position = rowPos,
-                                onClick = {
-                                    val next = styleList[(styleList.indexOf(currentStyle) + 1) % styleList.size]
-                                    onIslandAnimationStyleChange(next.prefValue)
-                                },
-                                leading = {
-                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                        icon = Icons.Rounded.Animation,
-                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
-                                    )
-                                },
-                                content = {
-                                    Text(
-                                        text = "Motion style",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Tap to switch between expressive springs and calm easing",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                trailing = {
-                                    Text(
-                                        text = currentStyle.label,
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            )
-                            3 -> com.petal.browser.ui.containment.PetalGroupListRow(
-                                position = rowPos,
-                                onClick = {
-                                    val nextSpeed = speedList[(speedList.indexOf(currentSpeed) + 1) % speedList.size]
-                                    onIslandAnimationSpeedChange(nextSpeed.prefValue)
-                                },
-                                leading = {
-                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                        icon = Icons.Rounded.Speed,
-                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
-                                    )
-                                },
-                                content = {
-                                    Text(
-                                        text = "Animation speed",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = "Spring bounce: ${currentBounce.label}. Tap speed; use bounce below.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                trailing = {
-                                    TextButton(
-                                        onClick = {
-                                            val nextBounce = bounceList[(bounceList.indexOf(currentBounce) + 1) % bounceList.size]
-                                            onIslandAnimationBounceChange(nextBounce.prefValue)
-                                        }
-                                    ) {
-                                        Text("${currentSpeed.label} · ${currentBounce.label}")
-                                    }
-                                }
-                            )
-                            4 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                title = "Wavy progress bar",
-                                subtitle = "Show expressive sinusoidal waveform progress inside media, download & sync cards",
-                                icon = Icons.Rounded.Tune,
-                                checked = islandWavyProgress,
-                                position = rowPos,
-                                onCheckedChange = onIslandWavyProgressChange
-                            )
-                            5 -> com.petal.browser.ui.containment.PetalGroupListRow(
-                                position = rowPos,
-                                onClick = { showCategoryToggles = !showCategoryToggles },
-                                leading = {
-                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
-                                        icon = if (showCategoryToggles) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore,
-                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
-                                    )
-                                },
-                                content = {
-                                    Text(
-                                        text = "Activity categories",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                    Text(
-                                        text = if (showCategoryToggles) "Tap to collapse category switches"
-                                        else "Choose which live activities appear inside Petal Now",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                trailing = {
-                                    Text(
-                                        text = if (showCategoryToggles) "Hide" else "${nowPrefs.categoryEnabled.count { it.value }}/${nowPrefs.categoryEnabled.size}",
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                }
-                            )
-                            else -> {
-                                val category = com.petal.browser.live.LiveEventCategory.entries[idx - 6]
-                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                    title = category.label,
-                                    subtitle = if (nowPrefs.isCategoryOn(category)) "Shown in Petal Now" else "Muted",
-                                    icon = Icons.Rounded.Tune,
-                                    checked = nowPrefs.categoryEnabled[category] ?: true,
-                                    position = rowPos,
-                                    enabled = nowPrefs.eventsMaster,
-                                    onCheckedChange = { enabled ->
-                                        com.petal.browser.now.PetalNowSettingsStore.setCategoryEnabled(context, category, enabled)
-                                    }
-                                )
-                            }
-                        }
-                    }
-                    // Preserve unused compat parameter cleanly until overlay support returns
-                    @Suppress("UNUSED_EXPRESSION")
-                    islandOverlay
-                    @Suppress("UNUSED_EXPRESSION")
-                    onIslandOverlayChange
                 }
 
                 Spacer(Modifier.height(32.dp))
