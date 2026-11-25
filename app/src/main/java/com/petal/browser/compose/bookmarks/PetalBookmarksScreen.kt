@@ -9,6 +9,7 @@
 package com.petal.browser.compose.bookmarks
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
@@ -511,14 +512,13 @@ fun PetalBookmarksScreen(
                                     }
                                 },
                                 content = {
-                                    Text(record.title?.ifBlank { record.url } ?: "Bookmark", style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                    Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
+                                    Text(record.title?.ifBlank { record.url } ?: "Bookmark", style = PetalText.listItemTitle)
+                                    Text(record.url ?: "", style = PetalText.listItemMeta,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     if (record.isReadingList) {
                                         Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.tertiaryContainer,
                                             contentColor = MaterialTheme.colorScheme.onTertiaryContainer) {
-                                            Text(stringResource(R.string.ui_reading_list), style = MaterialTheme.typography.labelSmall,
+                                            Text(stringResource(R.string.ui_reading_list), style = PetalText.badge,
                                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                                         }
                                     }
@@ -730,8 +730,7 @@ fun PetalBookmarksScreen(
 
                 Text(
                     text = "Edit Bookmark",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
@@ -857,8 +856,7 @@ fun PetalBookmarksScreen(
 
                 Text(
                     text = stringResource(R.string.ui_add_bookmark),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 

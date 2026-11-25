@@ -1,6 +1,7 @@
 package com.petal.browser.media.sniffer
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.media.PetalVideoPlayerOverlayBridge
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -126,8 +127,7 @@ fun PetalMediaGrabberPopupDialog(
                         ) {
                             Text(
                                 text = "Petal Media Grabber",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.dialogTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Surface(
@@ -136,8 +136,7 @@ fun PetalMediaGrabberPopupDialog(
                             ) {
                                 Text(
                                     text = "Active",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
+                                    style = PetalText.badge,
                                     color = MaterialTheme.colorScheme.onTertiaryContainer,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
@@ -145,7 +144,7 @@ fun PetalMediaGrabberPopupDialog(
                         }
                         Text(
                             text = if (currentPageUrl.isNotBlank()) currentPageUrl else "Network stream & social downloader",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -203,13 +202,12 @@ fun PetalMediaGrabberPopupDialog(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "No direct media streams captured yet",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontWeight = FontWeight.SemiBold,
+                                            style = PetalText.emptyState,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = "Play a video on the page or use the Social Downloader below.",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.cardBody,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -250,17 +248,12 @@ fun PetalMediaGrabberPopupDialog(
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
                                                         text = item.quality ?: item.type.name,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        fontWeight = FontWeight.Bold,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
+                                                        style = PetalText.listItemTitle,
                                                     )
                                                     Text(
                                                         text = item.title ?: item.url.substringAfterLast('/').substringBefore('?').ifBlank { "Media stream" },
-                                                        style = MaterialTheme.typography.bodySmall,
+                                                        style = PetalText.listItemMeta,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis
                                                     )
                                                 }
                                                 Surface(
@@ -269,8 +262,7 @@ fun PetalMediaGrabberPopupDialog(
                                                 ) {
                                                     Text(
                                                         text = item.type.name + (if (sizeStr != null) " • $sizeStr" else ""),
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        fontWeight = FontWeight.Medium,
+                                                        style = PetalText.badge,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                                                     )

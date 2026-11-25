@@ -1,6 +1,7 @@
 package com.petal.browser.account
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import android.net.Uri
 import android.text.format.DateUtils
@@ -252,10 +253,7 @@ fun PetalAccountScreen(
                                     ) {
                                         Text(
                                             account.title,
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.Bold,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
+                                            style = PetalText.pageTitle,
                                             modifier = Modifier.weight(1f, fill = false)
                                         )
                                         Spacer(Modifier.width(8.dp))
@@ -263,19 +261,15 @@ fun PetalAccountScreen(
                                     }
                                     Text(
                                         account.subtitle,
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = PetalText.pageSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
                                     )
                                     if (profile.bio.isNotBlank()) {
                                         Spacer(Modifier.height(6.dp))
                                         Text(
                                             profile.bio,
-                                            style = MaterialTheme.typography.bodyMedium,
+                                            style = PetalText.cardBody,
                                             textAlign = TextAlign.Center,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                     }
                                     Spacer(Modifier.height(12.dp))
@@ -296,7 +290,7 @@ fun PetalAccountScreen(
                                         Spacer(Modifier.height(6.dp))
                                         Text(
                                             if (lastSync > 0) "Last synced ${DateUtils.getRelativeTimeSpanString(lastSync)}" else "Not synced yet",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.caption,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     } else {
@@ -475,11 +469,11 @@ fun PetalAccountScreen(
                                             )
                                             PetalHeroCard(Modifier.fillMaxWidth(), containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
                                                 Column(Modifier.padding(16.dp)) {
-                                                    Text("Your other devices", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                                    Text("Your other devices", style = PetalText.cardTitle)
                                                     if (otherDevices.isEmpty()) {
                                                         Text(
                                                             "None yet. Set up sync with the same folder and passphrase on another device, then sync.",
-                                                            style = MaterialTheme.typography.bodySmall,
+                                                            style = PetalText.cardBody,
                                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                                         )
                                                     }
@@ -488,10 +482,10 @@ fun PetalAccountScreen(
                                                             Icon(Icons.Rounded.Devices, null, Modifier.size(20.dp))
                                                             Spacer(Modifier.width(10.dp))
                                                             Column(Modifier.weight(1f)) {
-                                                                Text(d.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                                Text(d.name, style = PetalText.listItemTitle)
                                                                 Text(
                                                                     "Seen ${DateUtils.getRelativeTimeSpanString(d.lastSeen)} · ${d.tabs.size} tab${if (d.tabs.size == 1) "" else "s"}",
-                                                                    style = MaterialTheme.typography.bodySmall,
+                                                                    style = PetalText.listItemMeta,
                                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                                 )
                                                             }
@@ -541,13 +535,13 @@ fun PetalAccountScreen(
                                             PetalHeroCard(Modifier.fillMaxWidth(), containerColor = MaterialTheme.colorScheme.surfaceContainerLow) {
                                                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                                     syncMessage?.let {
-                                                        Text(it, style = MaterialTheme.typography.bodySmall)
+                                                        Text(it, style = PetalText.caption)
                                                     }
                                                     Text(
                                                         "Everything is encrypted on this device before it reaches your folder, so only your passphrase can read it. " +
                                                             "Changes and deletions are merged, and the most recent change to an item wins, so keep your devices' clocks correct. " +
                                                             "To send the page you're on to another device, use Send to device in the page menu.",
-                                                        style = MaterialTheme.typography.bodySmall,
+                                                        style = PetalText.cardBody,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
                                                 }
@@ -717,7 +711,7 @@ fun PetalAccountScreen(
                     Text(
                         "Pick a folder you own, such as one on Google Drive, Nextcloud, Syncthing or your SD card. " +
                             "Use the same folder and passphrase on each device.",
-                        style = MaterialTheme.typography.bodySmall
+                        style = PetalText.dialogBody
                     )
                     OutlinedButton(onClick = { folderLauncher.launch(null) }, modifier = Modifier.fillMaxWidth()) {
                         Icon(Icons.Rounded.Storage, null, Modifier.size(18.dp))
@@ -745,7 +739,7 @@ fun PetalAccountScreen(
                     )
                     Text(
                         "If you forget the passphrase, the synced data can't be recovered.",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -780,7 +774,7 @@ fun PetalAccountScreen(
                     Text(
                         "Enter the passphrase your other devices use. If you're choosing a new one, the existing synced file " +
                             "can't be read with it, so sync will stop with an error until it matches.",
-                        style = MaterialTheme.typography.bodySmall
+                        style = PetalText.caption
                     )
                     OutlinedTextField(
                         value = pass, onValueChange = { pass = it }, singleLine = true,
@@ -866,7 +860,7 @@ fun PetalAccountScreen(
             dragHandle = null
         ) {
             Column(Modifier.fillMaxWidth().padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                Text("Profile picture", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("Profile picture", style = PetalText.sheetTitle)
                 Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     PetalUserProfileManager.builtinAvatarPresets.forEach { (id, _) ->
                         val selected = profile.avatarType == AvatarType.PRESET && profile.avatarPresetId == id

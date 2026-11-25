@@ -38,10 +38,9 @@ import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.haptics.PetalHapticEngine
 import com.petal.browser.ui.glass.GlassBar
 import com.petal.browser.ui.glass.liquidGlass
@@ -242,9 +241,7 @@ fun PetalMinimizedPill(
                         // Domain Label
                         Text(
                             text = domain.ifBlank { stringResource(R.string.bar_search_or_type_url) },
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
+                            style = PetalText.badge.copy(
                                 shadow = if (isGlass) {
                                     androidx.compose.ui.graphics.Shadow(
                                         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.75f),

@@ -36,12 +36,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.petal.browser.ui.theme.PetalPaletteMix
 import com.petal.browser.ui.theme.PetalPaletteMix.Source
 import com.petal.browser.ui.theme.PetalPalettes
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.containment.liquidGlassChrome
 import androidx.compose.material3.Icon
 
@@ -61,7 +61,7 @@ fun PetalMixPreviewStrip(modifier: Modifier = Modifier) {
         listOf("Primary" to c.primary, "Secondary" to c.secondary, "Tertiary" to c.tertiary).forEach { (name, color) ->
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
                 Box(Modifier.size(44.dp).clip(ExpressiveButtonShape).background(color))
-                Text(name, style = MaterialTheme.typography.labelSmall, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
+                Text(name, style = PetalText.caption, color = c.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
             }
         }
     }
@@ -105,7 +105,7 @@ fun PetalMixSourceDialog(
                     )
             ) {
                 Column(Modifier.padding(vertical = 20.dp)) {
-                    Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+                    Text(title, style = PetalText.dialogTitle, modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                     Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
                         SourceRow("Auto", "Derived from your primary colour", current == Source.Auto,
                             swatch = { Icon(Icons.Rounded.AutoAwesome, null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }) {
@@ -155,8 +155,8 @@ private fun SourceRow(label: String, sub: String, selected: Boolean, swatch: @Co
             contentAlignment = Alignment.Center
         ) { swatch() }
         Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold), color = MaterialTheme.colorScheme.onSurface)
-            Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(label, style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+            Text(sub, style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (selected) Icon(Icons.Rounded.Check, contentDescription = "Selected", tint = MaterialTheme.colorScheme.primary)
     }
@@ -174,7 +174,7 @@ fun PetalMixComponentPreview(modifier: Modifier = Modifier) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 "Live Component Sandbox",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sectionHeader,
                 color = cs.primary
             )
             Row(
@@ -189,7 +189,7 @@ fun PetalMixComponentPreview(modifier: Modifier = Modifier) {
                     modifier = Modifier.weight(1f).height(40.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("Primary", color = cs.onPrimary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Primary", color = cs.onPrimary, style = PetalText.chip)
                     }
                 }
                 // Secondary Container Chip
@@ -199,7 +199,7 @@ fun PetalMixComponentPreview(modifier: Modifier = Modifier) {
                     modifier = Modifier.weight(1f).height(40.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("Secondary", color = cs.onSecondaryContainer, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Secondary", color = cs.onSecondaryContainer, style = PetalText.chip)
                     }
                 }
                 // Tertiary Highlight Pill
@@ -209,7 +209,7 @@ fun PetalMixComponentPreview(modifier: Modifier = Modifier) {
                     modifier = Modifier.weight(1f).height(40.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text("Tertiary", color = cs.onTertiary, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                        Text("Tertiary", color = cs.onTertiary, style = PetalText.chip)
                     }
                 }
             }
@@ -228,7 +228,7 @@ fun PetalMixRecipesStrip(
     Column(modifier = modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             "Harmonious Quick Recipes",
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.sectionHeader,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Row(

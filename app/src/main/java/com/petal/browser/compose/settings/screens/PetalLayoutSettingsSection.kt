@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import com.petal.browser.ui.components.PetalSpring
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -151,7 +153,7 @@ fun PetalLayoutSettingsSection(
     ) {
         Text(
             text = "Switch, slider and shape styles from ImageToolbox - changes apply instantly across Petal.",
-            style = MaterialTheme.typography.bodySmall,
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 6.dp)
         )
@@ -246,7 +248,7 @@ fun PetalLayoutSettingsSection(
     ) {
         Text(
             text = "Shape of Petal's cards, rows, chips and icon containers. Follows Shapes Type unless you pick your own.",
-            style = MaterialTheme.typography.bodySmall,
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 6.dp)
         )
@@ -585,7 +587,7 @@ private fun <T> ChoiceSheet(
             if (banner != null) {
                 Text(
                     text = banner,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp)
                 )
@@ -610,7 +612,7 @@ private fun SheetTitle(title: String, icon: ImageVector) {
         Spacer(Modifier.width(8.dp))
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            style = PetalText.dialogTitle,
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -689,13 +691,12 @@ private fun ChoiceCard(
                 Column(Modifier.weight(1f)) {
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
+                        style = PetalText.rowTitle,
                         color = scheme.onSurface
                     )
                     Text(
                         text = subtitle,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.rowSubtitle,
                         color = scheme.onSurfaceVariant
                     )
                 }

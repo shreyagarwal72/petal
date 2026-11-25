@@ -36,11 +36,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
+import com.petal.browser.ui.theme.PetalText
 import coil.compose.AsyncImage
 import com.petal.browser.account.PetalUserProfileManager
 import com.petal.browser.account.PetalUserProfile
@@ -114,13 +112,12 @@ fun PetalProfileSwitchSheet(
                 Column {
                     Text(
                         text = stringResource(R.string.ui_profiles),
-                        style = MaterialTheme.typography.headlineSmall.copy(fontSize = 26.sp),
-                        fontWeight = FontWeight.Light,
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = stringResource(R.string.ui_switch_or_create_browsing_profiles),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -215,14 +212,12 @@ fun PetalProfileSwitchSheet(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = profile.name,
-                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                        color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        style = PetalText.rowTitle,
+                                        color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = if (profile.isDefault) "Default Profile" else "Custom Profile",
-                                        style = MaterialTheme.typography.labelSmall,
+                                        style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -348,7 +343,7 @@ fun PetalProfileSwitchSheet(
 
                     Text(
                         text = stringResource(R.string.ui_accent_color),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 

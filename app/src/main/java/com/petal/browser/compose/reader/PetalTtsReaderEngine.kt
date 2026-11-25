@@ -1,6 +1,7 @@
 package com.petal.browser.compose.reader
 
 import android.content.Context
+import com.petal.browser.ui.theme.PetalText
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
@@ -205,8 +206,7 @@ fun PetalFloatingTtsPlayerBar(
                 ) {
                     Text(
                         text = "${engine.speechRate}x",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
+                        style = PetalText.badge,
                     )
                 }
                 com.petal.browser.ui.containment.PetalPopupMenu(

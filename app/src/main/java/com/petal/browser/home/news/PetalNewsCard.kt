@@ -9,6 +9,7 @@
 package com.petal.browser.home.news
 
 import androidx.compose.foundation.background
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -84,7 +85,7 @@ fun PetalNewsSection(
             Spacer(Modifier.width(8.dp))
             Text(
                 text = "Top Stories",
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                style = PetalText.sectionHeader,
                 modifier = Modifier.weight(1f)
             )
 
@@ -187,7 +188,7 @@ private fun PetalNewsArticleCard(
                 ) {
                     Text(
                         text = article.source.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.badge,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -195,18 +196,14 @@ private fun PetalNewsArticleCard(
                 }
                 Text(
                     text = article.title,
-                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                    style = PetalText.cardTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 if (article.description.isNotBlank()) {
                     Text(
                         text = article.description,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

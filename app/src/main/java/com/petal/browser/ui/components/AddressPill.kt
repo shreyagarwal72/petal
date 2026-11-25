@@ -60,6 +60,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.database.HistoryBookmarkContract
 import com.petal.browser.database.HistoryBookmarkRepository
@@ -398,7 +399,7 @@ fun AddressPill(
                                                 Spacer(Modifier.width(3.5.dp))
                                                 Text(
                                                     text = if (totalMediaCount > 99) "99+" else totalMediaCount.toString(),
-                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                    style = PetalText.badge,
                                                     color = MaterialTheme.colorScheme.primary
                                                 )
                                             }
@@ -669,13 +670,11 @@ fun AddressPill(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = if (title.isNotBlank()) title else stringResource(R.string.bar_quick_actions_title),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                style = PetalText.sheetTitle
                             )
                             Text(
                                 text = url.ifBlank { "about:blank" },
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.listItemMeta,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -847,15 +846,13 @@ fun AddressPill(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = item.title,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = item.subtitle,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        style = PetalText.rowSubtitle,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -901,7 +898,7 @@ private fun SecurityIndicator(isHttps: Boolean, isPunycode: Boolean) {
             Spacer(Modifier.width(3.dp))
             Text(
                 text = notSecure,
-                style = MaterialTheme.typography.labelSmall,
+                style = PetalText.badge,
                 color = MaterialTheme.colorScheme.error,
                 maxLines = 1
             )

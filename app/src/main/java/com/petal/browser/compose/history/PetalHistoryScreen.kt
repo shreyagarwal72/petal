@@ -8,6 +8,7 @@
 
 package com.petal.browser.compose.history
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
 import com.petal.browser.ui.components.extractFastScrollGlyph
@@ -545,7 +546,7 @@ fun PetalHistoryScreen(
                                             // Firefox-style date group label
                                             Text(
                                                 text = listItem.label,
-                                                style = MaterialTheme.typography.labelMedium,
+                                                style = PetalText.sectionHeader,
                                                 color = MaterialTheme.colorScheme.primary,
                                                 fontWeight = FontWeight.SemiBold,
                                                 modifier = Modifier
@@ -649,11 +650,10 @@ fun PetalHistoryScreen(
                                                 },
                                                 content = {
                                                     Text(record.title?.takeIf { it.isNotBlank() } ?: record.domain ?: "Web Page",
-                                                        style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-                                                        maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                    Text(record.url ?: "", style = MaterialTheme.typography.bodySmall,
+                                                        style = PetalText.listItemTitle)
+                                                    Text(record.url ?: "", style = PetalText.listItemMeta,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                                                    if (timeFormatted.isNotEmpty()) Text(timeFormatted, style = MaterialTheme.typography.labelSmall,
+                                                    if (timeFormatted.isNotEmpty()) Text(timeFormatted, style = PetalText.caption,
                                                         color = MaterialTheme.colorScheme.primary)
                                                 },
                                                 trailing = {

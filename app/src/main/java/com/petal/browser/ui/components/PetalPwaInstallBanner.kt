@@ -10,8 +10,8 @@ import com.petal.browser.ui.kit.Button
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
@@ -61,11 +61,11 @@ fun PetalPwaInstallBanner(
                 Column {
                     Text(
                         text = stringResource(R.string.ui_install, appName),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.cardTitle
                     )
                     Text(
                         text = stringResource(R.string.ui_add_to_home_screen_as),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                     )
                 }
@@ -73,13 +73,13 @@ fun PetalPwaInstallBanner(
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onDismissClick) {
-                    Text(stringResource(R.string.ui_dismiss))
+                    Text(stringResource(R.string.ui_dismiss), style = PetalText.button)
                 }
                 Button(
                     onClick = onInstallClick,
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text(stringResource(R.string.ui_install_2))
+                    Text(stringResource(R.string.ui_install_2), style = PetalText.button)
                 }
             }
         }

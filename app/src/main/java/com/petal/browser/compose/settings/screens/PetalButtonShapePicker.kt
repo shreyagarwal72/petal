@@ -32,6 +32,7 @@ import com.petal.browser.ui.theme.ExpressiveIconButton
 import com.petal.browser.ui.theme.ExpressiveShapeAmount
 import com.petal.browser.ui.theme.PetalShapePrefs
 import com.petal.browser.ui.theme.PetalShapeState
+import com.petal.browser.ui.theme.PetalText
 
 /**
  * Lets the user choose the expressive shape used for every button and how widely it is applied.
@@ -47,7 +48,7 @@ fun PetalButtonShapePicker() {
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Text(
             "Button shape",
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            style = PetalText.sectionHeader,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(
@@ -76,7 +77,7 @@ fun PetalButtonShapePicker() {
                     Spacer(Modifier.height(4.dp))
                     Text(
                         option.title,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -85,7 +86,7 @@ fun PetalButtonShapePicker() {
 
         Text(
             "Where to use shapes",
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            style = PetalText.sectionHeader,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         // Connected segmented group (same Expressive style as the Design System Presets row).

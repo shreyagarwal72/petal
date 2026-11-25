@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.containment.PetalSettingsSection
 
@@ -132,7 +133,7 @@ fun TabsSettingsScreen(
                 ) {
                     Text(
                         text = "Firefox-grade CPU prioritization and tab memory hibernation to extend battery life.",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                     )

@@ -56,6 +56,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.theme.PetalExpressiveTheme
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import androidx.compose.material3.Icon
@@ -79,14 +80,13 @@ fun PetalExitConfirmationDialog(
             title = {
                 Text(
                     text = stringResource(R.string.ui_leave_petal_browser),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                    style = PetalText.dialogTitle
                 )
             },
             text = {
                 Text(
                     text = stringResource(R.string.ui_do_you_want_to_exit),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = PetalText.dialogBody
                 )
             },
             confirmButton = {
@@ -97,12 +97,12 @@ fun PetalExitConfirmationDialog(
                         contentColor = MaterialTheme.colorScheme.onError
                     )
                 ) {
-                    Text(stringResource(R.string.ui_exit), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_exit), style = PetalText.button)
                 }
             },
             dismissButton = {
                 TextButton(onClick = onDismissRequest) {
-                    Text(stringResource(R.string.ui_stay), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.ui_stay), style = PetalText.button)
                 }
             }
         )
@@ -276,7 +276,7 @@ private fun ExitDialogContent(
             ) {
                 Text(
                     text = stringResource(R.string.ui_leave_petal_browser),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.primary,
                 )
             }
@@ -285,8 +285,7 @@ private fun ExitDialogContent(
 
             Text(
                 text = stringResource(R.string.ui_do_you_want_to_exit),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = PetalText.dialogBody,
             )
 
             Spacer(Modifier.height(22.dp))
@@ -310,7 +309,7 @@ private fun ExitDialogContent(
                 ) {
                     Text(
                         stringResource(R.string.ui_stay),
-                        fontWeight = FontWeight.SemiBold
+                        style = PetalText.button
                     )
                 }
 
@@ -328,7 +327,7 @@ private fun ExitDialogContent(
                 ) {
                     Text(
                         stringResource(R.string.ui_exit),
-                        fontWeight = FontWeight.SemiBold
+                        style = PetalText.button
                     )
                 }
             }

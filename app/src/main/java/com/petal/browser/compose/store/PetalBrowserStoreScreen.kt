@@ -1,6 +1,7 @@
 package com.petal.browser.compose.store
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -425,13 +426,12 @@ private fun StoreExtensionsPage(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = "Firefox WebExtensions",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
+                                    style = PetalText.cardTitle,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = "Curated add-ons verified for Petal GeckoView with 1-tap installation.",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.cardBody,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -529,8 +529,7 @@ private fun FeaturedAddonsRow(
     Column(modifier = Modifier.fillMaxWidth()) {
         Text(
             text = stringResource(R.string.ui_store_featured),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold,
+            style = PetalText.sectionHeader,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
         )
@@ -572,13 +571,11 @@ private fun FeaturedAddonsRow(
                         }
                     }
                     Column {
-                        Text(addon.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(addon.name, style = PetalText.cardTitle)
                         Text(
                             text = if (isInstalled) stringResource(R.string.ui_store_installed_short) else addon.category.displayName,
-                            style = MaterialTheme.typography.labelMedium,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.75f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -635,9 +632,7 @@ private fun StoreAddonRow(
             ) {
                 Text(
                     text = addon.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    style = PetalText.rowTitle,
                     modifier = Modifier.weight(1f, fill = false)
                 )
                 Surface(
@@ -650,16 +645,14 @@ private fun StoreAddonRow(
                         horizontalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Icon(Icons.Rounded.Star, null, tint = MaterialTheme.colorScheme.tertiary, modifier = Modifier.size(11.dp))
-                        Text(addon.rating.toString(), fontSize = 10.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onTertiaryContainer)
+                        Text(addon.rating.toString(), style = PetalText.badge, color = MaterialTheme.colorScheme.onTertiaryContainer)
                     }
                 }
             }
             Text(
                 text = addon.description,
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.cardBody,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
             )
         },
         trailing = {
@@ -742,13 +735,12 @@ private fun StoreScriptsPage(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = stringResource(R.string.ui_store_verified_by_petal),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.cardTitle,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                         Text(
                             text = stringResource(R.string.ui_store_scripts_catalog_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -798,9 +790,7 @@ private fun StoreScriptsPage(
                                 ) {
                                     Text(
                                         text = script.name,
-                                        fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
+                                        style = PetalText.rowTitle,
                                         modifier = Modifier.weight(1f, fill = false)
                                     )
                                     if (isVerified) {
@@ -810,8 +800,7 @@ private fun StoreScriptsPage(
                                         ) {
                                             Text(
                                                 text = "SHA-256",
-                                                fontSize = 9.sp,
-                                                fontWeight = FontWeight.Bold,
+                                                style = PetalText.badge,
                                                 color = MaterialTheme.colorScheme.primary,
                                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                             )
@@ -820,10 +809,8 @@ private fun StoreScriptsPage(
                                 }
                                 Text(
                                     text = script.description,
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.rowSubtitle,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
                                 )
                             },
                             trailing = {
@@ -904,13 +891,12 @@ private fun StoreFilterListsPage(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Petal Shield Filters",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.cardTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = stringResource(R.string.ui_store_filter_catalog_desc),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -959,9 +945,7 @@ private fun StoreFilterListsPage(
                                 ) {
                                     Text(
                                         text = filter.name,
-                                        fontWeight = FontWeight.SemiBold,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
+                                        style = PetalText.rowTitle,
                                         modifier = Modifier.weight(1f, fill = false)
                                     )
                                     Surface(
@@ -970,8 +954,7 @@ private fun StoreFilterListsPage(
                                     ) {
                                         Text(
                                             text = filter.ruleCount,
-                                            fontSize = 9.sp,
-                                            fontWeight = FontWeight.Bold,
+                                            style = PetalText.badge,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                         )
@@ -979,10 +962,8 @@ private fun StoreFilterListsPage(
                                 }
                                 Text(
                                     text = filter.description,
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.rowSubtitle,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
                                 )
                             },
                             trailing = {
@@ -1049,7 +1030,7 @@ private fun StoreEmptyStateCard(
             }
             Text(
                 text = message,
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.emptyState,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Medium
             )

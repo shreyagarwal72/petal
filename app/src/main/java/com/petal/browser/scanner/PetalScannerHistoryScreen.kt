@@ -1,6 +1,7 @@
 package com.petal.browser.scanner
 
 import android.text.format.DateUtils
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -57,7 +58,7 @@ fun PetalScannerHistoryScreen(
                     title = {
                         Text(
                             text = "Scan History",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                            style = PetalText.pageTitle
                         )
                     },
                     navigationIcon = {
@@ -125,7 +126,7 @@ fun PetalScannerHistoryScreen(
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 text = if (searchQuery.isNotEmpty()) "No matching results" else "No scan history yet",
-                                style = MaterialTheme.typography.titleMedium,
+                                style = PetalText.emptyState,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -197,23 +198,19 @@ private fun HistoryItemRow(
                     }
                     Text(
                         text = item.title,
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                        style = PetalText.listItemTitle,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
                     )
                 }
                 Text(
                     text = item.subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.listItemMeta,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.padding(top = 2.dp)
                 )
                 Text(
                     text = "$relativeTime • ${item.formatName}",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = PetalText.caption,
                     color = MaterialTheme.colorScheme.outline,
                     modifier = Modifier.padding(top = 4.dp)
                 )

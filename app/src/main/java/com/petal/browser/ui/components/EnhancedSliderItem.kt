@@ -33,8 +33,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.containment.PetalGroupIconBadge
 import com.petal.browser.ui.containment.PetalGroupPosition
@@ -43,6 +41,7 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupShape
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.glass.rememberGlassSheen
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.material3.Icon
 
 /**
@@ -104,9 +103,7 @@ fun EnhancedSliderItem(
                     }
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = PetalText.rowTitle
                     )
                 }
 
@@ -141,8 +138,7 @@ fun EnhancedSliderItem(
                         ) {
                             Text(
                                 text = valueText,
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
+                                style = PetalText.value
                             )
                         }
                     }

@@ -52,8 +52,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.R
 import com.petal.browser.account.PetalUserProfileManager
 import com.petal.browser.browser.viewmodel.PetalBrowserViewModel
@@ -444,9 +444,7 @@ fun PetalAiChatSheet(
                             Column {
                                 Text(
                                     text = stringResource(R.string.ui_petal_ai),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    style = PetalText.sheetTitle
                                 )
                                 val subtitle = if (thinkHarder) {
                                     "$activeModel • ${stringResource(R.string.ui_petal_ai_think_harder)}"
@@ -455,8 +453,8 @@ fun PetalAiChatSheet(
                                 }
                                 Text(
                                     text = subtitle,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = if (thinkHarder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    style = PetalText.caption,
+                                    color = if (thinkHarder) MaterialTheme.colorScheme.primary else Color.Unspecified,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -629,14 +627,13 @@ fun PetalAiChatSheet(
                         ) {
                             Text(
                                 text = greeting,
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.pageTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(6.dp))
                             Text(
                                 text = stringResource(R.string.ui_petal_ai_help_prompt),
-                                style = MaterialTheme.typography.bodyLarge,
+                                style = PetalText.pageSubtitle,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
 
@@ -926,8 +923,7 @@ fun PetalAiChatSheet(
                                                     text = activeError.localizedMessage
                                                         ?: activeError.message
                                                         ?: stringResource(R.string.ui_petal_ai_no_key_warning),
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    fontWeight = FontWeight.Medium
+                                                    style = PetalText.cardBody
                                                 )
                                                 TextButton(
                                                     onClick = { openAiSettings() },
@@ -935,8 +931,7 @@ fun PetalAiChatSheet(
                                                 ) {
                                                     Text(
                                                         text = stringResource(R.string.ui_petal_ai_open_settings),
-                                                        style = MaterialTheme.typography.labelSmall,
-                                                        fontWeight = FontWeight.Bold,
+                                                        style = PetalText.button,
                                                         color = MaterialTheme.colorScheme.error
                                                     )
                                                 }
@@ -966,7 +961,7 @@ fun PetalAiChatSheet(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             stringResource(R.string.ui_petal_ai_private_tab_notice),
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -986,7 +981,7 @@ fun PetalAiChatSheet(
                         Spacer(Modifier.width(6.dp))
                         Text(
                             stringResource(R.string.ui_petal_ai_password_page_notice),
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -1563,7 +1558,7 @@ fun PetalAiChatSheet(
                     if (candidateTabs.isEmpty()) {
                         Text(
                             text = "No other eligible open tabs found.",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.dialogBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
@@ -1609,14 +1604,11 @@ fun PetalAiChatSheet(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = t.title.ifBlank { t.url },
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.Medium,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
+                                                style = PetalText.listItemTitle
                                             )
                                             Text(
                                                 text = t.url,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.listItemMeta,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
@@ -1666,7 +1658,7 @@ fun PetalAiChatSheet(
                             ) {
                                 Text(
                                     text = lang,
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = PetalText.listItemTitle,
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
                                 )
                             }
@@ -1709,7 +1701,7 @@ fun PetalAiChatSheet(
                             }) {
                                 Text(
                                     text = stringResource(R.string.ui_petal_ai_history_clear_all),
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = PetalText.button,
                                     color = MaterialTheme.colorScheme.error
                                 )
                             }
@@ -1742,7 +1734,7 @@ fun PetalAiChatSheet(
                             ) {
                                 Text(
                                     text = stringResource(R.string.ui_petal_ai_history_empty),
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = PetalText.emptyState,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -1765,18 +1757,12 @@ fun PetalAiChatSheet(
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
                                                     text = item.title,
-                                                    style = MaterialTheme.typography.bodyMedium,
-                                                    fontWeight = FontWeight.Medium,
-                                                    maxLines = 1,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    style = PetalText.listItemTitle
                                                 )
                                                 val preview = item.messages.lastOrNull()?.text ?: ""
                                                 Text(
                                                     text = preview,
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                    maxLines = 2,
-                                                    overflow = TextOverflow.Ellipsis
+                                                    style = PetalText.listItemMeta
                                                 )
                                             }
                                             IconButton(
@@ -1847,9 +1833,7 @@ private fun SuggestionPromptRow(
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface
+                style = PetalText.rowTitle
             )
         }
     }

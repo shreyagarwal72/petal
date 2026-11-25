@@ -32,8 +32,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -86,10 +86,10 @@ fun PetalSnackbarHost(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     PetalGroupIconBadge(Icons.Rounded.Info, container = badgeContainer, tint = accent, size = 36.dp, iconSize = 18.dp)
-                    Text(message, Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium, lineHeight = 18.sp), maxLines = 2)
+                    Text(message, Modifier.weight(1f), style = PetalText.cardBody, color = MaterialTheme.colorScheme.onSurface, maxLines = 2)
                     data.visuals.actionLabel?.let { label ->
                         TextButton(onClick = data::performAction, contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp), colors = ButtonDefaults.textButtonColors(contentColor = actionColor)) {
-                            Text(label, fontWeight = FontWeight.Bold)
+                            Text(label, style = PetalText.button)
                         }
                     }
                     if (data.visuals.withDismissAction) {
@@ -246,8 +246,7 @@ fun PetalPopupMenuItem(
         text = {
             Text(
                 text = text,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
+                style = PetalText.button,
                 color = if (destructive) MaterialTheme.colorScheme.error else Color.Unspecified
             )
         },
@@ -302,8 +301,7 @@ fun PetalAlertDialog(
         title = {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+                style = PetalText.dialogTitle
             )
         },
         text = if (message != null || content != null) {
@@ -315,8 +313,7 @@ fun PetalAlertDialog(
                     if (message != null) {
                         Text(
                             text = message,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = PetalText.dialogBody
                         )
                     }
                     content?.invoke(this)
@@ -347,7 +344,7 @@ fun PetalAlertDialog(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
             ) {
-                Text(confirmText, fontWeight = FontWeight.SemiBold)
+                Text(confirmText, style = PetalText.button)
             }
         },
         dismissButton = dismissText?.let { label ->
@@ -363,7 +360,7 @@ fun PetalAlertDialog(
                         .fillMaxWidth()
                         .heightIn(min = 48.dp),
                 ) {
-                    Text(label, fontWeight = FontWeight.SemiBold)
+                    Text(label, style = PetalText.button)
                 }
             }
         }
@@ -447,7 +444,7 @@ fun PetalMaterialAlertDialog(
                     if (title != null) {
                         CompositionLocalProvider(
                             LocalContentColor provides titleContentColor,
-                            LocalTextStyle provides MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                            LocalTextStyle provides PetalText.dialogTitle
                         ) {
                             title()
                         }
@@ -455,7 +452,7 @@ fun PetalMaterialAlertDialog(
                     if (text != null) {
                         CompositionLocalProvider(
                             LocalContentColor provides textContentColor,
-                            LocalTextStyle provides MaterialTheme.typography.bodyMedium
+                            LocalTextStyle provides PetalText.dialogBody
                         ) {
                             text()
                         }
@@ -651,8 +648,7 @@ fun PetalSheetTitleBadge(
 ) {
     Text(
         text = title,
-        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-        color = MaterialTheme.colorScheme.onSurface,
+        style = PetalText.sheetTitle,
         modifier = modifier.padding(vertical = 4.dp)
     )
 }
@@ -699,7 +695,7 @@ fun PetalActionRow(
                     .weight(1f)
                     .heightIn(min = 48.dp)
             ) {
-                Text(dismissText, fontWeight = FontWeight.SemiBold)
+                Text(dismissText, style = PetalText.button)
             }
         }
         Button(
@@ -730,7 +726,7 @@ fun PetalActionRow(
                 .weight(1f)
                 .heightIn(min = 48.dp)
         ) {
-            Text(confirmText, fontWeight = FontWeight.SemiBold)
+            Text(confirmText, style = PetalText.button)
         }
     }
 }

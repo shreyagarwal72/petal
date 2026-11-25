@@ -12,6 +12,7 @@
 package com.petal.browser.compose.security
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.app.Activity
@@ -212,8 +213,7 @@ fun PetalBiometricExpressiveSheet(
 
                 Text(
                     text = if (isSuccess) "Authenticated" else title,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.sheetTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                     textAlign = TextAlign.Center
                 )
@@ -222,7 +222,7 @@ fun PetalBiometricExpressiveSheet(
 
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.pageSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
@@ -242,7 +242,7 @@ fun PetalBiometricExpressiveSheet(
                         ) {
                             Text(
                                 text = errorMessage!!,
-                                style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
@@ -301,7 +301,7 @@ fun PetalBiometricExpressiveSheet(
                     Text(
                         stringResource(R.string.ui_cancel),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelLarge
+                        style = PetalText.button
                     )
                 }
             }

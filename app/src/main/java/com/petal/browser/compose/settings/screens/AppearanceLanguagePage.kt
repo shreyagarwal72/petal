@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.layout.UiExperience
 import com.petal.browser.ui.theme.layout.PetalLayoutState
 import com.petal.browser.ui.theme.layout.PetalLayoutSettings
@@ -114,13 +115,12 @@ fun AppearanceLanguagePage(
                     ) {
                         Text(
                             stringResource(R.string.ui_app_language),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            style = PetalText.sheetTitle
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             stringResource(R.string.ui_choose_your_preferred_display_language),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.height(12.dp))
@@ -199,18 +199,15 @@ fun AppearanceLanguagePage(
                                     content = {
                                         Text(
                                             text = lang.displayLabel,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            style = PetalText.rowTitle.copy(
+                                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                            ),
+                                            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = if (lang.tag != "system") "BCP-47: ${lang.tag} • ${lang.nativeName}" else stringResource(R.string.ui_follow_device_language),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                                            style = PetalText.rowSubtitle,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     },
                                     trailing = {
@@ -242,7 +239,7 @@ fun AppearanceLanguagePage(
         ) {
             Text(
                 stringResource(R.string.ui_choose_your_preferred_display_language),
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -288,13 +285,12 @@ fun AppearanceLanguagePage(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     stringResource(R.string.ui_quick_languages),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
+                                    style = PetalText.rowTitle,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     stringResource(R.string.ui_switch_common_languages_instantly),
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.rowSubtitle,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }

@@ -86,7 +86,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.setViewTreeLifecycleOwner
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
@@ -359,13 +359,11 @@ object PetalPrivacyShieldSheet {
                         Column {
                             Text(
                                 text = stringResource(R.string.ui_petal_shield_hud),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
+                                style = PetalText.cardTitle
                             )
                             Text(
                                 text = domain,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = PetalText.caption,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -420,7 +418,7 @@ object PetalPrivacyShieldSheet {
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = stringResource(R.string.ui_blocked_on_this_site),
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = PetalText.caption,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                             }
@@ -440,8 +438,7 @@ object PetalPrivacyShieldSheet {
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = stringResource(R.string.ui_total_threats_stopped),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = PetalText.caption
                                 )
                             }
                         }
@@ -459,25 +456,25 @@ object PetalPrivacyShieldSheet {
 
                         PetalSuggestionChip(
                             onClick = {},
-                            label = { Text(adsLabel, fontSize = 11.sp, maxLines = 1) },
+                            label = { Text(adsLabel, style = PetalText.badge, maxLines = 1) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f)
                         )
                         PetalSuggestionChip(
                             onClick = {},
-                            label = { Text(trackersLabel, fontSize = 11.sp, maxLines = 1) },
+                            label = { Text(trackersLabel, style = PetalText.badge, maxLines = 1) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f)
                         )
                         PetalSuggestionChip(
                             onClick = {},
-                            label = { Text(socialLabel, fontSize = 11.sp, maxLines = 1) },
+                            label = { Text(socialLabel, style = PetalText.badge, maxLines = 1) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f)
                         )
                         PetalSuggestionChip(
                             onClick = {},
-                            label = { Text(cookiesLabel, fontSize = 11.sp, maxLines = 1) },
+                            label = { Text(cookiesLabel, style = PetalText.badge, maxLines = 1) },
                             shape = RoundedCornerShape(10.dp),
                             modifier = Modifier.weight(1f)
                         )
@@ -505,13 +502,11 @@ object PetalPrivacyShieldSheet {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = if (isHttps) "Connection is secure (HTTPS)" else "Connection not secure (HTTP)",
-                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    style = PetalText.cardTitle
                                 )
                                 Text(
                                     text = if (isHttps) "Information you share is private & encrypted" else "Beware of entering sensitive credentials or data",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = PetalText.cardBody
                                 )
                             }
                         }
@@ -595,7 +590,7 @@ object PetalPrivacyShieldSheet {
                         ) {
                             Icon(Icons.Rounded.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Zap Element (Interactive Visual Picker)", fontSize = 12.sp)
+                            Text("Zap Element (Interactive Visual Picker)", style = PetalText.button)
                         }
 
                         FilledTonalButton(
@@ -611,7 +606,7 @@ object PetalPrivacyShieldSheet {
                         ) {
                             Icon(Icons.Rounded.Block, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("Block Page Element (CSS Selector)", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                            Text("Block Page Element (CSS Selector)", style = PetalText.button)
                         }
                     }
 
@@ -640,14 +635,12 @@ object PetalPrivacyShieldSheet {
                             ) {
                                 Text(
                                     text = "AdGuard AdBlocker (Recommended)",
-                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    style = PetalText.cardTitle
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     text = "Enhance Petal's built-in Trie blocker with AdGuard's premier content blocker for cosmetic filtering, tracker removal, and anti-adblock defense.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = PetalText.cardBody
                                 )
                                 Spacer(Modifier.height(10.dp))
                                 FilledTonalButton(

@@ -1,6 +1,7 @@
 package com.petal.browser.compose.tabs
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.spring
@@ -96,17 +97,14 @@ fun PetalPinnedTabsShelf(
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = "Essentials",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.5.sp
-                        ),
+                        style = PetalText.sectionHeader.copy(letterSpacing = 0.5.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
 
                 Text(
                     text = "${pinnedTabs.size}",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.badge,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -181,7 +179,7 @@ fun PetalPinnedTabsShelf(
                                         Box(contentAlignment = Alignment.Center) {
                                             Text(
                                                 text = tab.title.take(1).uppercase().ifBlank { "?" },
-                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                style = PetalText.badge,
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                         }
@@ -208,8 +206,7 @@ fun PetalPinnedTabsShelf(
 
                             Text(
                                 text = tab.title,
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.sp,
+                                style = PetalText.tabLabel.copy(
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal
                                 ),
                                 color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant,

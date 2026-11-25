@@ -1,6 +1,7 @@
 package com.petal.browser.setup
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import android.net.Uri
 import android.widget.Toast
@@ -240,8 +241,7 @@ private fun SetupScaffold(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             stringResource(R.string.petal_setup_step_of, stage + 1, titles.size) + "  ·  " + titles[stage],
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if (!isLast) {
@@ -382,7 +382,7 @@ private fun PrimaryAction(label: String, modifier: Modifier = Modifier, onClick:
             contentColor = MaterialTheme.colorScheme.onPrimary
         )
     ) {
-        Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+        Text(label, style = PetalText.button, maxLines = 1)
         Spacer(Modifier.width(8.dp))
         Icon(Icons.AutoMirrored.Rounded.ArrowForward, null, Modifier.size(20.dp))
     }

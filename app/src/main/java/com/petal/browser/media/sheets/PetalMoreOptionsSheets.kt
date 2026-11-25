@@ -14,6 +14,7 @@
 package com.petal.browser.media.sheets
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -173,8 +174,7 @@ fun PetalSleepTimerSheet(
                     )
                     Text(
                         text = "Sleep Timer",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = audioPalette.onSurface
                     )
                 }
@@ -212,14 +212,13 @@ fun PetalSleepTimerSheet(
                         Column {
                             Text(
                                 text = "Active Sleep Timer",
-                                style = MaterialTheme.typography.labelMedium,
+                                style = PetalText.sectionHeader,
                                 color = audioPalette.seed,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
                                 text = String.format(Locale.US, "%02d:%02d remaining", mins, secs),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.ExtraBold,
+                                style = PetalText.value,
                                 color = audioPalette.onSurface
                             )
                         }
@@ -236,8 +235,7 @@ fun PetalSleepTimerSheet(
 
             Text(
                 text = "Turn off playback in:",
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
+                style = PetalText.sectionHeader,
                 color = audioPalette.onSurfaceVariant,
                 modifier = Modifier.padding(top = 12.dp, bottom = 8.dp)
             )
@@ -305,13 +303,12 @@ fun PetalSleepTimerSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = "Finish current track",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = PetalText.rowTitle,
                         color = audioPalette.onSurface
                     )
                     Text(
                         text = "Let the active track finish playing before pausing",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.rowSubtitle,
                         color = audioPalette.onSurfaceVariant
                     )
                 }
@@ -409,8 +406,7 @@ fun PetalSongInfoSheet(
                     )
                     Text(
                         text = "Track Information",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = audioPalette.onSurface
                     )
                 }
@@ -447,15 +443,14 @@ fun PetalSongInfoSheet(
                     ) {
                         Text(
                             text = label,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.caption,
                             color = audioPalette.onSurfaceVariant,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.width(90.dp)
                         )
                         Text(
                             text = value,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
+                            style = PetalText.listItemTitle,
                             color = audioPalette.onSurface,
                             modifier = Modifier.weight(1f)
                         )
@@ -552,8 +547,7 @@ fun PetalSpeedSelectorSheet(
                     )
                     Text(
                         text = "Playback Speed",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = audioPalette.onSurface
                     )
                 }
@@ -719,8 +713,7 @@ fun PetalAudioRouteSheet(
                     Icon(routeIcon, contentDescription = null, tint = audioPalette.seed, modifier = Modifier.size(24.dp))
                     Text(
                         text = "Audio Output",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = audioPalette.onSurface
                     )
                 }
@@ -760,14 +753,13 @@ fun PetalAudioRouteSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Currently Active",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.badge,
                             color = audioPalette.seed,
                             fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = currentRoute,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.rowTitle,
                             color = audioPalette.onSurface
                         )
                     }

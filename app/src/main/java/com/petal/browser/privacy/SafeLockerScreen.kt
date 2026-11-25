@@ -12,6 +12,7 @@
 package com.petal.browser.privacy
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
@@ -379,12 +380,12 @@ fun SafeLockerScreen(
                                     )
                                     Text(
                                         stringResource(R.string.ui_safe_locker_is_locked),
-                                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.pageTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         authError ?: "Authenticate using your fingerprint, face, or device PIN/pattern to access your private encrypted vault.",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = PetalText.pageSubtitle,
                                         color = if (authError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(horizontal = 24.dp),
                                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -469,12 +470,12 @@ fun SafeLockerScreen(
                                         )
                                         Text(
                                             if (searchQuery.isNotEmpty()) "No matching files" else "Safe Locker is empty",
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.emptyState,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             if (searchQuery.isNotEmpty()) "Try a different search term" else "Import private downloads, images, or documents into your hardware-encrypted vault",
-                                            style = MaterialTheme.typography.bodyMedium,
+                                            style = PetalText.pageSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                                         )
@@ -558,15 +559,13 @@ fun SafeLockerScreen(
                                                 Column(modifier = Modifier.weight(1f)) {
                                                     Text(
                                                         item.name,
-                                                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                                                        maxLines = 1,
-                                                        overflow = TextOverflow.Ellipsis,
+                                                        style = PetalText.listItemTitle,
                                                         color = MaterialTheme.colorScheme.onSurface
                                                     )
                                                     Spacer(Modifier.height(2.dp))
                                                     Text(
                                                         "${formatSafeFileSize(item.sizeBytes)} • ${formatSafeFileDate(item.modifiedTime)}",
-                                                        style = MaterialTheme.typography.bodySmall,
+                                                        style = PetalText.listItemMeta,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
                                                 }

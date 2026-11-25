@@ -1,6 +1,7 @@
 package com.petal.browser.compose.composable
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.content.Context
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -133,8 +134,7 @@ fun PetalWebsiteLoadingSkeleton(
                     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             text = displayHost,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.rowTitle,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis

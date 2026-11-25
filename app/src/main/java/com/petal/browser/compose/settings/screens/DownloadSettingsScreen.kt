@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.containment.PetalSettingsSection
 
@@ -291,19 +292,19 @@ fun DownloadSettingsScreenContent(
                                 content = {
                                     Text(
                                         text = "Connections per download",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "Tap to change. More is faster on slow servers, but some hosts limit it (Petal backs off automatically). Applies to new downloads.",
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
                                 trailing = {
                                     Text(
                                         text = if (parallelEnabled) "$connections" else "Off",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.value,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
@@ -321,13 +322,13 @@ fun DownloadSettingsScreenContent(
                                 content = {
                                     Text(
                                         text = "Background downloads",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = if (batteryExempt) "Unrestricted: downloads keep running with the screen off."
                                         else "Restricted: Android may pause downloads when the screen locks. Tap to allow.",
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -357,11 +358,11 @@ fun DownloadSettingsScreenContent(
                                     )
                                 },
                                 content = {
-                                    Text("Simultaneous downloads", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                                    Text("Extra downloads wait in the queue. Tap to change.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Simultaneous downloads", style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                                    Text("Extra downloads wait in the queue. Tap to change.", style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 },
                                 trailing = {
-                                    Text("$maxConcurrent", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                    Text("$maxConcurrent", style = PetalText.value, color = MaterialTheme.colorScheme.primary)
                                 }
                             )
                             1 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -385,11 +386,11 @@ fun DownloadSettingsScreenContent(
                                     )
                                 },
                                 content = {
-                                    Text("Speed limit", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
-                                    Text("Caps total download speed. Tap to change. Applies to downloads Petal fetches itself.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text("Speed limit", style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                                    Text("Caps total download speed. Tap to change. Applies to downloads Petal fetches itself.", style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 },
                                 trailing = {
-                                    Text(if (speedLimit == 0) "Off" else if (speedLimit >= 1024) "${speedLimit / 1024} MB/s" else "$speedLimit KB/s", style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.primary)
+                                    Text(if (speedLimit == 0) "Off" else if (speedLimit >= 1024) "${speedLimit / 1024} MB/s" else "$speedLimit KB/s", style = PetalText.value, color = MaterialTheme.colorScheme.primary)
                                 }
                             )
                             3 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -421,7 +422,7 @@ fun DownloadSettingsScreenContent(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_choose_whether_downloads_are_handled),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -445,12 +446,12 @@ fun DownloadSettingsScreenContent(
                                     content = {
                                         Text(
                                             text = stringResource(R.string.ui_in_app_downloader_fast_multi),
-                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_native_petal_accelerated_downloader_wi),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     },
@@ -478,12 +479,12 @@ fun DownloadSettingsScreenContent(
                                     content = {
                                         Text(
                                             text = downloader.displayName,
-                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_installed_external_download_manager_wi),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     },
@@ -511,12 +512,12 @@ fun DownloadSettingsScreenContent(
                                     content = {
                                         Text(
                                             text = stringResource(R.string.ui_external_app_auto_chooser),
-                                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = stringResource(R.string.ui_prompt_system_chooser_or_dispatch),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     },

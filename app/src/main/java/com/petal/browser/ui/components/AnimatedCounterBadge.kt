@@ -1,21 +1,16 @@
-package com.petal.browser.ui.components;
+package com.petal.browser.ui.components
 
-import com.petal.browser.ui.components.PetalSpring
-
-import androidx.compose.animation.AnimatedContent;
-import androidx.compose.animation.ContentTransform;
-import androidx.compose.animation.ExperimentalAnimationApi;
-import androidx.compose.animation.fadeIn;
-import androidx.compose.animation.fadeOut;
-import androidx.compose.animation.slideInVertically;
-import androidx.compose.animation.slideOutVertically;
-import androidx.compose.animation.with;
-import androidx.compose.material3.MaterialTheme;
-import androidx.compose.material3.Text;
-import androidx.compose.runtime.Composable;
-import androidx.compose.ui.Modifier;
-import androidx.compose.ui.text.font.FontWeight;
-import androidx.compose.ui.unit.sp;
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.with
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import com.petal.browser.ui.theme.PetalText
 
 /**
  * AnimatedCounterBadge renders M3 Expressive animated flip numbers for open tabs & download counts.
@@ -41,10 +36,7 @@ fun AnimatedCounterBadge(
     ) { targetCount ->
         Text(
             text = "$targetCount",
-            style = MaterialTheme.typography.labelLarge.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 12.sp
-            ),
+            style = PetalText.badge,
             modifier = modifier
         )
     }

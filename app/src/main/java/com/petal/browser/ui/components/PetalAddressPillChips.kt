@@ -42,10 +42,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.preference.PreferenceManager
 import com.petal.browser.activity.MainActivity
@@ -239,7 +239,7 @@ private fun ExtensionChip(
             ) {
                 Text(
                     text = badgeText,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = PetalText.badge,
                     color = badgeTextColor?.let { Color(it) } ?: MaterialTheme.colorScheme.onPrimary,
                     maxLines = 1,
                     overflow = TextOverflow.Clip,
@@ -362,7 +362,7 @@ fun PetalTranslateSheet(tabId: String, onDismiss: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (pickingTarget) {
-                Text("Translate to", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                Text("Translate to", style = PetalText.sheetTitle)
                 val targets = supported?.toLanguages.orEmpty().filter { !it.code.equals(from, ignoreCase = true) }
                 LazyColumn(modifier = Modifier.heightIn(max = 360.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(targets) { lang ->
@@ -379,7 +379,7 @@ fun PetalTranslateSheet(tabId: String, onDismiss: () -> Unit) {
                             Row(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Text(
                                     text = lang.localizedDisplayName?.takeIf { it.isNotBlank() } ?: lang.code,
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    style = PetalText.rowTitle,
                                     modifier = Modifier.weight(1f)
                                 )
                                 if (selected) Icon(Icons.Rounded.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
@@ -393,8 +393,8 @@ fun PetalTranslateSheet(tabId: String, onDismiss: () -> Unit) {
             // Detected language -> target language
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text("Page language", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(if (from.isEmpty()) "Unknown" else nameOf(from), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    Text("Page language", style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(if (from.isEmpty()) "Unknown" else nameOf(from), style = PetalText.rowTitle)
                 }
                 Surface(
                     shape = RoundedCornerShape(16.dp),
@@ -404,8 +404,8 @@ fun PetalTranslateSheet(tabId: String, onDismiss: () -> Unit) {
                     }
                 ) {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        Text("Translate to", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                        Text(nameOf(to), style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text("Translate to", style = PetalText.badge, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                        Text(nameOf(to), style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSecondaryContainer)
                     }
                 }
             }
@@ -413,19 +413,19 @@ fun PetalTranslateSheet(tabId: String, onDismiss: () -> Unit) {
             if (state.processing) {
                 Text(
                     text = if (downloadBytes > 0) "Downloading language pack and translating…" else "Translating…",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             } else if (!state.isTranslated && downloadBytes > 0) {
                 Text(
                     text = "One-time download of about ${"%.1f".format(downloadBytes / (1024.0 * 1024.0))} MB. Translation runs on your device.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             if (state.error != null) {
-                Text("Translation failed. Try again.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error)
+                Text("Translation failed. Try again.", style = PetalText.cardBody, color = MaterialTheme.colorScheme.error)
             }
 
             // Primary action: translate / show original
@@ -441,8 +441,7 @@ fun PetalTranslateSheet(tabId: String, onDismiss: () -> Unit) {
                 Box(Modifier.padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
                     Text(
                         text = if (state.isTranslated) "Show original" else "Translate",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
+                        style = PetalText.button,
                         color = MaterialTheme.colorScheme.onPrimary
                     )
                 }
@@ -455,7 +454,7 @@ fun PetalTranslateSheet(tabId: String, onDismiss: () -> Unit) {
             ) {
                 Text(
                     text = "Always translate ${if (from.isEmpty()) "this language" else nameOf(from)}",
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = PetalText.rowTitle,
                     modifier = Modifier.weight(1f)
                 )
                 Switch(

@@ -25,6 +25,7 @@
 package com.petal.browser.ui.components
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.layout.petalFlingBehavior
 
 import android.content.ClipData
@@ -182,7 +183,7 @@ private fun SlashCommandCard(
         Column(modifier = Modifier.padding(vertical = 6.dp)) {
             Text(
                 text = stringResource(R.string.ui_slash_title),
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                style = PetalText.sectionHeader,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
             )
@@ -228,22 +229,18 @@ private fun SlashCommandRow(spec: SlashCommandSpec, onRun: (PetalOmniboxCommand)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = spec.name,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                style = PetalText.rowTitle,
+                color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = spec.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                style = PetalText.rowSubtitle,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Text(
             text = "/" + spec.trigger,
-            style = MaterialTheme.typography.labelMedium,
+            style = PetalText.badge,
             color = colors.solid,
             maxLines = 1
         )
@@ -900,7 +897,7 @@ fun PetalOmniboxPage(
                                             ) {
                                                 Text(
                                                     text = stringResource(R.string.ui_search_engine),
-                                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                    style = PetalText.sectionHeader,
                                                     color = MaterialTheme.colorScheme.primary,
                                                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
                                                 )
@@ -1055,14 +1052,12 @@ fun PetalOmniboxPage(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = if (pageTitle.isNotBlank()) pageTitle else (pageDomain.ifBlank { cleanPageUrl }),
-                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
+                                                style = PetalText.cardTitle,
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = if (pageDomain.isNotBlank()) pageDomain else cleanPageUrl,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.listItemMeta,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
@@ -1198,14 +1193,12 @@ fun PetalOmniboxPage(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = if (isClipboardUrl) "Link from clipboard" else "Search from clipboard",
-                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
+                                                style = PetalText.cardTitle,
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = clip,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.listItemMeta,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
@@ -1250,7 +1243,7 @@ fun PetalOmniboxPage(
                             ) {
                                 Text(
                                     text = stringResource(R.string.ui_frequently_visited),
-                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sectionHeader,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)
                                 )
@@ -1315,7 +1308,7 @@ fun PetalOmniboxPage(
 
                                                 Text(
                                                     text = shortcut.title,
-                                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                                                    style = PetalText.caption,
                                                     color = MaterialTheme.colorScheme.onSurface,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
@@ -1362,7 +1355,7 @@ fun PetalOmniboxPage(
                                 ) {
                                     Text(
                                         text = stringResource(R.string.ui_search_suggestions),
-                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold, fontSize = 11.sp),
+                                        style = PetalText.sectionHeader,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp)
                                     )
@@ -1406,7 +1399,7 @@ fun PetalOmniboxPage(
                                                     }
                                                     Text(
                                                         text = headerLabel,
-                                                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                        style = PetalText.sectionHeader,
                                                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.75f),
                                                         modifier = Modifier
                                                             .animateItem(
@@ -1504,19 +1497,13 @@ fun PetalOmniboxPage(
                                                             Column {
                                                                 Text(
                                                                     displayText,
-                                                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                                                        fontSize = 13.5.sp,
-                                                                        lineHeight = 17.sp
-                                                                    ),
-                                                                    fontWeight = FontWeight.Medium,
-                                                                    color = MaterialTheme.colorScheme.onSurface,
-                                                                    maxLines = 2,
-                                                                    overflow = TextOverflow.Ellipsis
+                                                                    style = PetalText.listItemTitle,
+                                                                    color = MaterialTheme.colorScheme.onSurface
                                                                 )
                                                                 if (!payload.targetUrl.isNullOrBlank() && (payload.source == SuggestionSource.SWITCH_TO_TAB || payload.source == SuggestionSource.BOOKMARK || payload.source == SuggestionSource.BROWSING_HISTORY)) {
                                                                     Text(
                                                                         text = smartEllipsize(payload.targetUrl, true, maxChars = 60),
-                                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                                                        style = PetalText.listItemMeta,
                                                                         color = MaterialTheme.colorScheme.primary,
                                                                         maxLines = 1,
                                                                         overflow = TextOverflow.Ellipsis
@@ -1524,7 +1511,7 @@ fun PetalOmniboxPage(
                                                                 } else if (isDirectEngineNav && !payload.targetUrl.isNullOrBlank()) {
                                                                     Text(
                                                                         text = smartEllipsize(payload.targetUrl, true, maxChars = 60),
-                                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
+                                                                        style = PetalText.listItemMeta,
                                                                         color = MaterialTheme.colorScheme.primary,
                                                                         maxLines = 1,
                                                                         overflow = TextOverflow.Ellipsis
@@ -1532,10 +1519,8 @@ fun PetalOmniboxPage(
                                                                 } else if (payload.source == SuggestionSource.SEARCH_ENGINE && payload.query.equals(queryState.text.trim(), ignoreCase = true)) {
                                                                     Text(
                                                                         text = stringResource(R.string.ui_search_with, currentEngine.name),
-                                                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp),
-                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                                                        maxLines = 1,
-                                                                        overflow = TextOverflow.Ellipsis
+                                                                        style = PetalText.listItemMeta,
+                                                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                                                     )
                                                                 }
                                                             }
@@ -1584,14 +1569,14 @@ fun PetalOmniboxPage(
             title = {
                 Text(
                     text = stringResource(R.string.ui_remove_suggestion),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.dialogTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             },
             text = {
                 Text(
                     text = stringResource(R.string.ui_remove_from_search_suggestions, item.query, if (item.isHistory) " This will also delete it from your browsing history." else ""),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.dialogBody,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
@@ -1659,7 +1644,7 @@ fun PetalOmniboxPage(
                     ),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(stringResource(R.string.ui_remove), fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ui_remove), style = PetalText.button)
                 }
             },
             dismissButton = {
@@ -1667,7 +1652,7 @@ fun PetalOmniboxPage(
                     onClick = { suggestionToRemove = null },
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text(stringResource(R.string.ui_cancel))
+                    Text(stringResource(R.string.ui_cancel), style = PetalText.button)
                 }
             }
         )

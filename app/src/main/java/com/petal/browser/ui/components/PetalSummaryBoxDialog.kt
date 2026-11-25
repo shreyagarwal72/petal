@@ -25,11 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.ResearchMode
@@ -137,15 +135,13 @@ fun PetalSummaryBoxDialog(
                         Column(Modifier.weight(1f)) {
                             Text(
                                 stringResource(R.string.ui_page_summary),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.dialogTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 "${selectedProvider.displayName} • $selectedModel",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                style = PetalText.badge,
+                                color = MaterialTheme.colorScheme.primary
                             )
                         }
                     }
@@ -182,7 +178,7 @@ fun PetalSummaryBoxDialog(
                             Spacer(Modifier.height(12.dp))
                             Text(
                                 stringResource(R.string.ui_generating_summary),
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = PetalText.dialogBody,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -206,9 +202,9 @@ fun PetalSummaryBoxDialog(
                             ) {
                                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Icon(Icons.Rounded.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                                    Text(stringResource(R.string.ui_summary_failed), style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onErrorContainer)
+                                    Text(stringResource(R.string.ui_summary_failed), style = PetalText.cardTitle, color = MaterialTheme.colorScheme.onErrorContainer)
                                 }
-                                Text(errorMessage!!, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                                Text(errorMessage!!, style = PetalText.cardBody, color = MaterialTheme.colorScheme.onErrorContainer)
                                 androidx.compose.foundation.layout.FlowRow(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -222,7 +218,7 @@ fun PetalSummaryBoxDialog(
                                     ) {
                                         Icon(Icons.Rounded.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
                                         Spacer(Modifier.width(6.dp))
-                                        Text(stringResource(R.string.ui_retry), maxLines = 1)
+                                        Text(stringResource(R.string.ui_retry), style = PetalText.button, maxLines = 1)
                                     }
                                     FilledTonalButton(
                                         onClick = onOpenSettings,
@@ -233,7 +229,7 @@ fun PetalSummaryBoxDialog(
                                         Spacer(Modifier.width(4.dp))
                                         Text(
                                             stringResource(R.string.ui_configure_key),
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            style = PetalText.button,
                                             maxLines = 1
                                         )
                                     }

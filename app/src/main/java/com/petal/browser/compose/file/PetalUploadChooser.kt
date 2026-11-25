@@ -17,6 +17,7 @@
 package com.petal.browser.compose.file
 
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.net.Uri
 import android.webkit.ValueCallback
@@ -310,7 +311,7 @@ private fun ChoiceContent(onPickFiles: () -> Unit, onPickMedia: () -> Unit) {
         ) {
             Text(
                 text = stringResource(R.string.upload_chooser_title),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sheetTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(Modifier.height(4.dp))
@@ -360,12 +361,12 @@ private fun ChoiceRow(icon: ImageVector, title: String, subtitle: String, onClic
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.rowTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

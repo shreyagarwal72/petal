@@ -48,6 +48,7 @@ import com.petal.browser.ui.theme.FontAxes
 import com.petal.browser.ui.theme.FontState
 import com.petal.browser.ui.theme.GSFlexPreset
 import com.petal.browser.ui.theme.PetalFontAccentColors
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.VariableFontFactory
 import com.petal.browser.ui.theme.withFontAccent
 
@@ -144,7 +145,7 @@ fun FontTestScreen(
             1 -> {
                 Text(
                     "Dynamic Typescale",
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.sectionHeader,
                     color = colorScheme.primary
                 )
                 ScaleSampleRow("Display Large", dynamicTypography.displayLarge, accent.headingOr(colorScheme.onSurface))
@@ -157,7 +158,7 @@ fun FontTestScreen(
             2 -> {
                 Text(
                     "Signature Presets",
-                    style = MaterialTheme.typography.labelLarge,
+                    style = PetalText.sectionHeader,
                     color = colorScheme.primary
                 )
                 PetalChoiceButtonGroup(
@@ -211,7 +212,7 @@ fun FontTestScreen(
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             Text(
                 "Global Axis Override (All Tiers)",
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sectionHeader,
                 color = colorScheme.secondary
             )
 
@@ -291,14 +292,13 @@ private fun ScaleSampleRow(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall,
+                style = PetalText.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = "Pack my box with five dozen liquor jugs",
                 style = style,
-                color = color,
-                maxLines = 2
+                color = color
             )
         }
     }

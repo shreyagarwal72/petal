@@ -22,12 +22,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.theme.PetalText
 
 @Composable
 fun PetalAutoScrollOverlay(
@@ -90,7 +89,7 @@ fun PetalAutoScrollOverlay(
             ) {
                 Text(
                     text = "${speedLevel}x",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.badge,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }

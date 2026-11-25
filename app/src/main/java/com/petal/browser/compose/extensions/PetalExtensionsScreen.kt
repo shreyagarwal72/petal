@@ -16,6 +16,7 @@
 package com.petal.browser.compose.extensions
 
 import android.content.Context
+import com.petal.browser.ui.theme.PetalText
 import android.graphics.Bitmap
 import android.net.Uri
 import android.view.ViewGroup
@@ -570,12 +571,12 @@ private fun InstalledExtensionsTab(
                             }
                             Text(
                                 text = stringResource(R.string.ui_no_firefox_add_ons_installed),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.emptyState,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = "Install extensions to block ads, protect privacy, customize webpages, and sync credentials just like on desktop Firefox.",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                                 modifier = Modifier.padding(horizontal = 8.dp)
@@ -693,10 +694,7 @@ private fun ExtensionRow(
             ) {
                 Text(
                     extension.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    style = PetalText.rowTitle,
                     modifier = Modifier.weight(1f, fill = false)
                 )
                 actionState?.badgeText?.takeIf { it.isNotBlank() }?.let { badge ->
@@ -708,16 +706,14 @@ private fun ExtensionRow(
                             .background(bg)
                             .padding(horizontal = 6.dp, vertical = 2.dp)
                     ) {
-                        Text(badge, style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold), color = fg)
+                        Text(badge, style = PetalText.badge, color = fg)
                     }
                 }
             }
             Text(
                 "v${extension.version}" + if (!extension.enabled) " · Disabled" else if (extension.allowedInPrivateBrowsing) " · Private allowed" else "",
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.rowSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
         },
         trailing = {
@@ -873,8 +869,8 @@ private fun ExploreExtensionsTab(
                             Icon(Icons.Rounded.Public, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
                         }
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Browse Mozilla Add-ons (AMO)", fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
-                            Text("Explore thousands of extensions on addons.mozilla.org", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text("Browse Mozilla Add-ons (AMO)", style = PetalText.rowTitle)
+                            Text("Explore thousands of extensions on addons.mozilla.org", style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         Icon(Icons.Rounded.OpenInNew, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                     }
@@ -941,7 +937,7 @@ private fun ExploreExtensionsTab(
                         ) {
                             Text(
                                 entry.name,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.rowTitle,
                                 modifier = Modifier.weight(1f, fill = false)
                             )
                             if (isInstalled) {
@@ -952,8 +948,7 @@ private fun ExploreExtensionsTab(
                                 ) {
                                     Text(
                                         text = stringResource(R.string.ui_installed),
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Bold,
+                                        style = PetalText.badge,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
@@ -962,10 +957,8 @@ private fun ExploreExtensionsTab(
                         }
                         Text(
                             entry.description,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
                         )
                     },
                     trailing = {
@@ -1036,11 +1029,11 @@ private fun TweaksExtensionsTab(
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
                         text = "Install from Local File (.XPI)",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        style = PetalText.cardTitle
                     )
                     Text(
                         text = "Import unlisted, developer, or self-hosted Firefox add-ons (.xpi) directly from device storage or downloads.",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     FilledTonalButton(
@@ -1060,7 +1053,7 @@ private fun TweaksExtensionsTab(
 
                     Text(
                         text = "Install from Direct URL",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        style = PetalText.cardTitle
                     )
                     TextField(
                         value = directUrlInput,
@@ -1104,11 +1097,11 @@ private fun TweaksExtensionsTab(
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         text = "Mozilla Firefox Add-on Collection",
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                        style = PetalText.cardTitle
                     )
                     Text(
                         text = "Configure your Mozilla Account User ID and custom collection slug to browse and install any add-on from your personal collection.",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     FilledTonalButton(
@@ -1143,11 +1136,11 @@ private fun TweaksExtensionsTab(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "WebExtension Developer Mode",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                                style = PetalText.rowTitle
                             )
                             Text(
                                 text = "Enable manifest inspector and advanced diagnostic tools",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.rowSubtitle,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -1166,7 +1159,7 @@ private fun TweaksExtensionsTab(
 
                         Text(
                             text = "Inspect Extension Manifest",
-                            style = MaterialTheme.typography.labelLarge,
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.primary
                         )
                         installedExtensions.forEach { ext ->
@@ -1182,7 +1175,7 @@ private fun TweaksExtensionsTab(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text(ext.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                                    Text(ext.name, style = PetalText.listItemTitle)
                                     Icon(Icons.Rounded.Code, contentDescription = null, modifier = Modifier.size(18.dp))
                                 }
                             }
@@ -1208,7 +1201,7 @@ private fun TweaksExtensionsTab(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.CollectionsBookmark, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                     Spacer(Modifier.width(8.dp))
-                    Text("AMO Add-on Collection", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    Text("AMO Add-on Collection", style = PetalText.dialogTitle)
                 }
             },
             text = {
@@ -1219,7 +1212,7 @@ private fun TweaksExtensionsTab(
                 ) {
                     Text(
                         "Enter your Mozilla Add-ons (AMO) account User ID and collection slug to install your favorite extensions in 1 tap.",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.dialogBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -1242,7 +1235,7 @@ private fun TweaksExtensionsTab(
                     )
 
                     if (collectionError != null) {
-                        Text(collectionError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                        Text(collectionError!!, color = MaterialTheme.colorScheme.error, style = PetalText.caption)
                     }
 
                     if (isLoadingCollection) {
@@ -1252,7 +1245,7 @@ private fun TweaksExtensionsTab(
                     }
 
                     fetchedAddons?.let { list ->
-                        Text("Found ${list.size} add-ons in collection:", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Text("Found ${list.size} add-ons in collection:", style = PetalText.sectionHeader, color = MaterialTheme.colorScheme.primary)
                         list.forEach { addon ->
                             Surface(
                                 shape = RoundedCornerShape(12.dp),
@@ -1265,9 +1258,9 @@ private fun TweaksExtensionsTab(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
-                                        Text(addon.name, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium)
+                                        Text(addon.name, style = PetalText.rowTitle)
                                         if (addon.description.isNotBlank()) {
-                                            Text(addon.description, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
+                                            Text(addon.description, style = PetalText.rowSubtitle)
                                         }
                                     }
                                     FilledTonalButton(
@@ -1275,7 +1268,7 @@ private fun TweaksExtensionsTab(
                                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 2.dp),
                                         shape = RoundedCornerShape(8.dp)
                                     ) {
-                                        Text("Install", style = MaterialTheme.typography.labelSmall)
+                                        Text("Install", style = PetalText.button)
                                     }
                                 }
                             }
@@ -1328,7 +1321,7 @@ private fun TweaksExtensionsTab(
         PetalMaterialAlertDialog(
             onDismissRequest = { manifestInspectExt = null },
             title = {
-                Text("${ext.name} manifest.json", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("${ext.name} manifest.json", style = PetalText.dialogTitle)
             },
             text = {
                 Box(
@@ -1498,13 +1491,11 @@ private fun ExtensionDetailSheet(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = extension.name,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        style = PetalText.sheetTitle,
                     )
                     Text(
                         text = "Version ${extension.version}",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -1520,7 +1511,7 @@ private fun ExtensionDetailSheet(
             if (extension.description.isNotBlank()) {
                 Text(
                     text = extension.description,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.cardBody,
                     color = MaterialTheme.colorScheme.onSurface
                 )
             }
@@ -1586,11 +1577,11 @@ private fun ExtensionDetailSheet(
                         Column {
                             Text(
                                 text = "Run in private windows",
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
+                                style = PetalText.rowTitle
                             )
                             Text(
                                 text = "Allow this add-on to execute in private/incognito tabs",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.rowSubtitle,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -1613,14 +1604,14 @@ private fun ExtensionDetailSheet(
                         Icon(Icons.Rounded.Security, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                         Text(
                             text = "Granted Permissions (${permissions.size})",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold)
+                            style = PetalText.sectionHeader
                         )
                     }
 
                     if (permissions.isEmpty()) {
                         Text(
                             text = "This add-on does not require any special host or API permissions.",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
@@ -1642,8 +1633,8 @@ private fun ExtensionDetailSheet(
                                     Icon(perm.icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(16.dp))
                                 }
                                 Column(modifier = Modifier.weight(1f)) {
-                                    Text(perm.title, style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium))
-                                    Text(perm.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(perm.title, style = PetalText.rowTitle)
+                                    Text(perm.description, style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                             }
                         }
@@ -1666,7 +1657,7 @@ private fun ExtensionDetailSheet(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("View on addons.mozilla.org", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.primary)
+                            Text("View on addons.mozilla.org", style = PetalText.button, color = MaterialTheme.colorScheme.primary)
                             Icon(Icons.Rounded.OpenInNew, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
                     }
@@ -1684,7 +1675,7 @@ private fun ExtensionDetailSheet(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
-                            Text("Visit Official Homepage", style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium), color = MaterialTheme.colorScheme.onSurface)
+                            Text("Visit Official Homepage", style = PetalText.button, color = MaterialTheme.colorScheme.onSurface)
                             Icon(Icons.Rounded.Language, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
                         }
                     }
@@ -1759,12 +1750,11 @@ private fun AddExtensionSheet(
         ) {
             Text(
                 stringResource(R.string.ui_add_firefox_extension),
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold
+                style = PetalText.sheetTitle
             )
             Text(
                 stringResource(R.string.ui_installs_compatible_firefox_webextensi),
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.pageSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -1798,7 +1788,7 @@ private fun AddExtensionSheet(
 
             Text(
                 stringResource(R.string.ui_install_directly_from_url),
-                style = MaterialTheme.typography.labelLarge,
+                style = PetalText.sectionHeader,
                 color = MaterialTheme.colorScheme.primary
             )
             TextField(
@@ -1842,15 +1832,15 @@ internal fun InstallPermissionDialog(prompt: PetalExtensionManager.PendingPrompt
             Column {
                 Text(
                     if (prompt.isUpdate) "This extension needs new permissions:" else "This extension needs permission to:",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = PetalText.dialogBody
                 )
                 Spacer(Modifier.height(8.dp))
                 val shown = (prompt.permissions + prompt.origins).distinct().take(8)
                 if (shown.isEmpty()) {
-                    Text(stringResource(R.string.ui_no_special_permissions), style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.ui_no_special_permissions), style = PetalText.caption)
                 } else {
                     shown.forEach { p ->
-                        Text("• $p", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text("• $p", style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
             }
@@ -1981,15 +1971,14 @@ fun PetalExtensionPopupScreen(
                         Column(Modifier.weight(1f)) {
                             Text(
                                 text = popup.extensionName,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.sheetTitle,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
                             Text(
                                 text = stringResource(R.string.ui_extension_popup),
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -2185,7 +2174,7 @@ fun PetalExtensionPopupScreen(
                             ) {
                                 Text(
                                     text = "This popup didn't load",
-                                    style = MaterialTheme.typography.titleMedium,
+                                    style = PetalText.emptyState,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Spacer(Modifier.height(16.dp))
@@ -2212,7 +2201,7 @@ fun PetalExtensionPopupScreen(
                     pendingDialog = null
                 },
                 title = { Text(req.title?.takeIf { it.isNotBlank() } ?: popup.extensionName) },
-                text = { if (!req.message.isNullOrBlank()) Text(req.message, style = MaterialTheme.typography.bodyMedium) },
+                text = { if (!req.message.isNullOrBlank()) Text(req.message, style = PetalText.dialogBody) },
                 confirmButton = {
                     Button(onClick = {
                         req.onResult(true)
@@ -2241,7 +2230,7 @@ fun PetalExtensionPopupScreen(
                 text = {
                     Column {
                         if (!prompt.message.isNullOrBlank()) {
-                            Text(prompt.message!!, style = MaterialTheme.typography.bodyMedium)
+                            Text(prompt.message!!, style = PetalText.dialogBody)
                             Spacer(Modifier.height(8.dp))
                         }
                         TextField(

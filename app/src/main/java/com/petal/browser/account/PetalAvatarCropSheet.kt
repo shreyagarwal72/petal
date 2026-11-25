@@ -1,6 +1,7 @@
 package com.petal.browser.account
 
 import android.graphics.Bitmap
+import com.petal.browser.ui.theme.PetalText
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.net.Uri
@@ -102,9 +103,7 @@ fun PetalAvatarCropSheet(
             ) {
                 Text(
                     text = stringResource(R.string.ui_crop_profile_picture),
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                    ),
+                    style = PetalText.sheetTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 IconButton(onClick = onDismiss) {
@@ -236,9 +235,7 @@ fun PetalAvatarCropSheet(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.ui_save_profile_picture),
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-                        )
+                        style = PetalText.button
                     )
                 }
             }

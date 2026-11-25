@@ -40,9 +40,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.compose.ai.AiProvider
 import com.petal.browser.compose.ai.PetalAiResearchEngine
 import com.petal.browser.compose.ai.ResearchMode
@@ -193,13 +192,11 @@ fun PetalAiResearchSheet(
                     Column {
                         Text(
                             text = stringResource(R.string.ui_petal_ai),
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = PetalText.sheetTitle
                         )
                         Text(
                             text = stringResource(R.string.ui_ai_web_research),
-                            style = MaterialTheme.typography.labelMedium,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -244,11 +241,10 @@ fun PetalAiResearchSheet(
                             onClick = { providerMenuExpanded = true },
                             leading = { PetalGroupIconBadge(Icons.Rounded.Psychology) },
                             content = {
-                                Text("Provider", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                Text("Provider", style = PetalText.rowTitle)
                                 Text(
                                     selectedProvider.displayName,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = PetalText.rowSubtitle
                                 )
                             },
                             trailing = {
@@ -319,13 +315,10 @@ fun PetalAiResearchSheet(
                                 )
                             },
                             content = {
-                                Text("Model", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                                Text("Model", style = PetalText.rowTitle)
                                 Text(
                                     selectedModel.substringAfterLast("/"),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    style = PetalText.rowSubtitle
                                 )
                             },
                             trailing = {
@@ -466,13 +459,10 @@ fun PetalAiResearchSheet(
                             )
                         },
                         content = {
-                            Text(option.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                            Text(option.title, style = PetalText.rowTitle)
                             Text(
                                 option.subtitle,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
+                                style = PetalText.rowSubtitle
                             )
                         },
                         trailing = { RadioButton(selected = selected, onClick = null) }
@@ -621,13 +611,11 @@ fun PetalAiResearchSheet(
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(
                                 stringResource(R.string.ui_researching_synthesizing),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.SemiBold
+                                style = PetalText.cardTitle
                             )
                             Text(
                                 selectedProvider.displayName,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = PetalText.cardBody
                             )
                         }
                     }
@@ -712,8 +700,7 @@ fun PetalAiResearchSheet(
                                     }
                                     Text(
                                         stringResource(R.string.ui_ai_insights),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
+                                        style = PetalText.cardTitle
                                     )
                                 }
 

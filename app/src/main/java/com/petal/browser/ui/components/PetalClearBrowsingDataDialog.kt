@@ -21,8 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.R
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -64,8 +64,7 @@ fun PetalClearBrowsingDataDialog(
         title = {
             Text(
                 text = stringResource(R.string.ui_clear_browsing_data),
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+                style = PetalText.dialogTitle
             )
         },
         text = {
@@ -77,8 +76,7 @@ fun PetalClearBrowsingDataDialog(
             ) {
                 Text(
                     text = stringResource(R.string.ui_select_browsing_data_and_storage),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = PetalText.dialogBody,
                     modifier = Modifier.padding(bottom = 6.dp)
                 )
 
@@ -206,7 +204,7 @@ fun PetalClearBrowsingDataDialog(
             ) {
                 Text(
                     text = stringResource(R.string.ui_cancel),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                    style = PetalText.button
                 )
             }
         }
@@ -259,11 +257,9 @@ private fun ExpressiveClearOptionRow(
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontSize = 14.sp,
-                    fontWeight = if (checked) FontWeight.SemiBold else FontWeight.Normal
-                ),
-                color = MaterialTheme.colorScheme.onSurface
+                style = PetalText.rowTitle.copy(
+                    fontWeight = if (checked) FontWeight.Bold else FontWeight.Medium
+                )
             )
         }
         Checkbox(

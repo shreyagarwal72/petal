@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.material3.Icon
 
 data class ExpressiveSegmentItem(
@@ -176,8 +177,7 @@ fun ExpressiveButtonGroup(
                     }
                     Text(
                         text = item.label,
-                        style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                        style = (if (compact) PetalText.tabLabel else PetalText.chip).copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold),
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis,

@@ -1,6 +1,7 @@
 package com.petal.browser.compose.tabs
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.components.PetalExpressiveScrollBar
@@ -980,7 +981,7 @@ fun PetalTabGridSwitcher(
                                 Spacer(Modifier.width(6.dp))
                                 Text(
                                     stringResource(R.string.ui_sleeping_tabs_badge, sleepingCount),
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = PetalText.badge,
                                     color = MaterialTheme.colorScheme.onSecondaryContainer
                                 )
                             }
@@ -1100,7 +1101,7 @@ fun PetalTabGridSwitcher(
                                 )
                                 Text(
                                     text = if (isThresholdReached) "Release to open Vault" else "Pull to reveal Vault",
-                                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.chip,
                                     maxLines = 1,
                                     softWrap = false
                                 )
@@ -1716,7 +1717,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             Icon(Icons.Rounded.FolderCopy, contentDescription = stringResource(R.string.ui_group), tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_group), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.ui_group), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.onSurface)
                         }
 
                         // Bookmark All
@@ -1729,7 +1730,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             Icon(Icons.Rounded.BookmarkAdd, contentDescription = stringResource(R.string.ui_bookmark), tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_bookmark), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.ui_bookmark), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.onSurface)
                         }
 
                         // Share All (URLs joined by newline)
@@ -1748,7 +1749,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.ui_share), tint = accentColor, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_share), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface)
+                            Text(stringResource(R.string.ui_share), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.onSurface)
                         }
 
                         // Close Selected
@@ -1761,7 +1762,7 @@ fun PetalTabGridSwitcher(
                         ) {
                             Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(22.dp))
                             Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_close), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                            Text(stringResource(R.string.ui_close), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -1875,7 +1876,7 @@ fun PetalTabGridSwitcher(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_add_tabs_to_group, selectedTabs.size),
-                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     IconButton(onClick = { showAddToGroupDialog = false }) {
@@ -1886,7 +1887,7 @@ fun PetalTabGridSwitcher(
                 if (!isCreatingNew) {
                     Text(
                         text = stringResource(R.string.ui_select_an_existing_group_or),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
@@ -1917,14 +1918,14 @@ fun PetalTabGridSwitcher(
                                 content = {
                                     Text(
                                         text = group.title,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface,
                                     )
                                 },
                                 trailing = {
                                     Text(
                                         text = stringResource(R.string.ui_tabs_2, group.tabIds.size),
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
@@ -2199,7 +2200,7 @@ private fun TabManagerEmptyState(
 
         Text(
             text = title,
-            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.emptyState,
             color = textColor,
             textAlign = TextAlign.Center
         )
@@ -2208,7 +2209,7 @@ private fun TabManagerEmptyState(
 
         Text(
             text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
+            style = PetalText.pageSubtitle,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -2417,7 +2418,7 @@ private fun PetalTabCard(
                     TabFavicon(tab = tab, accentColor = accentColor, size = 16.dp)
                     Text(
                         text = if (tab.title.isBlank()) "New Tab" else tab.title,
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 12.sp),
+                        style = PetalText.tabLabel,
                         color = textColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -2570,7 +2571,7 @@ private fun PetalHomePreviewCard(
                 Spacer(Modifier.height(10.dp))
                 Text(
                     text = if (tab.title.isBlank() || tab.title == "about:blank") "Website" else tab.title,
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+                    style = PetalText.listItemTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 2,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -2585,7 +2586,7 @@ private fun PetalHomePreviewCard(
                 }
                 Text(
                     text = domain,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                    style = PetalText.listItemMeta,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     maxLines = 1,
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -2756,7 +2757,7 @@ private fun PetalTabListItem(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(
                             text = if (tab.title.isBlank() || tab.title.equals("about:blank", true) || tab.title.equals("Petal Start", true)) "Petal Home" else tab.title,
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.listItemTitle,
                             color = textColor,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -2768,7 +2769,7 @@ private fun PetalTabListItem(
                     }
                     Text(
                         text = if (tab.url.isBlank() || tab.url.equals("about:blank", true)) "Petal Home" else tab.url,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.listItemMeta,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -2893,7 +2894,7 @@ private fun PetalTabGroupCard(
             ) {
                 if (tabs.isEmpty()) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(stringResource(R.string.ui_empty_group), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.ui_empty_group), style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 } else {
                     val previewItems = tabs.take(4)
@@ -3086,13 +3087,13 @@ private fun PetalTabGroupInspectionDialog(
                             content = {
                                         Text(
                                             text = tab.title.ifBlank { "New Tab" },
-                                            style = MaterialTheme.typography.titleSmall,
+                                            style = PetalText.listItemTitle,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = tab.url.ifBlank { "about:blank" },
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.listItemMeta,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
@@ -3135,7 +3136,7 @@ private fun TabFavicon(tab: PetalTabItem, accentColor: Color, size: androidx.com
             Box(contentAlignment = Alignment.Center) {
                 Text(
                     text = tab.title.take(1).uppercase().ifBlank { "?" },
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.badge,
                     color = accentColor
                 )
             }
@@ -3281,10 +3282,7 @@ fun ExpressiveTabUndoBanner(
                 ) { _ ->
                     Text(
                         text = "Closed $tabTitle",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = 13.5.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -3302,7 +3300,7 @@ fun ExpressiveTabUndoBanner(
             ) {
                 Text(
                     text = stringResource(R.string.ui_undo),
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                    style = PetalText.button
                 )
             }
         }

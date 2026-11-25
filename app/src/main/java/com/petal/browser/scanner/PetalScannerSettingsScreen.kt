@@ -1,6 +1,7 @@
 package com.petal.browser.scanner
 
 import androidx.compose.foundation.background
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -45,7 +46,7 @@ fun PetalScannerSettingsScreen(
                     title = {
                         Text(
                             text = "Scanner Settings",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                            style = PetalText.pageTitle
                         )
                     },
                     navigationIcon = {
@@ -71,7 +72,7 @@ fun PetalScannerSettingsScreen(
                 // Section: Behavior
                 Text(
                     text = "Behavior & Feedback",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 8.dp, top = 8.dp)
                 )
@@ -111,7 +112,7 @@ fun PetalScannerSettingsScreen(
                 // Section: Safety & Privacy
                 Text(
                     text = "Safety & Privacy",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(start = 8.dp, top = 8.dp)
                 )
@@ -176,12 +177,12 @@ private fun SettingToggleRow(
         Column(modifier = Modifier.weight(1f).padding(end = 16.dp)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                style = PetalText.rowTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.rowSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

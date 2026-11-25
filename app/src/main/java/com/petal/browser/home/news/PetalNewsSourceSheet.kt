@@ -9,6 +9,7 @@
 package com.petal.browser.home.news
 
 import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.containment.PetalSheetActionRow
 import com.petal.browser.ui.containment.PetalSheetTone
 import com.petal.browser.ui.containment.petalSheetSurface
@@ -81,12 +82,11 @@ fun PetalNewsSourceSheet(
                     Column {
                         Text(
                             text = "Petal Feed & News",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            style = PetalText.sheetTitle,
                         )
                         Text(
                             text = "Privacy RSS aggregator without tracking",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -117,12 +117,11 @@ fun PetalNewsSourceSheet(
                 content = {
                     Text(
                         text = "Show Feed on Homepage",
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium
+                        style = PetalText.rowTitle,
                     )
                     Text(
                         text = if (isEnabled) "Active · Displays top articles below shortcuts" else "Disabled · Homepage is minimal",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.rowSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
@@ -150,12 +149,11 @@ fun PetalNewsSourceSheet(
                 ) {
                     Text(
                         text = "Select News Sources",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        style = PetalText.sectionHeader,
                     )
                     Text(
                         text = "${selectedIds.size} of ${PetalNewsManager.AVAILABLE_SOURCES.size} active",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = PetalText.badge,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -189,12 +187,11 @@ fun PetalNewsSourceSheet(
                         content = {
                             Text(
                                 text = source.name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
+                                style = PetalText.rowTitle,
                             )
                             Text(
                                 text = source.category,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.rowSubtitle,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },

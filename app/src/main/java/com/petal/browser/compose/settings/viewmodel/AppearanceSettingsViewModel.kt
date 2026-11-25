@@ -15,6 +15,8 @@ import com.petal.browser.ui.theme.ThemeConfig
 import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -149,43 +151,79 @@ class AppearanceSettingsViewModel @Inject constructor(
     val liquidGlassBgBlur: StateFlow<Float> = settingsRepository.liquidGlassBgBlur
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 16f)
 
+    private sealed interface AxisWrite {
+        data class GsFlexTier(val tier: FontTier, val axis: FontAxes.Axis, val value: Float) : AxisWrite
+        data class GsFlexAll(val axis: FontAxes.Axis, val value: Float) : AxisWrite
+        data class CustomTier(val tier: FontTier, val axis: FontAxes.Axis, val value: Float) : AxisWrite
+        data class CustomAll(val axis: FontAxes.Axis, val value: Float) : AxisWrite
+    }
+
+    private var axisWriteDebounceJob: Job? = null
+
+    private fun scheduleAxisWrite(debounced: Boolean, write: AxisWrite) {
+        axisWriteDebounceJob?.cancel()
+        if (debounced) {
+            axisWriteDebounceJob = viewModelScope.launch {
+                delay(110L)
+                executeAxisWrite(write)
+            }
+        } else {
+            viewModelScope.launch { executeAxisWrite(write) }
+        }
+    }
+
+    private suspend fun executeAxisWrite(write: AxisWrite) {
+        when (write) {
+            is AxisWrite.GsFlexTier -> settingsRepository.setGsFlexAxis(write.tier, write.axis, write.value)
+            is AxisWrite.GsFlexAll -> settingsRepository.setAllGsFlexAxes(write.axis, write.value)
+            is AxisWrite.CustomTier -> settingsRepository.setCustomFontAxis(write.tier, write.axis, write.value)
+            is AxisWrite.CustomAll -> settingsRepository.setAllCustomFontAxes(write.axis, write.value)
+        }
+    }
+
     fun setAppFont(font: AppFont) = viewModelScope.launch {
+        axisWriteDebounceJob?.cancel()
         settingsRepository.setAppFont(font)
     }
 
     fun setGsFlexPreset(preset: GSFlexPreset) = viewModelScope.launch {
+        axisWriteDebounceJob?.cancel()
         settingsRepository.setGsFlexPreset(preset)
     }
 
     fun setGsFlexSettings(settings: com.petal.browser.ui.theme.GSFlexSettings) = viewModelScope.launch {
+        axisWriteDebounceJob?.cancel()
         settingsRepository.setGsFlexSettings(settings)
     }
 
-    fun setGsFlexAxis(tier: FontTier, axis: FontAxes.Axis, value: Float) = viewModelScope.launch {
-        settingsRepository.setGsFlexAxis(tier, axis, value)
+    fun setGsFlexAxis(tier: FontTier, axis: FontAxes.Axis, value: Float, debounce: Boolean = false) {
+        scheduleAxisWrite(debounce, AxisWrite.GsFlexTier(tier, axis, value))
     }
 
-    fun setAllGsFlexAxes(axis: FontAxes.Axis, value: Float) = viewModelScope.launch {
-        settingsRepository.setAllGsFlexAxes(axis, value)
+    fun setAllGsFlexAxes(axis: FontAxes.Axis, value: Float, debounce: Boolean = false) {
+        scheduleAxisWrite(debounce, AxisWrite.GsFlexAll(axis, value))
     }
 
     fun resetGsFlexToPreset(preset: GSFlexPreset) = viewModelScope.launch {
+        axisWriteDebounceJob?.cancel()
         settingsRepository.resetGsFlexToPreset(preset)
     }
 
     fun setNunitoWeight(weight: Int) = viewModelScope.launch {
+        axisWriteDebounceJob?.cancel()
         settingsRepository.setNunitoWeight(weight)
     }
 
-    fun setCustomFontAxis(tier: FontTier, axis: FontAxes.Axis, value: Float) = viewModelScope.launch {
-        settingsRepository.setCustomFontAxis(tier, axis, value)
+    fun setCustomFontAxis(tier: FontTier, axis: FontAxes.Axis, value: Float, debounce: Boolean = false) {
+        scheduleAxisWrite(debounce, AxisWrite.CustomTier(tier, axis, value))
     }
 
-    fun setAllCustomFontAxes(axis: FontAxes.Axis, value: Float) = viewModelScope.launch {
-        settingsRepository.setAllCustomFontAxes(axis, value)
+    fun setAllCustomFontAxes(axis: FontAxes.Axis, value: Float, debounce: Boolean = false) {
+        scheduleAxisWrite(debounce, AxisWrite.CustomAll(axis, value))
     }
 
     fun setCustomFontSettings(settings: CustomFontSettings) = viewModelScope.launch {
+        axisWriteDebounceJob?.cancel()
         settingsRepository.setCustomFontSettings(settings)
     }
 

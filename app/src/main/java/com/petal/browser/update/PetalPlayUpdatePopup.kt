@@ -1,6 +1,7 @@
 package com.petal.browser.update
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -202,7 +203,7 @@ fun PetalPlayUpdatePopupContent(
                     )
                     Text(
                         text = "Google Play Store",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.badge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -213,7 +214,7 @@ fun PetalPlayUpdatePopupContent(
             // Headline
             Text(
                 text = if (isDownloaded) "Update Ready to Install" else "New Version Available",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.dialogTitle,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = TextAlign.Center
             )
@@ -226,7 +227,7 @@ fun PetalPlayUpdatePopupContent(
                     "The update was downloaded in the background. Restart Petal to finish applying the latest updates."
                 else
                     "A new release of Petal Browser is available on Google Play with enhanced performance and security upgrades.",
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.dialogBody,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
@@ -282,7 +283,7 @@ fun PetalPlayUpdatePopupContent(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Restart Petal",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                            style = PetalText.button
                         )
                     }
 
@@ -309,7 +310,7 @@ fun PetalPlayUpdatePopupContent(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Update on Google Play",
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                            style = PetalText.button
                         )
                     }
 
@@ -357,12 +358,12 @@ private fun UpdateFeatureRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                style = PetalText.rowTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
                 text = description,
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.rowSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

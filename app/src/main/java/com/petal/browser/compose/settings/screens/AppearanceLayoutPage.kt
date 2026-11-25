@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.layout.UiExperience
 import com.petal.browser.ui.theme.layout.PetalLayoutState
 import com.petal.browser.ui.theme.layout.PetalLayoutSettings
@@ -160,12 +161,12 @@ private fun PetalDesktopTabBarModeRow() {
             // invisible on dark themes, leaving the subtitle orphaned.
             androidx.compose.material3.Text(
                 text = stringResource(R.string.ui_desktop_tab_bar),
-                style = androidx.compose.material3.MaterialTheme.typography.titleMedium,
+                style = PetalText.rowTitle,
                 color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
             )
             androidx.compose.material3.Text(
                 text = stringResource(R.string.ui_desktop_tab_bar_subtitle),
-                style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+                style = PetalText.rowSubtitle,
                 color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
             )
             com.petal.browser.ui.components.ExpressiveButtonGroup(

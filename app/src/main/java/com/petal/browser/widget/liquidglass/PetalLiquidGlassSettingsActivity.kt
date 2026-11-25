@@ -1,6 +1,7 @@
 package com.petal.browser.widget.liquidglass
 
 import android.app.WallpaperManager
+import com.petal.browser.ui.theme.PetalText
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
@@ -321,7 +322,7 @@ private fun LiquidGlassSettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     GlassContainer(petalGroupPositionFor(0, if (darkLightMode != PetalBlurConfig.DARK_LIGHT_OFF) 2 else 1)) {
                         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            Text("Glass tint", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
+                            Text("Glass tint", style = PetalText.rowTitle)
                             ExpressiveButtonGroup(
                                 items = listOf(
                                     ExpressiveSegmentItem("off", "Auto", Icons.Rounded.AutoAwesome),
@@ -344,7 +345,7 @@ private fun LiquidGlassSettingsScreen(
                             )
                             Text(
                                 "Auto leaves the glass clear and picks light or dark text from your wallpaper.",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -400,15 +401,12 @@ private fun GlassSliderRow(
             ) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    style = PetalText.rowTitle,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     valueText,
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.value,
                     color = MaterialTheme.colorScheme.primary
                 )
             }
@@ -513,7 +511,7 @@ private fun GlassPreview(config: PetalBlurConfig, wallpaperRevision: Int) {
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(Icons.Rounded.Search, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
-                    Text("Search or type URL", color = ink, fontSize = 14.sp, fontWeight = FontWeight.Medium, modifier = Modifier.weight(1f), maxLines = 1)
+                    Text("Search or type URL", style = PetalText.rowTitle, color = ink, modifier = Modifier.weight(1f), maxLines = 1)
                     Icon(Icons.Rounded.Mic, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
                     Icon(Icons.Rounded.CameraAlt, contentDescription = null, tint = ink, modifier = Modifier.size(22.dp))
                 }

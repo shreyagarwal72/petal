@@ -1,6 +1,7 @@
 package com.petal.browser.media
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.AnimatedContent
@@ -284,9 +285,8 @@ fun PetalBrightnessHud(
         ) {
             Text(
                 text = "${(brightness * 100).toInt()}%",
+                style = PetalText.badge,
                 color = Color.White,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
             )
             PetalVerticalSlider(
                 value = brightness,
@@ -339,9 +339,8 @@ fun PetalVolumeHud(
         ) {
             Text(
                 text = "$pct%",
+                style = PetalText.badge,
                 color = Color.White,
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Bold,
             )
             PetalVerticalSlider(
                 value = volume.toFloat(),
@@ -418,9 +417,8 @@ fun PetalSlideToUnlock(
         ) {
             Text(
                 text = stringResource(R.string.ui_slide_to_unlock),
+                style = PetalText.rowTitle,
                 color = Color.White.copy(alpha = 0.85f),
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Medium,
             )
         }
 
@@ -525,14 +523,12 @@ fun PetalSpeedCapsule(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = target,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                        style = PetalText.chip,
                         color = Color.White,
                     )
                     Text(
                         text = "x",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.badge,
                         color = Color.White.copy(alpha = 0.7f),
                         modifier = Modifier.padding(start = 1.dp),
                     )
@@ -917,11 +913,9 @@ fun PetalAudioMetaBadge(
     ) {
         Text(
             text = metaText,
+            style = PetalText.badge.copy(letterSpacing = 0.5.sp),
             color = textColor,
-            fontSize = 11.sp,
-            fontWeight = FontWeight.SemiBold,
             maxLines = 1,
-            letterSpacing = 0.5.sp,
         )
     }
 }
@@ -1211,8 +1205,7 @@ fun PetalPlayerHeaderTopBar(
         // Center Title (strictly centered)
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
+            style = PetalText.sheetTitle,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -1270,8 +1263,7 @@ fun PetalPlayerHeaderTopBar(
                     if (!audioRouteName.isNullOrBlank()) {
                         Text(
                             text = audioRouteName,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.chip,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1
                         )
@@ -1366,14 +1358,12 @@ fun PetalExpressiveTimeLabels(
         ) {
             Text(
                 text = posStr,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                fontWeight = FontWeight.SemiBold,
+                style = PetalText.caption.copy(fontWeight = FontWeight.SemiBold),
                 color = textColor
             )
             Text(
                 text = durStr,
-                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
-                fontWeight = FontWeight.SemiBold,
+                style = PetalText.caption.copy(fontWeight = FontWeight.SemiBold),
                 color = textColor
             )
         }
@@ -1398,10 +1388,7 @@ fun PetalExpressiveTimeLabels(
             ) {
                 Text(
                     text = audioMetaLabel,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 11.sp
-                    ),
+                    style = PetalText.badge,
                     color = textColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

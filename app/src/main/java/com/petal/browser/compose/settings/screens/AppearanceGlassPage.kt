@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import com.petal.browser.ui.components.PetalSpring
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -160,12 +162,12 @@ fun AppearanceGlassPage(
                     ) {
                         Text(
                             text = "Choose Wallpaper Source",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Select an image using Petal's built-in file picker or your device's media gallery.",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
@@ -256,7 +258,7 @@ fun AppearanceGlassPage(
             ) {
                 Text(
                     text = "Stride and Vyxel-style glass with a shared frosted wallpaper, refracted edges and soft highlights.",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -316,12 +318,12 @@ fun AppearanceGlassPage(
                             ) {
                                 Text(
                                     text = "Surface Translucency / Opacity",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sectionHeader,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = "${Math.round(liveAlpha * 100)}%",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.value,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -347,12 +349,12 @@ fun AppearanceGlassPage(
                             ) {
                                 Text(
                                     text = "Blur Strength",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sectionHeader,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = if (liveBlur < 0f) "Auto" else "${Math.round(liveBlur)} dp",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.value,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -379,12 +381,12 @@ fun AppearanceGlassPage(
                             ) {
                                 Text(
                                     text = "Specular Sheen & Border Reflection",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sectionHeader,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = "${Math.round(liveSheen * 100)}%",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.value,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -409,12 +411,12 @@ fun AppearanceGlassPage(
                             ) {
                                 Text(
                                     text = "Refraction Strength",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sectionHeader,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = if (lensSupported) "${Math.round(liveRefraction * 100)}%" else "Android 13+",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.value,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -432,7 +434,7 @@ fun AppearanceGlassPage(
                             Text(
                                 text = if (lensSupported) "How strongly the rim bends what is behind the glass. 0% turns the lens off."
                                 else "Edge refraction needs Android 13 or newer. Your device shows blur only.",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -446,12 +448,12 @@ fun AppearanceGlassPage(
                             ) {
                                 Text(
                                     text = "Refraction Width",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.sectionHeader,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = if (lensSupported) "${Math.round(liveRefractionWidth * 100)}%" else "Android 13+",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.value,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -502,7 +504,7 @@ fun AppearanceGlassPage(
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(
                                 text = "Component Surfaces",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.sectionHeader,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Column(
@@ -591,7 +593,7 @@ fun AppearanceGlassPage(
                         // Background Mode Selector
                         Text(
                             text = "Liquid Glass Background Layer",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.onSurface
                         )
 
@@ -644,12 +646,12 @@ fun AppearanceGlassPage(
                                         Column {
                                             Text(
                                                 text = "Bloom + Glass Preview",
-                                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                                style = PetalText.cardTitle,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = "Tonal M3E shapes with live refraction",
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.cardBody,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -713,12 +715,12 @@ fun AppearanceGlassPage(
                                         ) {
                                             Text(
                                                 text = "Wallpaper Dim Level",
-                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                style = PetalText.sectionHeader,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                             Text(
                                                 text = "${Math.round(liquidGlassBgDim * 100)}%",
-                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                style = PetalText.value,
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                         }
@@ -739,12 +741,12 @@ fun AppearanceGlassPage(
                                         ) {
                                             Text(
                                                 text = "Wallpaper Blur Radius",
-                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                style = PetalText.sectionHeader,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                             Text(
                                                 text = "${Math.round(liquidGlassBgBlur)} dp",
-                                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                                style = PetalText.value,
                                                 color = MaterialTheme.colorScheme.primary
                                             )
                                         }

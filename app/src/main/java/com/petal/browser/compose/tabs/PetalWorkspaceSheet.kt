@@ -1,6 +1,7 @@
 package com.petal.browser.compose.tabs
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.containment.PetalSheetPill
 import com.petal.browser.ui.containment.PetalSheetActionRow
@@ -109,10 +110,7 @@ fun PetalWorkspaceSheet(
             ) {
                 Text(
                     text = if (isEditMode) "Edit Workspace" else "New Workspace",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 20.sp
-                    ),
+                    style = PetalText.sheetTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
@@ -143,7 +141,7 @@ fun PetalWorkspaceSheet(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = name.ifBlank { "Workspace" },
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.chip,
                             color = activeColor
                         )
                     }
@@ -169,7 +167,7 @@ fun PetalWorkspaceSheet(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Accent Color",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -230,7 +228,7 @@ fun PetalWorkspaceSheet(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
                     text = "Icon",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 

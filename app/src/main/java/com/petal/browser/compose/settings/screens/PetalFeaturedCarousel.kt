@@ -11,6 +11,8 @@
 
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import com.petal.browser.ui.components.PetalSpring
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
@@ -520,19 +522,13 @@ private fun RowScope.FeaturedStepCard(
                     ) {
                         Text(
                             text = item.title,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.cardTitle,
                             color = contentColor,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
                         )
                         Text(
                             text = item.description,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = contentColor.copy(alpha = 0.75f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            lineHeight = 14.sp
                         )
                     }
                 }

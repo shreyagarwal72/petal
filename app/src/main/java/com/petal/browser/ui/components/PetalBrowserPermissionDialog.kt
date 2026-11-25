@@ -43,11 +43,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.ViewCompositionStrategy
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.setViewTreeLifecycleOwner
@@ -437,9 +436,7 @@ private fun BrowserPermissionSheet(
 
             Text(
                 text = stringResource(R.string.ui_permissions_required),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.ExtraBold,
-                color = MaterialTheme.colorScheme.onSurface,
+                style = PetalText.sheetTitle,
                 textAlign = TextAlign.Center
             )
 
@@ -447,8 +444,7 @@ private fun BrowserPermissionSheet(
 
             Text(
                 text = stringResource(R.string.ui_petal_needs_these_permissions_for),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = PetalText.pageSubtitle,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
@@ -478,8 +474,7 @@ private fun BrowserPermissionSheet(
                 )
                 Text(
                     text = "$readyCount of ${permissionItems.size} ready",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    style = PetalText.value,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -505,8 +500,7 @@ private fun BrowserPermissionSheet(
             if (missing) {
                 Text(
                     text = stringResource(R.string.ui_you_can_change_or_grant),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = PetalText.caption,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 12.dp)
                 )
@@ -533,7 +527,7 @@ private fun BrowserPermissionSheet(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     text = if (allGranted) "Everything is ready" else "Continue",
-                    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    style = PetalText.button
                 )
             }
 
@@ -548,7 +542,7 @@ private fun BrowserPermissionSheet(
                 ) {
                     Text(
                         text = "Not now",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                        style = PetalText.button
                     )
                 }
             }
@@ -580,15 +574,15 @@ private fun ZenithPermissionItemRow(
             )
         },
         content = {
-            Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(title, style = PetalText.rowTitle)
+            Text(description, style = PetalText.rowSubtitle)
         },
         trailing = {
             if (isGranted) {
                 Icon(Icons.Rounded.CheckCircle, contentDescription = stringResource(R.string.ui_granted), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
             } else {
                 FilledTonalButton(onClick = onGrant, shape = ExpressiveButtonShape, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp)) {
-                    Text(actionText, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                    Text(actionText, style = PetalText.button)
                 }
             }
         },

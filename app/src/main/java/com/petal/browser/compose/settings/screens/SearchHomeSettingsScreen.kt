@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.PetalSheet
@@ -227,7 +228,7 @@ fun SearchHomeSettingsScreenContent(
                 ) {
                     Text(
                         stringResource(R.string.ui_custom_homepage),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 

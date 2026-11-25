@@ -1,6 +1,7 @@
 package com.petal.browser.scanner
 
 import android.Manifest
+import com.petal.browser.ui.theme.PetalText
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -615,7 +616,7 @@ fun ScannerHost(
                                         cameraError == CameraErrorState.NO_CAMERA -> "No Camera Available"
                                         else -> "Camera Unavailable"
                                     },
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.cardTitle,
                                     textAlign = TextAlign.Center
                                 )
                                 Text(
@@ -625,7 +626,7 @@ fun ScannerHost(
                                         cameraError == CameraErrorState.CAMERA_IN_USE -> "The camera is currently in use by another application. Please close other camera apps and retry."
                                         else -> "Failed to initialize the camera hardware."
                                     },
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = PetalText.cardBody,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     textAlign = TextAlign.Center
                                 )
@@ -755,7 +756,7 @@ fun ScannerHost(
                                     Spacer(Modifier.width(6.dp))
                                     Text(
                                         text = "Low light — tap for torch",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                                        style = PetalText.chip
                                     )
                                 }
                             }
@@ -785,7 +786,7 @@ fun ScannerHost(
                                     Spacer(Modifier.width(6.dp))
                                     Text(
                                         text = "Small code — tap to zoom 2x",
-                                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold)
+                                        style = PetalText.chip
                                     )
                                 }
                             }
@@ -829,7 +830,7 @@ fun ScannerHost(
                                     Box(contentAlignment = Alignment.Center) {
                                         Text(
                                             text = "${preset.toInt()}x",
-                                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.chip,
                                             color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.White
                                         )
                                     }
@@ -1022,7 +1023,7 @@ private fun ModeChip(
             Spacer(Modifier.width(5.dp))
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                style = PetalText.chip,
                 color = if (isSelected) MaterialTheme.colorScheme.onPrimary else Color.White
             )
         }

@@ -61,12 +61,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.haptics.PetalHapticEngine
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
@@ -177,13 +175,12 @@ fun PetalQuickToolsSheet(
                 Column {
                     Text(
                         text = stringResource(R.string.ui_quick_tools),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onSurface
+                        style = PetalText.sheetTitle
                     )
                     Text(
                         text = if (isReorderMode) "Tap arrows to rearrange or reset" else "Long-press any tool to rearrange",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (isReorderMode) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        style = PetalText.caption,
+                        color = if (isReorderMode) MaterialTheme.colorScheme.primary else Color.Unspecified
                     )
                 }
 
@@ -204,7 +201,7 @@ fun PetalQuickToolsSheet(
                             ),
                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp)
                         ) {
-                            Text(stringResource(R.string.ui_reset), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold))
+                            Text(stringResource(R.string.ui_reset), style = PetalText.button)
                         }
 
                         Button(
@@ -219,7 +216,7 @@ fun PetalQuickToolsSheet(
                             ),
                             contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp)
                         ) {
-                            Text(stringResource(R.string.ui_done), style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold))
+                            Text(stringResource(R.string.ui_done), style = PetalText.button)
                         }
                     }
                 }
@@ -343,16 +340,9 @@ private fun ExpressiveQuickToolItem(
         // Tool Title
         Text(
             text = tool.title,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                lineHeight = 13.sp
-            ),
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 2,
-            minLines = 2,
             softWrap = true,
-            overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 2.dp)
         )

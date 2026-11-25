@@ -21,11 +21,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.preference.PreferenceManager
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.PetalTabViewController
@@ -198,8 +196,7 @@ fun PetalSiteInfoBottomSheet(
             // --- Enhanced Tracking Protection (ETP Shield) Section ---
             Text(
                 text = stringResource(R.string.ui_enhanced_tracking_protection),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                style = PetalText.sectionHeader,
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
             )
 
@@ -235,8 +232,7 @@ fun PetalSiteInfoBottomSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = if (trackingProtectionEnabled) "Protections Active" else "Protections Paused",
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface
+                                style = PetalText.cardTitle
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
@@ -245,8 +241,7 @@ fun PetalSiteInfoBottomSheet(
                                 } else {
                                     "Protection is disabled for this domain"
                                 },
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                style = PetalText.cardBody
                             )
                         }
 
@@ -278,25 +273,25 @@ fun PetalSiteInfoBottomSheet(
 
                             PetalSuggestionChip(
                                 onClick = {},
-                                label = { Text(adsLabel, fontSize = 11.sp, maxLines = 1) },
+                                label = { Text(adsLabel, style = PetalText.badge, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
                             PetalSuggestionChip(
                                 onClick = {},
-                                label = { Text(trackersLabel, fontSize = 11.sp, maxLines = 1) },
+                                label = { Text(trackersLabel, style = PetalText.badge, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
                             PetalSuggestionChip(
                                 onClick = {},
-                                label = { Text(socialLabel, fontSize = 11.sp, maxLines = 1) },
+                                label = { Text(socialLabel, style = PetalText.badge, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
                             PetalSuggestionChip(
                                 onClick = {},
-                                label = { Text(cookiesLabel, fontSize = 11.sp, maxLines = 1) },
+                                label = { Text(cookiesLabel, style = PetalText.badge, maxLines = 1) },
                                 shape = RoundedCornerShape(10.dp),
                                 modifier = Modifier.weight(1f)
                             )
@@ -352,9 +347,7 @@ fun PetalSiteInfoBottomSheet(
                             Spacer(Modifier.height(8.dp))
                             Text(
                                 text = "Dark mode for this site",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = PetalText.sectionHeader,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                             )
                             val schemeValues = listOf(
@@ -449,8 +442,7 @@ fun PetalSiteInfoBottomSheet(
             // --- Cookies & Site Data Section ---
             Text(
                 text = stringResource(R.string.ui_cookies_site_data),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                style = PetalText.sectionHeader,
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
             )
 
@@ -484,14 +476,12 @@ fun PetalSiteInfoBottomSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = stringResource(R.string.ui_stored_cookies_cache),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                            color = MaterialTheme.colorScheme.onSurface
+                            style = PetalText.cardTitle
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
                             text = if (cookieCount > 0) "$cookieCount active cookies" else "No active cookies stored",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style = PetalText.cardBody
                         )
                     }
 
@@ -579,8 +569,7 @@ fun PetalSiteInfoBottomSheet(
             // --- Site Permissions Section ---
             Text(
                 text = stringResource(R.string.ui_page_permissions),
-                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                style = PetalText.sectionHeader,
                 modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
             )
 

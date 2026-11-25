@@ -1,6 +1,7 @@
 package com.petal.browser.media
 
 import com.petal.browser.ui.containment.PetalSheetPill
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.containment.PetalSheetActionRow
 import com.petal.browser.ui.containment.PetalSheetTone
 import com.petal.browser.ui.containment.petalSheetSurface
@@ -101,8 +102,7 @@ fun PetalAspectRatioSheet(
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = stringResource(R.string.ui_video_scale_aspect_ratio),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
@@ -144,17 +144,14 @@ fun PetalAspectRatioSheet(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = option.label,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.cardTitle,
                                 color = contentColor,
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = option.subtitle,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontSize = 11.sp,
+                                style = PetalText.caption,
                                 color = contentColor.copy(alpha = 0.75f),
-                                maxLines = 1,
                             )
                         }
 

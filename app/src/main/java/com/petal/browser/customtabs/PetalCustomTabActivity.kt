@@ -1,6 +1,7 @@
 package com.petal.browser.customtabs
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.content.ClipData
@@ -501,7 +502,7 @@ private fun CustomTabTopBar(
 
                         Text(
                             text = displayTitle,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -529,7 +530,7 @@ private fun CustomTabTopBar(
                             }
                             Text(
                                 text = displayHost,
-                                style = MaterialTheme.typography.labelSmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis

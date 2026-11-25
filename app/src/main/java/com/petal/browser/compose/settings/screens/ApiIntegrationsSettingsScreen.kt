@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
@@ -158,16 +160,13 @@ private fun HubBlock(
                 Column(Modifier.weight(1f)) {
                     Text(
                         title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
                     )
                     if (!subtitle.isNullOrBlank()) {
                         Text(
                             subtitle,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
@@ -199,7 +198,7 @@ private fun HubNote(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
-            Text(text, style = MaterialTheme.typography.bodySmall, color = content)
+            Text(text, style = PetalText.cardBody, color = content)
         }
     }
 }
@@ -330,8 +329,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 ) {
                                     Text(
                                         "Local Server Presets",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontWeight = FontWeight.SemiBold,
+                                        style = PetalText.sectionHeader,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                     FlowRow(
@@ -390,7 +388,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                 ) {
                                     Text(
                                         stringResource(R.string.ui_petal_ai_termux_help_body),
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.cardBody,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
@@ -497,7 +495,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                         ) {
                                             Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                                             Spacer(Modifier.width(8.dp))
-                                            Text("Get API Key", style = MaterialTheme.typography.labelLarge, maxLines = 1)
+                                            Text("Get API Key", style = PetalText.button, maxLines = 1)
                                         }
                                     }
                                 }
@@ -553,7 +551,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                             Spacer(Modifier.width(6.dp))
                                             Text(
                                                 stringResource(R.string.ui_fetch_models),
-                                                style = MaterialTheme.typography.labelLarge,
+                                                style = PetalText.button,
                                                 maxLines = 1,
                                                 overflow = TextOverflow.Ellipsis
                                             )
@@ -596,7 +594,7 @@ fun ApiIntegrationsSettingsScreenContent(
                                         Spacer(Modifier.width(6.dp))
                                         Text(
                                             stringResource(R.string.ui_test_connection),
-                                            style = MaterialTheme.typography.labelLarge,
+                                            style = PetalText.button,
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis
                                         )

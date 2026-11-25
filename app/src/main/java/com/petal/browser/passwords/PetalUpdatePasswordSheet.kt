@@ -1,6 +1,7 @@
 package com.petal.browser.passwords
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.app.Dialog
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -260,12 +261,12 @@ private fun UpdatePasswordSheetContent(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Update password?",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.sheetTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = cleanDomain,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = PetalText.pageSubtitle,
                                 color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -312,14 +313,14 @@ private fun UpdatePasswordSheetContent(
                                 Spacer(modifier = Modifier.width(10.dp))
                                 Text(
                                     text = username.ifBlank { "Saved Account" },
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    style = PetalText.rowTitle,
                                     color = MaterialTheme.colorScheme.onSurface
                                 )
                             }
 
                             Text(
                                 text = "Petal detected a new password entered for this account. Update it in your encrypted vault?",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -347,7 +348,7 @@ private fun UpdatePasswordSheetContent(
                         ) {
                             Text(
                                 text = "Keep Existing",
-                                fontWeight = FontWeight.SemiBold,
+                                style = PetalText.button,
                                 maxLines = 1
                             )
                         }
@@ -383,7 +384,7 @@ private fun UpdatePasswordSheetContent(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Update",
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.button,
                                 maxLines = 1
                             )
                         }

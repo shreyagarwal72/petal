@@ -1,6 +1,7 @@
 package com.petal.browser.scanner
 
 import androidx.compose.animation.AnimatedVisibility
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -90,7 +91,7 @@ fun PetalScanResultSheet(
                 ) {
                     Text(
                         text = "Codes detected (${results.size}):",
-                        style = MaterialTheme.typography.labelMedium,
+                        style = PetalText.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 8.dp)
                     )
@@ -107,7 +108,7 @@ fun PetalScanResultSheet(
                             Box(contentAlignment = Alignment.Center) {
                                 Text(
                                     text = "${idx + 1}",
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.badge,
                                     color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                                 )
                             }
@@ -139,7 +140,7 @@ fun PetalScanResultSheet(
 
             Text(
                 text = typeLabel,
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                style = PetalText.sectionHeader,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
@@ -149,31 +150,29 @@ fun PetalScanResultSheet(
                 is ScanPayload.Url -> {
                     Text(
                         text = payload.host,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
                     )
                     Text(
                         text = payload.displayUrl,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
                     )
                 }
                 is ScanPayload.Email -> {
                     Text(
                         text = payload.address,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
                     )
                     if (!payload.subject.isNullOrBlank()) {
                         Text(
                             text = "Subject: ${payload.subject}",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 2.dp)
                         )
@@ -182,7 +181,7 @@ fun PetalScanResultSheet(
                 is ScanPayload.Phone -> {
                     Text(
                         text = payload.number,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Center
                     )
@@ -190,13 +189,13 @@ fun PetalScanResultSheet(
                 is ScanPayload.Sms -> {
                     Text(
                         text = payload.number,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     if (!payload.message.isNullOrBlank()) {
                         Text(
                             text = payload.message,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(top = 4.dp)
@@ -206,76 +205,76 @@ fun PetalScanResultSheet(
                 is ScanPayload.Wifi -> {
                     Text(
                         text = payload.ssid,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Security: ${payload.authType}${if (payload.hidden) " (Hidden)" else ""}",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 is ScanPayload.Contact -> {
                     Text(
                         text = payload.name,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     payload.phone?.let {
-                        Text(text = it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = it, style = PetalText.cardBody, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     payload.email?.let {
-                        Text(text = it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = it, style = PetalText.cardBody, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 is ScanPayload.Calendar -> {
                     Text(
                         text = payload.title,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     payload.location?.let {
-                        Text(text = "Location: $it", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = "Location: $it", style = PetalText.cardBody, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 is ScanPayload.Otp -> {
                     Text(
                         text = payload.account ?: "Authentication Code",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Issuer: ${payload.issuer ?: "Unknown"} (${payload.type.uppercase()})",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 is ScanPayload.Product -> {
                     Text(
                         text = payload.code,
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, fontFamily = FontFamily.Monospace),
+                        style = PetalText.sheetTitle.copy(fontFamily = FontFamily.Monospace),
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = "Format: ${payload.format}",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 is ScanPayload.Geo -> {
                     Text(
                         text = "${payload.latitude}, ${payload.longitude}",
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     payload.query?.let {
-                        Text(text = it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(text = it, style = PetalText.cardBody, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
                 is ScanPayload.Text -> {
                     Text(
                         text = payload.content,
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurface,
                         textAlign = TextAlign.Start,
                         modifier = Modifier
@@ -310,14 +309,14 @@ fun PetalScanResultSheet(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = if (isHighRisk) "Security Alert: Suspicious Link" else "Link Notice",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.cardTitle,
                                 color = bannerOnColor
                             )
                         }
                         safetyReport.warnings.forEach { warning ->
                             Text(
                                 text = "• ${warning.title}: ${warning.description}",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.cardBody,
                                 color = bannerOnColor.copy(alpha = 0.9f),
                                 modifier = Modifier.padding(top = 4.dp)
                             )

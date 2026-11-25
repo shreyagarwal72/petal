@@ -1,6 +1,7 @@
 package com.petal.browser.media.ytdlp
 
 import android.content.ClipData
+import com.petal.browser.ui.theme.PetalText
 import android.content.ClipboardManager
 import android.content.Context
 import androidx.compose.foundation.background
@@ -141,7 +142,7 @@ fun PetalMediaGrabberSheet(
                     }
                     Text(
                         text = if (engineState is YtDlpEngineState.Initializing) "Setting up yt-dlp…" else "Reading page video…",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
                     )
@@ -150,7 +151,7 @@ fun PetalMediaGrabberSheet(
                 is GrabberLoad.Failed -> {
                     Text(
                         text = l.message,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.cardBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
@@ -226,7 +227,7 @@ fun PetalMediaGrabberSheet(
                     selected?.detail?.takeIf { it.isNotBlank() }?.let {
                         Text(
                             text = it,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
@@ -260,7 +261,7 @@ fun PetalMediaGrabberSheet(
 
                 GrabberLoad.NotApplicable -> Text(
                     text = "Open a page with a video to grab it.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.emptyState,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
@@ -327,10 +328,7 @@ private fun GrabberHeader(load: GrabberLoad, pageUrl: String) {
         Column(Modifier.weight(1f)) {
             Text(
                 text = info?.title ?: "Media Grabber",
-                style = MaterialTheme.typography.headlineSmall.copy(fontSize = 22.sp),
-                fontWeight = FontWeight.Light,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
+                style = PetalText.sheetTitle,
                 color = MaterialTheme.colorScheme.onSurface
             )
             val sub = listOfNotNull(
@@ -339,10 +337,8 @@ private fun GrabberHeader(load: GrabberLoad, pageUrl: String) {
             ).joinToString(" • ").ifBlank { hostOf(pageUrl) }
             Text(
                 text = sub,
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.pageSubtitle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
         }
     }

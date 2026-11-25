@@ -11,6 +11,7 @@
 package com.petal.browser.tools
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -126,12 +127,12 @@ fun PetalDevConsoleSheet(
                     Column {
                         Text(
                             stringResource(R.string.ui_developer_console),
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             stringResource(R.string.ui_javascript_repl_page_inspector),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -156,7 +157,7 @@ fun PetalDevConsoleSheet(
                 presetSnippets.forEach { (snippet, label) ->
                     SuggestionChip(
                         onClick = { inputText = snippet },
-                        label = { Text(label, fontSize = 12.sp) },
+                        label = { Text(label, style = PetalText.chip) },
                         shape = RoundedCornerShape(12.dp),
                         colors = SuggestionChipDefaults.suggestionChipColors(
                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -184,7 +185,7 @@ fun PetalDevConsoleSheet(
                     ) {
                         Text(
                             stringResource(R.string.ui_type_javascript_expression_or_tap),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.emptyState,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                         )
                     }
@@ -226,7 +227,7 @@ fun PetalDevConsoleSheet(
                     value = inputText,
                     onValueChange = { inputText = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text(stringResource(R.string.ui_console_log_or_js_snippet), fontSize = 13.sp) },
+                    placeholder = { Text(stringResource(R.string.ui_console_log_or_js_snippet), style = PetalText.listItemMeta) },
                     singleLine = true,
                     shape = RoundedCornerShape(16.dp),
                     colors = TextFieldDefaults.colors(

@@ -1,6 +1,7 @@
 package com.petal.browser.account.progress
 
 import android.content.Context
+import com.petal.browser.ui.theme.PetalText
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.foundation.background
@@ -85,14 +86,14 @@ fun PetalFuelTheCodeSheet(
             // Title & Subtitle
             Text(
                 text = "Support Development",
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sheetTitle,
                 color = cs.onSurface,
                 textAlign = TextAlign.Center
             )
 
             Text(
                 text = "Petal Browser is 100% free, independent, and open source with zero advertisements. Support continued development and future updates with direct payment support via Telegram.",
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.pageSubtitle,
                 color = cs.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 lineHeight = 22.sp
@@ -140,12 +141,12 @@ fun PetalFuelTheCodeSheet(
                         Column {
                             Text(
                                 text = "Direct Telegram Support",
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.rowTitle,
                                 color = cs.onSurface
                             )
                             Text(
                                 text = "@hereyourchampion",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.rowSubtitle,
                                 color = cs.primary
                             )
                         }
@@ -181,7 +182,7 @@ fun PetalFuelTheCodeSheet(
                     Icon(Icons.Rounded.Send, contentDescription = null, modifier = Modifier.size(18.dp))
                     Text(
                         text = "Support on Telegram",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold)
+                        style = PetalText.button
                     )
                 }
             }

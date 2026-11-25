@@ -43,14 +43,12 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -87,12 +85,10 @@ import com.petal.browser.ui.theme.GSFlexPreset
 import com.petal.browser.ui.theme.PetalFontAccentColors
 import com.petal.browser.ui.theme.PetalFontHelper
 import com.petal.browser.ui.theme.PetalFontPrefs
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.VariableFontFactory
 import com.petal.browser.ui.theme.withFontAccent
 import com.petal.browser.view.PetalToast
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.debounce
-import kotlinx.coroutines.flow.drop
 import org.json.JSONObject
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -250,13 +246,13 @@ fun AppearanceTypographyPage(
                     ) {
                         Text(
                             stringResource(R.string.ui_choose_typography_style_or_load),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
                         Text(
                             stringResource(R.string.ui_select_font_family),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         PetalChoiceButtonGroup(
@@ -324,13 +320,19 @@ fun AppearanceTypographyPage(
                                         )
                                     )
                                 },
+                                onDragTierAxis = { tier, axis, value ->
+                                    viewModel.setGsFlexAxis(tier, axis, value, debounce = true)
+                                },
+                                onDragAllAxis = { axis, value ->
+                                    viewModel.setAllGsFlexAxes(axis, value, debounce = true)
+                                },
                                 onCommitTierAxis = { tier, axis, value ->
                                     livePreviewOverride = null
-                                    viewModel.setGsFlexAxis(tier, axis, value)
+                                    viewModel.setGsFlexAxis(tier, axis, value, debounce = false)
                                 },
                                 onCommitAllAxis = { axis, value ->
                                     livePreviewOverride = null
-                                    viewModel.setAllGsFlexAxes(axis, value)
+                                    viewModel.setAllGsFlexAxes(axis, value, debounce = false)
                                 }
                             )
                         }
@@ -360,12 +362,12 @@ fun AppearanceTypographyPage(
                                         Column {
                                             Text(
                                                 "Nunito Active",
-                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                style = PetalText.cardTitle,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 "Soft geometric rounded variable typeface (wght 100–1000).",
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.cardBody,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -412,12 +414,12 @@ fun AppearanceTypographyPage(
                                     Column {
                                         Text(
                                             "System Default",
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                            style = PetalText.cardTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             "Follows Android OS typography and accessibility scaling.",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.cardBody,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -435,13 +437,19 @@ fun AppearanceTypographyPage(
                                 fontState = fontState,
                                 onBrowseClick = { showFontPicker = true },
                                 onPreviewChange = { livePreviewOverride = it },
+                                onDragTierAxis = { tier, axis, value ->
+                                    viewModel.setCustomFontAxis(tier, axis, value, debounce = true)
+                                },
+                                onDragAllAxis = { axis, value ->
+                                    viewModel.setAllCustomFontAxes(axis, value, debounce = true)
+                                },
                                 onCommitTierAxis = { tier, axis, value ->
                                     livePreviewOverride = null
-                                    viewModel.setCustomFontAxis(tier, axis, value)
+                                    viewModel.setCustomFontAxis(tier, axis, value, debounce = false)
                                 },
                                 onCommitAllAxis = { axis, value ->
                                     livePreviewOverride = null
-                                    viewModel.setAllCustomFontAxes(axis, value)
+                                    viewModel.setAllCustomFontAxes(axis, value, debounce = false)
                                 },
                                 onResetCustomAxes = {
                                     livePreviewOverride = null
@@ -462,7 +470,7 @@ fun AppearanceTypographyPage(
                     ) {
                         Text(
                             "Apply your active theme accent color to typography. Contrast against surfaces is checked automatically (min 4.5:1).",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         PetalChoiceButtonGroup(
@@ -573,7 +581,7 @@ fun AppearanceTypographyPage(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         "Paste previously exported Petal font configuration JSON.",
-                        style = MaterialTheme.typography.bodySmall
+                        style = PetalText.dialogBody
                     )
                     OutlinedTextField(
                         value = importJsonText,
@@ -622,6 +630,8 @@ private fun PetalSignatureCustomizer(
     onResetToPreset: (GSFlexPreset) -> Unit,
     onToggleCustomMode: (Boolean, GSFlexPreset) -> Unit,
     onCopyPreset: (GSFlexPreset) -> Unit,
+    onDragTierAxis: (FontTier, FontAxes.Axis, Float) -> Unit,
+    onDragAllAxis: (FontAxes.Axis, Float) -> Unit,
     onCommitTierAxis: (FontTier, FontAxes.Axis, Float) -> Unit,
     onCommitAllAxis: (FontAxes.Axis, Float) -> Unit
 ) {
@@ -650,13 +660,13 @@ private fun PetalSignatureCustomizer(
             ) {
                 Text(
                     "Presets",
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 TextButton(onClick = { onResetToPreset(lastNonCustomPreset) }) {
                     Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Reset to preset")
+                    Text("Reset to preset", style = PetalText.button)
                 }
             }
 
@@ -697,7 +707,7 @@ private fun PetalSignatureCustomizer(
                     Spacer(Modifier.width(8.dp))
                     Text(
                         "Copy from ${lastNonCustomPreset.label}",
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold)
+                        style = PetalText.button
                     )
                 }
 
@@ -740,6 +750,7 @@ private fun PetalSignatureCustomizer(
                                     .withTierAxes(selectedTier, axis.withValue(currentAxes, v))
                             }
                             onPreviewChange(fontState.copy(gsFlexSettings = updatedGs))
+                            if (globalOverride) onDragAllAxis(axis, v) else onDragTierAxis(selectedTier, axis, v)
                         },
                         onCommit = { v ->
                             if (globalOverride) {
@@ -760,6 +771,8 @@ private fun CustomFontCustomizer(
     fontState: FontState,
     onBrowseClick: () -> Unit,
     onPreviewChange: (FontState) -> Unit,
+    onDragTierAxis: (FontTier, FontAxes.Axis, Float) -> Unit,
+    onDragAllAxis: (FontAxes.Axis, Float) -> Unit,
     onCommitTierAxis: (FontTier, FontAxes.Axis, Float) -> Unit,
     onCommitAllAxis: (FontAxes.Axis, Float) -> Unit,
     onResetCustomAxes: () -> Unit
@@ -788,12 +801,12 @@ private fun CustomFontCustomizer(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.ui_custom_font_file),
-                        style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = if (resolvedFile != null) custom.name else "No valid font loaded",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.rowSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (resolvedFile != null) {
@@ -803,7 +816,7 @@ private fun CustomFontCustomizer(
                             } else {
                                 "Static font · weights 100–1000 active"
                             },
-                            style = MaterialTheme.typography.labelSmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -814,7 +827,7 @@ private fun CustomFontCustomizer(
                 ) {
                     Icon(Icons.Rounded.FolderOpen, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(6.dp))
-                    Text(stringResource(R.string.ui_browse))
+                    Text(stringResource(R.string.ui_browse), style = PetalText.button)
                 }
             }
         }
@@ -828,12 +841,12 @@ private fun CustomFontCustomizer(
             ) {
                 Text(
                     "Custom Variable Axes",
-                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                    style = PetalText.sectionHeader
                 )
                 TextButton(onClick = onResetCustomAxes) {
                     Icon(Icons.Rounded.RestartAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("Reset axes")
+                    Text("Reset axes", style = PetalText.button)
                 }
             }
 
@@ -874,6 +887,7 @@ private fun CustomFontCustomizer(
                             custom.settings.withTierAxes(selectedTier, axis.withValue(currentAxes, v))
                         }
                         onPreviewChange(fontState.copy(customFont = custom.copy(settings = updatedSettings)))
+                        if (globalOverride) onDragAllAxis(axis, v) else onDragTierAxis(selectedTier, axis, v)
                     },
                     onCommit = { v ->
                         if (globalOverride) {
@@ -888,7 +902,6 @@ private fun CustomFontCustomizer(
     }
 }
 
-@OptIn(FlowPreview::class)
 @Composable
 internal fun GSFlexVariableSlider(
     label: String,
@@ -899,22 +912,12 @@ internal fun GSFlexVariableSlider(
     onCommit: (Float) -> Unit
 ) {
     // Slider owns local state while dragging so the thumb never lags or jumps back.
+    // Debounced persistence lives centrally in AppearanceSettingsViewModel.
     var local by remember { mutableFloatStateOf(value) }
     var dragging by remember { mutableStateOf(false) }
-    val latestCommit by androidx.compose.runtime.rememberUpdatedState(onCommit)
-    val latestDrag by androidx.compose.runtime.rememberUpdatedState(onDrag)
 
-    LaunchedEffect(value) {
-        if (!dragging) local = value
-    }
-
-    LaunchedEffect(Unit) {
-        snapshotFlow { local }
-            .drop(1)
-            .debounce(110)
-            .collect {
-                if (dragging) latestCommit(it)
-            }
+    if (!dragging && local != value) {
+        local = value
     }
 
     Column(
@@ -928,7 +931,7 @@ internal fun GSFlexVariableSlider(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sectionHeader,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f, fill = false),
                 maxLines = 1,
@@ -936,7 +939,7 @@ internal fun GSFlexVariableSlider(
             )
             Text(
                 text = formatter(local),
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.value,
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
                 softWrap = false
@@ -947,11 +950,11 @@ internal fun GSFlexVariableSlider(
             onValueChange = { next ->
                 dragging = true
                 local = next
-                latestDrag?.invoke(next)
+                onDrag?.invoke(next)
             },
             onValueChangeFinished = {
                 dragging = false
-                latestCommit(local)
+                onCommit(local)
             },
             valueRange = range,
             modifier = Modifier.fillMaxWidth()

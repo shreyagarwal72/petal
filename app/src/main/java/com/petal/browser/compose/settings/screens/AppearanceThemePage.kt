@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.layout.UiExperience
 import com.petal.browser.ui.theme.layout.PetalLayoutState
 import com.petal.browser.ui.theme.layout.PetalLayoutSettings
@@ -132,14 +133,14 @@ fun AppearanceThemePage(
                 ) {
                     Text(
                         stringResource(R.string.ui_customize_app_color_schemes_dynamic),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
                     // Theme Mode Chips
                     Text(
                         stringResource(R.string.ui_theme_mode),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Spacer(Modifier.height(4.dp))
@@ -169,7 +170,7 @@ fun AppearanceThemePage(
                     // Preset Color Palettes
                     Text(
                         stringResource(R.string.ui_preset_color_palettes),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     val paletteScrollState = rememberScrollState()
@@ -247,7 +248,7 @@ fun AppearanceThemePage(
                     // Palette Style Swatches
                     Text(
                         stringResource(R.string.ui_palette_harmony_style),
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
@@ -303,13 +304,13 @@ fun AppearanceThemePage(
                         Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                             Text(
                                 text = colorStyle.label,
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.cardTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
                                 text = colorStyle.description,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }

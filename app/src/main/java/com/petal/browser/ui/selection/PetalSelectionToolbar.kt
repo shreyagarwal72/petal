@@ -89,6 +89,7 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.glass.LocalPetalGlassWallpaper
 import com.petal.browser.ui.glass.PetalGlassContainer
 import com.petal.browser.ui.glass.petalGlassPanel
+import com.petal.browser.ui.theme.PetalText
 import kotlin.math.max
 import kotlin.math.roundToInt
 import androidx.compose.material3.Icon
@@ -490,7 +491,7 @@ private fun ActionButton(
         Text(
             text = action.label,
             color = tint,
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
+            style = PetalText.badge,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -521,7 +522,7 @@ fun PetalSelectionToolbarSettingsSection(targetHighlightId: String? = null) {
     ) {
         Text(
             text = "The Cut / Copy / Paste row that appears when you select text, in address bar, settings, dialogs and on web pages.",
-            style = MaterialTheme.typography.bodySmall,
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         PetalSettingsToggleRow(
@@ -538,7 +539,7 @@ fun PetalSelectionToolbarSettingsSection(targetHighlightId: String? = null) {
         if (enabled) {
             Text(
                 text = "Style",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sectionHeader,
                 color = MaterialTheme.colorScheme.onSurface
             )
             ExpressiveButtonGroup(
@@ -556,7 +557,7 @@ fun PetalSelectionToolbarSettingsSection(targetHighlightId: String? = null) {
             )
             Text(
                 text = "Auto uses liquid glass when Liquid Glass UI is on, Material 3 Expressive otherwise.",
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.caption,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

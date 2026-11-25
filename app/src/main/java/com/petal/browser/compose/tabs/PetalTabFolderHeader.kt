@@ -1,6 +1,7 @@
 package com.petal.browser.compose.tabs
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
@@ -90,10 +91,7 @@ fun PetalTabFolderHeader(
 
                 Text(
                     text = group.title,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp
-                    ),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1
                 )
@@ -105,7 +103,7 @@ fun PetalTabFolderHeader(
                 ) {
                     Text(
                         text = if (isCollapsed) "$tabCount tabs (collapsed)" else "$tabCount",
-                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.badge,
                         color = groupColor,
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                     )

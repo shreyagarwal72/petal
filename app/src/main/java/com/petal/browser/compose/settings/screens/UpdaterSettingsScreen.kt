@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.components.scrollMotionBlur
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -214,10 +215,8 @@ fun UpdaterSettingsScreenContent(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = stringResource(R.string.ui_petal_v, appVersionName, appVersionCode),
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.cardTitle,
                                         color = MaterialTheme.colorScheme.onSurface,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
                                     )
                                     val channelSubtitle = if (com.petal.browser.BuildConfig.IS_PLAY_STORE_BUILD) {
                                         "Channel: Google Play • Last Checked: $formattedLastCheck"
@@ -230,10 +229,8 @@ fun UpdaterSettingsScreenContent(
                                     }
                                     Text(
                                         text = channelSubtitle,
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.cardBody,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
                                     )
                                 }
                             }
@@ -272,13 +269,13 @@ fun UpdaterSettingsScreenContent(
                                                         )
                                                         Text(
                                                             text = "Downloading v${state.version}",
-                                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                            style = PetalText.cardTitle,
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                     }
                                                     Text(
                                                         text = "${state.progress}%",
-                                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                                        style = PetalText.value,
                                                         color = MaterialTheme.colorScheme.primary
                                                     )
                                                 }
@@ -297,12 +294,12 @@ fun UpdaterSettingsScreenContent(
                                                     val totalStr = if (state.totalBytes > 0) formatBytes(state.totalBytes) else "..."
                                                     Text(
                                                         text = "$downloadedStr / $totalStr",
-                                                        style = MaterialTheme.typography.bodySmall,
+                                                        style = PetalText.listItemMeta,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
                                                     Text(
                                                         text = if (state.bytesPerSecond > 0) formatSpeed(state.bytesPerSecond) else "Connecting...",
-                                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                                        style = PetalText.listItemMeta,
                                                         color = MaterialTheme.colorScheme.primary
                                                     )
                                                 }
@@ -355,7 +352,7 @@ fun UpdaterSettingsScreenContent(
                                                         )
                                                         Text(
                                                             text = "Update Paused (${state.progress}%)",
-                                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                            style = PetalText.cardTitle,
                                                             color = MaterialTheme.colorScheme.onSurface
                                                         )
                                                     }
@@ -427,12 +424,12 @@ fun UpdaterSettingsScreenContent(
                                                     Column {
                                                         Text(
                                                             text = "Update Ready to Install",
-                                                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                            style = PetalText.cardTitle,
                                                             color = MaterialTheme.colorScheme.onSecondaryContainer
                                                         )
                                                         Text(
                                                             text = "Petal v${state.version} downloaded",
-                                                            style = MaterialTheme.typography.bodySmall,
+                                                            style = PetalText.cardBody,
                                                             color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.8f)
                                                         )
                                                     }
@@ -496,7 +493,7 @@ fun UpdaterSettingsScreenContent(
                                     ) {
                                         Icon(Icons.Rounded.CloudSync, contentDescription = null, modifier = Modifier.size(17.dp))
                                         Spacer(Modifier.width(5.dp))
-                                        Text(stringResource(R.string.ui_check_now), fontWeight = FontWeight.Bold, maxLines = 1, softWrap = false)
+                                        Text(stringResource(R.string.ui_check_now), style = PetalText.button, maxLines = 1, softWrap = false)
                                     }
 
                                     FilledTonalButton(
@@ -524,7 +521,7 @@ fun UpdaterSettingsScreenContent(
                                     ) {
                                         Icon(Icons.Rounded.History, contentDescription = null, modifier = Modifier.size(17.dp))
                                         Spacer(Modifier.width(5.dp))
-                                        Text(stringResource(R.string.ui_changelog), maxLines = 1, softWrap = false)
+                                        Text(stringResource(R.string.ui_changelog), style = PetalText.button, maxLines = 1, softWrap = false)
                                     }
                                 }
                             }
@@ -585,7 +582,7 @@ private fun PetalPreReleaseSheet(
                 text = stringResource(
                     if (isEnabling) R.string.ui_prerelease_enable_title else R.string.ui_prerelease_disable_title
                 ),
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sheetTitle,
                 color = MaterialTheme.colorScheme.onSurface,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -594,7 +591,7 @@ private fun PetalPreReleaseSheet(
                 text = stringResource(
                     if (isEnabling) R.string.ui_prerelease_enable_desc else R.string.ui_prerelease_disable_desc
                 ),
-                style = MaterialTheme.typography.bodyLarge,
+                style = PetalText.dialogBody,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth()
             )

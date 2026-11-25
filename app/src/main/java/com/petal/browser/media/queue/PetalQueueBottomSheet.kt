@@ -14,6 +14,7 @@
 package com.petal.browser.media.queue
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -169,8 +170,7 @@ fun PetalQueueBottomSheet(
                 ) {
                     Text(
                         text = "Up Next",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
+                        style = PetalText.sheetTitle,
                         color = audioPalette.onSurface
                     )
                     Surface(
@@ -179,8 +179,7 @@ fun PetalQueueBottomSheet(
                     ) {
                         Text(
                             text = "${queueManager.queue.size}",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.ExtraBold,
+                            style = PetalText.badge,
                             color = audioPalette.seed,
                             modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.dp)
                         )
@@ -305,17 +304,15 @@ fun PetalQueueBottomSheet(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = item.title,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
+                                    style = PetalText.listItemTitle.copy(
+                                        fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Medium,
+                                    ),
                                     color = if (isCurrent) audioPalette.seed else audioPalette.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
                                 )
                                 Text(
                                     text = item.artist,
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.listItemMeta,
                                     color = audioPalette.onSurfaceVariant,
-                                    maxLines = 1
                                 )
                             }
 

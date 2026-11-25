@@ -47,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.setViewTreeLifecycleOwner
+import com.petal.browser.ui.theme.PetalText
 import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.google.gson.Gson
@@ -525,7 +526,7 @@ fun PetalUpdateSheetContent(
             ) {
                 Text(
                     text = eyebrowText.uppercase(),
-                    style = MaterialTheme.typography.labelMedium.copy(
+                    style = PetalText.badge.copy(
                         fontWeight = FontWeight.Black,
                         letterSpacing = 1.2.sp
                     ),
@@ -538,8 +539,7 @@ fun PetalUpdateSheetContent(
                     } else {
                         "Petal Browser is Up to Date"
                     },
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface,
+                    style = PetalText.sheetTitle,
                     textAlign = TextAlign.Center
                 )
 
@@ -558,7 +558,7 @@ fun PetalUpdateSheetContent(
                         ) {
                             Text(
                                 text = "v$currentVersion",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.badge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Icon(
@@ -569,7 +569,7 @@ fun PetalUpdateSheetContent(
                             )
                             Text(
                                 text = "v${updateInfo.versionName.replace(Regex("^[vV]"), "")}",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.badge,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -582,7 +582,7 @@ fun PetalUpdateSheetContent(
                     ) {
                         Text(
                             text = "v$currentVersion (Current)",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.badge,
                             color = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                         )
@@ -595,8 +595,7 @@ fun PetalUpdateSheetContent(
                     } else {
                         "Running the latest release with all the newest features."
                     },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = PetalText.pageSubtitle,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(top = 2.dp)
                 )
@@ -634,13 +633,13 @@ fun PetalUpdateSheetContent(
                                     )
                                     Text(
                                         text = "Downloading update...",
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.cardTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                                 Text(
                                     text = "${state.progress}%",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                    style = PetalText.value,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -663,12 +662,12 @@ fun PetalUpdateSheetContent(
                                 val totalStr = if (state.totalBytes > 0) formatBytes(state.totalBytes) else "..."
                                 Text(
                                     text = "$downloadedStr / $totalStr",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.listItemMeta,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = if (state.bytesPerSecond > 0) formatSpeed(state.bytesPerSecond) else "Connecting...",
-                                    style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                    style = PetalText.listItemMeta,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -691,7 +690,7 @@ fun PetalUpdateSheetContent(
                                 ) {
                                     Icon(Icons.Rounded.PauseCircle, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Pause", fontWeight = FontWeight.SemiBold)
+                                    Text("Pause", style = PetalText.button)
                                 }
                                 Button(
                                     onClick = {
@@ -705,7 +704,7 @@ fun PetalUpdateSheetContent(
                                         contentColor = MaterialTheme.colorScheme.onPrimary
                                     )
                                 ) {
-                                    Text("Keep Browsing", fontWeight = FontWeight.SemiBold)
+                                    Text("Keep Browsing", style = PetalText.button)
                                 }
                             }
                         }
@@ -741,13 +740,13 @@ fun PetalUpdateSheetContent(
                                     )
                                     Text(
                                         text = "Download paused",
-                                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.cardTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                 }
                                 Text(
                                     text = "${state.progress}%",
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Black),
+                                    style = PetalText.value,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -809,13 +808,11 @@ fun PetalUpdateSheetContent(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = "Download Complete",
-                                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
-                                        color = MaterialTheme.colorScheme.onSurface
+                                        style = PetalText.cardTitle
                                     )
                                     Text(
                                         text = "Petal v${state.version} is ready to be inspected & installed.",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        style = PetalText.cardBody
                                     )
                                 }
                             }
@@ -827,11 +824,11 @@ fun PetalUpdateSheetContent(
                                 shape = RoundedCornerShape(18.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(52.dp)
+                                    .heightIn(min = 52.dp)
                             ) {
                                 Icon(Icons.Rounded.DownloadDone, contentDescription = null, modifier = Modifier.size(20.dp))
                                 Spacer(Modifier.width(8.dp))
-                                Text("Install Update", style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold))
+                                Text("Install Update", style = PetalText.button)
                             }
                         }
                     }
@@ -855,7 +852,7 @@ fun PetalUpdateSheetContent(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = "Download & Install Update",
-                                style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                                style = PetalText.button
                             )
                         }
                     }
@@ -881,7 +878,7 @@ fun PetalUpdateSheetContent(
                         Spacer(Modifier.width(12.dp))
                         Text(
                             text = stringResource(R.string.ui_prerelease_warning),
-                            style = MaterialTheme.typography.labelLarge,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
@@ -914,7 +911,7 @@ fun PetalUpdateSheetContent(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_what_s_new),
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(bottom = 6.dp)
                     )
@@ -961,7 +958,7 @@ fun PetalUpdateSheetContent(
                 ) {
                     Icon(Icons.Rounded.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.ui_view_release_notes_on_github), fontWeight = FontWeight.SemiBold)
+                    Text(stringResource(R.string.ui_view_release_notes_on_github), style = PetalText.button)
                 }
             }
 
@@ -1049,16 +1046,14 @@ fun PetalChangelogHistorySheetContent(
 
             Text(
                 text = stringResource(R.string.ui_changelog_history),
-                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
+                style = PetalText.sheetTitle
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
                 text = stringResource(R.string.ui_previous_browser_releases_release_note),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                style = PetalText.pageSubtitle
             )
 
             Spacer(modifier = Modifier.height(18.dp))
@@ -1079,7 +1074,7 @@ fun PetalChangelogHistorySheetContent(
                     ) {
                         Text(
                             text = stringResource(R.string.ui_no_changelog_releases_found),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.emptyState,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -1141,7 +1136,7 @@ fun PetalChangelogHistorySheetContent(
                                             )
                                             Text(
                                                 text = rel.versionName,
-                                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                                                style = PetalText.badge,
                                                 color = if (index == 0) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
                                             )
                                         }

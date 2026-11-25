@@ -63,6 +63,7 @@ import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import com.petal.browser.ui.kit.IconButton
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -685,10 +686,7 @@ internal fun TabCountBadge(color: Color, count: Int, scale: Float = 1f) {
         ) { value ->
             Text(
                 text = if (value > 99) "99+" else value.toString(),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.ExtraBold
-                ),
+                style = PetalText.badge,
                 color = color,
                 textAlign = TextAlign.Center
             )
@@ -827,10 +825,8 @@ private fun ExpressiveNavTabItem(
 
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = labelWeight,
-                    letterSpacing = 0.1.sp,
-                    fontSize = 10.5.sp
+                style = PetalText.tabLabel.copy(
+                    fontWeight = labelWeight
                 ),
                 color = labelColor,
                 maxLines = 1,

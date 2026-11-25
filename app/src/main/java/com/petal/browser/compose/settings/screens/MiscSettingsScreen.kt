@@ -1,5 +1,6 @@
 package com.petal.browser.compose.settings.screens
 import com.petal.browser.ui.components.scrollMotionBlur
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.containment.PetalSettingsSection
 
@@ -155,8 +156,7 @@ fun MiscSettingsScreenContent(
                             ) {
                                 Text(
                                     text = stringResource(R.string.menu_beta_badge),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
+                                    style = PetalText.badge,
                                     maxLines = 1,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                                 )
@@ -262,12 +262,11 @@ fun MiscSettingsScreenContent(
                                         Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = stringResource(tile.titleRes),
-                                                style = MaterialTheme.typography.bodyMedium,
-                                                fontWeight = FontWeight.SemiBold
+                                                style = PetalText.rowTitle
                                             )
                                             Text(
                                                 text = stringResource(tile.subtitleRes),
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.rowSubtitle,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -283,7 +282,7 @@ fun MiscSettingsScreenContent(
                                             },
                                             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
                                         ) {
-                                            Text(stringResource(R.string.quick_settings_add_tile_btn), style = MaterialTheme.typography.labelSmall)
+                                            Text(stringResource(R.string.quick_settings_add_tile_btn), style = PetalText.button)
                                         }
                                     }
                                 }

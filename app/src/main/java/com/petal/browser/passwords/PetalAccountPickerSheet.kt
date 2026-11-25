@@ -1,6 +1,7 @@
 package com.petal.browser.passwords
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.app.Dialog
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.background
@@ -186,12 +187,12 @@ private fun AccountPickerSheetContent(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Choose account to fill",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = cleanDomain,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.primary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -249,7 +250,7 @@ private fun AccountPickerSheetContent(
                                             val initial = cred.username.trim().take(1).uppercase().ifBlank { "?" }
                                             Text(
                                                 text = initial,
-                                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                                style = PetalText.badge,
                                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                                             )
                                         }
@@ -260,14 +261,12 @@ private fun AccountPickerSheetContent(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = cred.username.ifBlank { "Saved Login" },
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            style = PetalText.listItemTitle,
                                             color = MaterialTheme.colorScheme.onSurface,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis
                                         )
                                         Text(
                                             text = "••••••••",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.listItemMeta,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -308,7 +307,7 @@ private fun AccountPickerSheetContent(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Suggest Password",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.button,
                             maxLines = 1
                         )
                     }
@@ -330,7 +329,7 @@ private fun AccountPickerSheetContent(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = "Manage",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.button,
                             maxLines = 1
                         )
                     }

@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import com.petal.browser.ui.components.PetalSpring
 
 import android.content.Context
@@ -222,7 +224,7 @@ fun PrivacySettingsScreenContent(
             content = {
                 Text(
                     stringResource(R.string.ui_domains_added_here_will_bypass),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.dialogBody,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
@@ -261,7 +263,7 @@ fun PrivacySettingsScreenContent(
                 if (whitelistedDomainsState.isEmpty()) {
                     Text(
                         stringResource(R.string.ui_no_whitelisted_domains),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.emptyState,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
@@ -386,12 +388,12 @@ fun PrivacySettingsScreenContent(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         text = if (adBlockEnabled) "Shields Actively Blocking" else "Shields Paused",
-                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                        style = PetalText.cardTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = "${NumberFormat.getInstance().format(totalBlockedCount)} ads & trackers blocked",
-                                        style = MaterialTheme.typography.bodyMedium,
+                                        style = PetalText.cardBody,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
@@ -459,12 +461,12 @@ fun PrivacySettingsScreenContent(
                                 content = {
                                     Text(
                                         text = title,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                        style = PetalText.rowTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         text = subtitle,
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
@@ -596,12 +598,12 @@ fun PrivacySettingsScreenContent(
                                         content = {
                                             Text(
                                                 text = entry.title,
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                style = PetalText.rowTitle,
                                                 color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = entry.desc,
-                                                style = MaterialTheme.typography.bodySmall,
+                                                style = PetalText.rowSubtitle,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         },
@@ -638,12 +640,12 @@ fun PrivacySettingsScreenContent(
                                             content = {
                                                 Text(
                                                     text = entry.provider,
-                                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                    style = PetalText.rowTitle,
                                                     color = MaterialTheme.colorScheme.onSurface
                                                 )
                                                 Text(
                                                     text = activeChoice?.let { "Using ${it.label}" } ?: "${entry.choices.size} options",
-                                                    style = MaterialTheme.typography.bodySmall,
+                                                    style = PetalText.rowSubtitle,
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             },
@@ -693,12 +695,12 @@ fun PrivacySettingsScreenContent(
                                                         content = {
                                                             Text(
                                                                 text = choice.label,
-                                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                                                style = PetalText.rowTitle,
                                                                 color = MaterialTheme.colorScheme.onSurface
                                                             )
                                                             Text(
                                                                 text = choice.desc,
-                                                                style = MaterialTheme.typography.bodySmall,
+                                                                style = PetalText.rowSubtitle,
                                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                                             )
                                                         },

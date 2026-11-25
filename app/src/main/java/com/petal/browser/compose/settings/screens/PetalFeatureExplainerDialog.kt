@@ -1,5 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
@@ -111,8 +113,7 @@ fun PetalFeatureExplainerDialog(
                 ) {
                     Text(
                         text = b,
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.5.sp),
-                        fontWeight = FontWeight.ExtraBold,
+                        style = PetalText.badge.copy(letterSpacing = 0.5.sp),
                         color = badgeColor,
                         modifier = Modifier.padding(horizontal = 7.dp, vertical = 2.5.dp)
                     )
@@ -120,7 +121,7 @@ fun PetalFeatureExplainerDialog(
             }
             Text(
                 text = feature.subtitle,
-                style = MaterialTheme.typography.bodySmall,
+                style = PetalText.dialogBody,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -174,7 +175,7 @@ fun PetalFeatureExplainerDialog(
                         }
                         Text(
                             text = bullet,
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.dialogBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 19.sp
                         )
@@ -247,7 +248,7 @@ private fun AppleDuoLivePreview() {
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(Icons.Rounded.Description, null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(24.dp))
-                        Text("Left Page", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        Text("Left Page", style = PetalText.badge)
                     }
                 }
             }
@@ -283,7 +284,7 @@ private fun AppleDuoLivePreview() {
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Icon(Icons.Rounded.Layers, null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(24.dp))
-                        Text("Right Page", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                        Text("Right Page", style = PetalText.badge)
                     }
                 }
             }
@@ -390,8 +391,8 @@ private fun MotionBlurLivePreview() {
                     }
                 }
                 Column {
-                    Text("Smooth 120Hz Blur", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
-                    Text("Velocity Shader Active", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("Smooth 120Hz Blur", style = PetalText.cardTitle)
+                    Text("Velocity Shader Active", style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

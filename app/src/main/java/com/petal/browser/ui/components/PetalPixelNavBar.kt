@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.R
 import com.petal.browser.ui.glass.TabWeights
 import com.petal.browser.ui.glass.bouncyClickable
@@ -292,8 +293,7 @@ internal fun PetalPixelNavPill(
                                 // or large display scaling adapt gracefully without truncating labels.
                                 BasicText(
                                     text = label,
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold,
+                                    style = PetalText.tabLabel.copy(
                                         color = scheme.onPrimary,
                                         letterSpacing = 0.sp
                                     ),

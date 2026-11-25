@@ -88,6 +88,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.LaunchedEffect
@@ -601,14 +602,16 @@ fun PetalGroupRow(
             .scale(scale)
             .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
     ) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 70.dp).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             PetalGroupIconBadge(icon, iconContainer, iconTint)
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-                    color = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
-                subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f).padding(end = 6.dp)) {
+                Text(
+                    title,
+                    style = PetalText.rowTitle,
+                    color = if (danger) MaterialTheme.colorScheme.error else Color.Unspecified
+                )
+                subtitle?.let { Text(it, style = PetalText.rowSubtitle) }
             }
             if (trailing != null) trailing() else Icon(Icons.Rounded.ChevronRight, null,
                 tint = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
@@ -669,19 +672,28 @@ fun PetalGroupControlRow(
             .scale(scale)
             .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen),
     ) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 70.dp).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             if (leadingIcon != null) {
                 PetalGroupIconBadge(
                     shape = petalBadgeShape(),
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ) { leadingIcon() }
-                Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(16.dp))
             }
-            Column(Modifier.weight(1f).padding(end = 8.dp)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis,
-                    color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f))
-                if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Column(Modifier.weight(1f).padding(end = 6.dp)) {
+                Text(
+                    title,
+                    style = PetalText.rowTitle,
+                    color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                )
+                if (subtitle.isNotBlank()) {
+                    Text(
+                        subtitle,
+                        style = PetalText.rowSubtitle,
+                        color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    )
+                }
             }
             com.petal.browser.ui.components.IconSwitch(
                 checked = checked,
@@ -719,8 +731,8 @@ fun PetalGroupNavigationRow(
             else PetalGroupIconBadge(Icons.Rounded.Settings, variant = variant)
         },
         content = {
-            Text(title, style = MaterialTheme.typography.bodyLarge, color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurface), fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            if (subtitle.isNotBlank()) Text(subtitle, style = MaterialTheme.typography.bodySmall, color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurfaceVariant), maxLines = 2, overflow = TextOverflow.Ellipsis)
+            Text(title, style = PetalText.rowTitle)
+            if (subtitle.isNotBlank()) Text(subtitle, style = PetalText.rowSubtitle)
         },
         trailing = trailingIcon ?: { Icon(Icons.Rounded.ChevronRight, null, tint = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)) },
     )
@@ -765,12 +777,12 @@ fun PetalGroupToggleRow(
             .scale(scale)
             .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
     ) {
-        Row(Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 70.dp).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
             leadingIcon()
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurface), fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = com.petal.browser.ui.theme.petalAccentBodyColor(MaterialTheme.colorScheme.onSurfaceVariant), maxLines = 1, overflow = TextOverflow.Ellipsis) }
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f).padding(end = 6.dp)) {
+                Text(title, style = PetalText.rowTitle)
+                subtitle?.let { Text(it, style = PetalText.rowSubtitle) }
             }
             com.petal.browser.ui.components.IconSwitch(
                 checked = checked,
@@ -829,20 +841,17 @@ fun PetalSettingsToggleRow(
             .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
     ) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.fillMaxWidth().heightIn(min = 70.dp).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PetalGroupIconBadge(icon, badgeContainer, badgeTint)
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f).padding(end = 8.dp)) {
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f).padding(end = 6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         title,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.38f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                        style = PetalText.rowTitle,
+                        color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                         modifier = Modifier.weight(1f, fill = false),
                     )
                     titleSuffix?.invoke()
@@ -850,10 +859,8 @@ fun PetalSettingsToggleRow(
                 if (subtitle.isNotBlank()) {
                     Text(
                         subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.38f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                        style = PetalText.rowSubtitle,
+                        color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                     )
                 }
             }
@@ -910,7 +917,7 @@ fun PetalSettingsToggleRow(
             .liquidGlassChrome(shape = shape, enabled = isGlass, sheenIntensity = sheen, pressFx = true),
     ) {
         Row(
-            Modifier.fillMaxWidth().heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp),
+            Modifier.fillMaxWidth().heightIn(min = 70.dp).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             PetalGroupIconBadge(
@@ -918,23 +925,18 @@ fun PetalSettingsToggleRow(
                 container = badgeContainer,
                 tint = badgeTint
             )
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f).padding(end = 8.dp)) {
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f).padding(end = 6.dp)) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else 0.38f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                    style = PetalText.rowTitle,
+                    color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                 )
                 if (subtitle.isNotBlank()) {
                     Text(
                         subtitle,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (enabled) 1f else 0.38f),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                        style = PetalText.rowSubtitle,
+                        color = if (enabled) Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f),
                     )
                 }
             }
@@ -954,8 +956,8 @@ fun PetalGroupListRow(
     modifier: Modifier = Modifier,
     selected: Boolean = false,
     onLongClick: (() -> Unit)? = null,
-    minHeight: Dp = 64.dp,
-    contentPadding: PaddingValues = PaddingValues(horizontal = 12.dp, vertical = 10.dp),
+    minHeight: Dp = 70.dp,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp, vertical = 14.dp),
     leading: @Composable () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
     trailing: (@Composable () -> Unit)? = null,
@@ -990,15 +992,14 @@ fun PetalGroupListRow(
             .combinedClickable(interactionSource = source, indication = ripple(), onClick = onClick, onLongClick = onLongClick?.let { { haptics.performHapticFeedback(HapticFeedbackType.LongPress); it() } })
     ) {
         Row(Modifier.fillMaxWidth().heightIn(min = minHeight).padding(contentPadding), verticalAlignment = Alignment.CenterVertically) {
-            leading(); Spacer(Modifier.width(10.dp)); Column(Modifier.weight(1f), content = content); trailing?.invoke()
+            leading(); Spacer(Modifier.width(16.dp)); Column(Modifier.weight(1f).padding(end = 6.dp), content = content); trailing?.invoke()
         }
     }
 }
 
 @Composable
 fun PetalSectionLabel(text: String, modifier: Modifier = Modifier) {
-    Text(text, modifier = modifier.fillMaxWidth().padding(start = 4.dp, bottom = 8.dp), style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+    Text(text, modifier = modifier.fillMaxWidth().padding(start = 4.dp, bottom = 8.dp), style = PetalText.sectionHeader)
 }
 
 data class PetalConnectedButtonItem(val label: String, val icon: ImageVector? = null, val selected: Boolean = false)
@@ -1091,8 +1092,7 @@ fun PetalConnectedButtonGroup(
                     }
                     Text(
                         text = item.label,
-                        style = if (compact) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelLarge,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        style = (if (compact) PetalText.tabLabel else PetalText.chip).copy(fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold),
                         maxLines = 1,
                         softWrap = false,
                         overflow = TextOverflow.Ellipsis
@@ -1420,11 +1420,11 @@ fun PetalSelectableOptionCard(title: String, selected: Boolean, onClick: () -> U
         interactionSource = source,
         border = BorderStroke(if (selected) 2.dp else 1.dp, border)
     ) {
-        Row(Modifier.heightIn(min = 64.dp).padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            leading?.invoke(); if (leading != null) Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                subtitle?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        Row(Modifier.heightIn(min = 70.dp).padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            leading?.invoke(); if (leading != null) Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f).padding(end = 6.dp)) {
+                Text(title, style = PetalText.rowTitle)
+                subtitle?.let { Text(it, style = PetalText.rowSubtitle) }
             }
             if (selected) Box(Modifier.size(28.dp).clip(ExpressiveButtonShape).background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center) {
                 Icon(Icons.Rounded.Check, null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(16.dp))
@@ -1512,11 +1512,11 @@ fun PetalStatusHeroCard(
 ) {
     PetalHeroCard(modifier = modifier, shape = PetalContainmentShapes.Hero, containerColor = MaterialTheme.colorScheme.secondaryContainer) {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                 PetalGroupIconBadge(icon, MaterialTheme.colorScheme.secondary, MaterialTheme.colorScheme.onSecondary, size = 46.dp, iconSize = 24.dp)
                 Column(Modifier.weight(1f)) {
-                    Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSecondaryContainer)
-                    Text(subtitle, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(title, style = PetalText.cardTitle, color = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Text(subtitle, style = PetalText.cardBody, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f))
                 }
             }
             Row(
@@ -1542,8 +1542,7 @@ fun PetalStatusHeroCard(
                         )
                         Text(
                             text = statusText,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.badge,
                             maxLines = 1,
                             overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                         )
@@ -1557,7 +1556,7 @@ fun PetalStatusHeroCard(
                     ) {
                         Text(
                             text = actionLabel,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.button,
                             maxLines = 1,
                             softWrap = false
                         )

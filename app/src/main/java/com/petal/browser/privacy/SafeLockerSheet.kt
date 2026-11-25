@@ -9,6 +9,7 @@
 package com.petal.browser.privacy
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.view.PetalToast;
@@ -130,12 +131,12 @@ fun SafeLockerSheet(
                     Column {
                         Text(
                             stringResource(R.string.ui_safe_locker),
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             if (isUnlocked) "${lockedFiles.size} encrypted files" else "Biometric Protected",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -148,7 +149,7 @@ fun SafeLockerSheet(
                     ) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.ui_import), fontSize = 13.sp)
+                        Text(stringResource(R.string.ui_import), style = PetalText.button)
                     }
                 }
             }
@@ -175,7 +176,7 @@ fun SafeLockerSheet(
                         )
                         Text(
                             authError ?: "Authenticate to access private vault",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.cardBody,
                             color = if (authError != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         if (activity != null && authError != null) {
@@ -211,12 +212,12 @@ fun SafeLockerSheet(
                         )
                         Text(
                             stringResource(R.string.ui_safe_locker_is_empty),
-                            style = MaterialTheme.typography.titleMedium,
+                            style = PetalText.emptyState,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             stringResource(R.string.ui_import_sensitive_downloads_receipts_or),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.pageSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -272,14 +273,12 @@ fun SafeLockerSheet(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
                                         item.name,
-                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
+                                        style = PetalText.listItemTitle,
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
                                         formatFileSize(item.sizeBytes),
-                                        style = MaterialTheme.typography.bodySmall,
+                                        style = PetalText.listItemMeta,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }

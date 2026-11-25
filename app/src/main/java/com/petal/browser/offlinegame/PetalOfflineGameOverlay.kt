@@ -1,6 +1,7 @@
 package com.petal.browser.offlinegame
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import android.content.Context
 import android.content.ContextWrapper
@@ -328,21 +329,20 @@ private fun ErrorHeader(hostError: Boolean, url: String?, reduceMotion: Boolean)
                 text = stringResource(
                     if (hostError) R.string.offline_game_error_host_title else R.string.offline_game_error_no_internet_title
                 ),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.SemiBold,
+                style = PetalText.pageTitle,
                 color = cs.onSurface
             )
             Text(
                 text = stringResource(
                     if (hostError) R.string.offline_game_error_host_desc else R.string.offline_game_error_no_internet_desc
                 ),
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.pageSubtitle,
                 color = cs.onSurfaceVariant
             )
             if (!url.isNullOrBlank()) {
                 Text(
                     text = url,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = PetalText.caption,
                     color = cs.outline,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -395,7 +395,7 @@ private fun GameCard(
                 Surface(shape = CircleShape, color = cs.secondaryContainer) {
                     Text(
                         text = stringResource(R.string.offline_game_tap_to_hop),
-                        style = MaterialTheme.typography.titleMedium,
+                        style = PetalText.cardTitle,
                         color = cs.onSecondaryContainer,
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp)
                     )
@@ -460,8 +460,7 @@ private fun ScoreRow(state: PetalHopState) {
         ) {
             Text(
                 text = stringResource(R.string.offline_game_score, state.score),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.value,
                 color = cs.onPrimaryContainer,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
             )
@@ -469,7 +468,7 @@ private fun ScoreRow(state: PetalHopState) {
         Surface(shape = CircleShape, color = cs.surfaceContainerHighest) {
             Text(
                 text = stringResource(R.string.offline_game_best, maxOf(state.best, state.engine.best)),
-                style = MaterialTheme.typography.labelLarge,
+                style = PetalText.chip,
                 color = cs.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
             )
@@ -494,19 +493,18 @@ private fun GameOverCard(state: PetalHopState) {
                 text = stringResource(
                     if (state.newBest) R.string.offline_game_new_best else R.string.offline_game_oops
                 ),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                style = PetalText.pageTitle,
                 color = if (state.newBest) cs.tertiary else cs.onSurface,
                 textAlign = TextAlign.Center
             )
             Text(
                 text = stringResource(R.string.offline_game_score, state.score),
-                style = MaterialTheme.typography.titleMedium,
+                style = PetalText.cardTitle,
                 color = cs.onSurface
             )
             Text(
                 text = stringResource(R.string.offline_game_best, maxOf(state.best, state.engine.best)),
-                style = MaterialTheme.typography.bodyMedium,
+                style = PetalText.pageSubtitle,
                 color = cs.onSurfaceVariant
             )
             Spacer(Modifier.height(10.dp))
@@ -537,7 +535,7 @@ private fun BackOnlinePill(onReload: () -> Unit) {
         ) {
             Text(
                 text = stringResource(R.string.offline_game_back_online),
-                style = MaterialTheme.typography.titleSmall,
+                style = PetalText.cardTitle,
                 color = cs.onTertiaryContainer,
                 modifier = Modifier.weight(1f)
             )
@@ -600,7 +598,7 @@ private fun HopButton(
                 Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
             }
-            Text(text = text, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+            Text(text = text, style = PetalText.button)
         }
     }
 }

@@ -1,6 +1,7 @@
 package com.petal.browser.passwords
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.app.Dialog
 import androidx.activity.ComponentActivity
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -270,12 +271,12 @@ private fun SavePasswordSheetContent(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = "Save password?",
-                                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.sheetTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = cleanDomain,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = PetalText.pageSubtitle,
                                 color = MaterialTheme.colorScheme.primary,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -388,7 +389,7 @@ private fun SavePasswordSheetContent(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Never",
-                                fontWeight = FontWeight.SemiBold,
+                                style = PetalText.button,
                                 maxLines = 1
                             )
                         }
@@ -425,7 +426,7 @@ private fun SavePasswordSheetContent(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Save",
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.button,
                                 maxLines = 1
                             )
                         }

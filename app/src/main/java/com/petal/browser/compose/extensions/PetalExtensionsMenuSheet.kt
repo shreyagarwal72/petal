@@ -11,6 +11,7 @@
 package com.petal.browser.compose.extensions
 
 import android.net.Uri
+import com.petal.browser.ui.theme.PetalText
 import android.view.ViewGroup
 import androidx.activity.ComponentActivity
 import androidx.compose.foundation.Image
@@ -393,18 +394,14 @@ private fun ExtensionSheetRow(
         Column(Modifier.weight(1f)) {
             Text(
                 text = displayName,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Medium,
+                style = PetalText.rowTitle,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
             )
             if (extension.version.isNotBlank()) {
                 Text(
                     text = "v${extension.version}",
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1
                 )
             }
         }
@@ -419,8 +416,7 @@ private fun ExtensionSheetRow(
             ) {
                 Text(
                     text = badgeText,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.badge,
                     color = badgeFg,
                     maxLines = 1
                 )

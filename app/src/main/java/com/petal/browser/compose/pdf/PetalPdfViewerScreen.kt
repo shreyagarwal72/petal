@@ -23,6 +23,7 @@
 package com.petal.browser.compose.pdf
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import com.petal.browser.ui.components.petalContainerEnter
@@ -741,7 +742,7 @@ private fun PetalPdfViewerScreenImpl(
                             Spacer(Modifier.height(16.dp))
                             Text(
                                 text = stringResource(R.string.ui_loading_pdf),
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = PetalText.cardBody,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -779,13 +780,13 @@ private fun PetalPdfViewerScreenImpl(
                                 Spacer(Modifier.height(12.dp))
                                 Text(
                                     text = stringResource(R.string.ui_cannot_display_pdf),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                    style = PetalText.cardTitle,
                                     color = MaterialTheme.colorScheme.onErrorContainer
                                 )
                                 Spacer(Modifier.height(6.dp))
                                 Text(
                                     text = loadError ?: "",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.cardBody,
                                     textAlign = TextAlign.Center,
                                     color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f)
                                 )
@@ -1194,7 +1195,7 @@ private fun PetalPdfViewerScreenImpl(
                 )
             },
             title = {
-                Text(stringResource(R.string.ui_add_text_note), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.ui_add_text_note), style = PetalText.dialogTitle)
             },
             text = {
                 TextField(
@@ -1291,7 +1292,7 @@ private fun PetalPdfViewerScreenImpl(
                 )
             },
             title = {
-                Text(stringResource(R.string.ui_edit_text), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+                Text(stringResource(R.string.ui_edit_text), style = PetalText.dialogTitle)
             },
             text = {
                 Column {
@@ -1312,7 +1313,7 @@ private fun PetalPdfViewerScreenImpl(
                     Text(
                         text = "This replaces the line's actual text in the PDF using a standard font. " +
                             "Characters outside basic Latin/Western punctuation may be dropped.",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)
                     )
@@ -1600,7 +1601,7 @@ private fun PdfPageView(
                 ) {
                     Text(
                         text = note.text,
-                        style = MaterialTheme.typography.bodySmall.copy(
+                        style = PetalText.caption.copy(
                             color = note.color,
                             fontWeight = FontWeight.Bold
                         ),
@@ -1694,7 +1695,7 @@ private fun PdfTextEditTopBar(
 
                     Text(
                         text = stringResource(R.string.ui_edit_document_text),
-                        style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
@@ -1722,7 +1723,7 @@ private fun PdfTextEditTopBar(
                 Text(
                     text = "Tap a highlighted line to edit it. Edited lines use a standard font " +
                         "and may look slightly different from the surrounding text.",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = PetalText.caption,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 12.dp, top = 2.dp, end = 12.dp)
                 )
@@ -1787,7 +1788,7 @@ private fun PdfViewerTopBar(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    style = PetalText.sheetTitle,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -1795,7 +1796,7 @@ private fun PdfViewerTopBar(
                 if (totalPages > 0) {
                     Text(
                         text = stringResource(R.string.ui_page_of, currentPage, totalPages),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.primary,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -1936,7 +1937,7 @@ private fun PdfFindBar(
                 TextField(
                     value = query,
                     onValueChange = onQueryChange,
-                    placeholder = { Text(stringResource(R.string.ui_find_text_or_page), fontSize = 14.sp) },
+                    placeholder = { Text(stringResource(R.string.ui_find_text_or_page), style = PetalText.listItemMeta) },
                     singleLine = true,
                     colors = TextFieldDefaults.colors(
                         focusedContainerColor = Color.Transparent,
@@ -1950,7 +1951,7 @@ private fun PdfFindBar(
                 if (query.isNotBlank()) {
                     Text(
                         text = if (resultCount > 0) "$currentIndex of $resultCount" else "0 found",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = PetalText.badge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp)
                     )
@@ -2101,7 +2102,7 @@ private fun PdfEditTopBar(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_color),
-                        style = MaterialTheme.typography.labelSmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     colors.forEach { color ->
@@ -2199,7 +2200,7 @@ private fun PdfViewerBottomBar(
                         Spacer(Modifier.width(4.dp))
                         Text(
                             text = "$currentPage / $totalPages",
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.badge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
@@ -2339,7 +2340,7 @@ private fun PdfViewerBottomBar(
                             Spacer(Modifier.width(3.dp))
                             Text(
                                 text = "${(scale * 100).toInt()}%",
-                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.badge,
                                 color = MaterialTheme.colorScheme.onSecondaryContainer
                             )
                         }
@@ -2375,7 +2376,7 @@ private fun PdfJumpToPageDialog(
             )
         },
         title = {
-            Text(stringResource(R.string.ui_jump_to_page_2), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
+            Text(stringResource(R.string.ui_jump_to_page_2), style = PetalText.dialogTitle)
         },
         text = {
             Column(
@@ -2384,7 +2385,7 @@ private fun PdfJumpToPageDialog(
             ) {
                 Text(
                     text = stringResource(R.string.ui_page_of, targetPage, totalPages),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = PetalText.dialogBody,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Spacer(Modifier.height(16.dp))
@@ -2478,7 +2479,7 @@ private fun PdfThumbnailSheet(
         ) {
             Text(
                 text = stringResource(R.string.ui_pages, pageCount),
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sheetTitle,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp)
             )
@@ -2580,7 +2581,7 @@ private fun PdfThumbnailItem(
         Spacer(Modifier.height(4.dp))
         Text(
             text = "" + (pageIndex + 1),
-            style = MaterialTheme.typography.labelSmall.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
+            style = PetalText.caption.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal),
             color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
@@ -2632,7 +2633,7 @@ private fun PdfInfoBottomSheet(
         ) {
             Text(
                 text = stringResource(R.string.ui_document_info_2),
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sheetTitle,
                 modifier = Modifier.padding(bottom = 16.dp)
             )
 
@@ -2662,17 +2663,15 @@ private fun PdfInfoRow(label: String, value: String) {
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium,
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.SemiBold
         )
         Spacer(Modifier.height(2.dp))
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = PetalText.listItemTitle,
             color = MaterialTheme.colorScheme.onSurface,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis
         )
         HorizontalDivider(
             modifier = Modifier.padding(top = 8.dp),

@@ -1,6 +1,7 @@
 package com.petal.browser.compose.menu
 
 import android.app.Dialog
+import com.petal.browser.ui.theme.PetalText
 import android.net.Uri
 import android.view.Gravity
 import android.view.ViewGroup
@@ -155,13 +156,12 @@ fun PetalPopupBlockedSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Pop-up blocked",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.sheetTitle,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
                             text = domain ?: targetUrl,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -254,11 +254,8 @@ private fun PopupBlockedRow(
             Spacer(modifier = Modifier.width(14.dp))
             Text(
                 text = action.label,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Medium,
+                style = PetalText.rowTitle,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
             )
         }
     }

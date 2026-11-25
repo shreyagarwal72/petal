@@ -9,6 +9,7 @@
 package com.petal.browser.compose.settings
 
 import android.content.SharedPreferences
+import com.petal.browser.ui.theme.PetalText
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.setViewTreeOnBackPressedDispatcherOwner
@@ -130,13 +131,13 @@ fun PetalDeleteScreen(
             title = {
                 Text(
                     text = stringResource(R.string.ui_clear_selected_browsing_data),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    style = PetalText.dialogTitle
                 )
             },
             text = {
                 Text(
                     text = stringResource(R.string.ui_this_action_will_permanently_delete),
-                    style = MaterialTheme.typography.bodyMedium
+                    style = PetalText.dialogBody
                 )
             },
             confirmButton = {
@@ -212,12 +213,12 @@ fun PetalDeleteScreen(
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = stringResource(R.string.ui_clear_browsing_data),
-                                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                                    style = PetalText.cardTitle
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
                                     text = stringResource(R.string.ui_choose_items_to_erase_settings),
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    style = PetalText.cardBody,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -378,7 +379,7 @@ fun PetalDeleteScreen(
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 text = stringResource(R.string.ui_clear_selected_data),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                                style = PetalText.button
                             )
                         }
                     }

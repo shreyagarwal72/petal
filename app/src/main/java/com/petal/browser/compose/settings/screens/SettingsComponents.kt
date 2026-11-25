@@ -33,6 +33,7 @@ import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import com.petal.browser.ui.containment.rememberPetalGroupShape
 import com.petal.browser.ui.glass.rememberGlassSheen
+import com.petal.browser.ui.theme.PetalText
 import kotlinx.coroutines.delay
 
 @Composable
@@ -70,12 +71,12 @@ fun PetalVariableSlider(
             ) {
                 Text(
                     label,
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                    style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
                     String.format(java.util.Locale.getDefault(), "%.0f", value),
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.value,
                     color = MaterialTheme.colorScheme.primary
                 )
             }

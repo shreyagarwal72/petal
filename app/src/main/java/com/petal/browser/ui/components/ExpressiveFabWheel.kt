@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
+import com.petal.browser.ui.theme.PetalText
 
 data class FabWheelAction(
     val id: String,
@@ -96,7 +97,7 @@ fun ExpressiveFabWheel(
                         ) {
                             Text(
                                 text = action.label,
-                                style = MaterialTheme.typography.labelMedium,
+                                style = PetalText.button,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Spacer(Modifier.width(8.dp))

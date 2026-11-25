@@ -40,10 +40,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.petal.browser.haptics.PetalHapticEngine
+import com.petal.browser.ui.theme.PetalText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.abs
@@ -207,7 +207,7 @@ fun PetalSwipeActionRow(
                         }
                         Text(
                             text = shown.label,
-                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.button,
                             color = onContainer,
                             maxLines = 1,
                             overflow = TextOverflow.Clip,

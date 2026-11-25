@@ -1,6 +1,7 @@
 package com.petal.browser.compose.image
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -122,9 +123,8 @@ fun PetalImageCropDialog(
                     }
                     Text(
                         text = "Crop & Rotate",
+                        style = PetalText.sheetTitle,
                         color = Color.White,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.Bold
                     )
                     IconButton(
                         onClick = {

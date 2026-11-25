@@ -1,6 +1,7 @@
 package com.petal.browser.compose.settings.screens
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
+import com.petal.browser.ui.theme.PetalText
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -128,7 +129,7 @@ fun AddressBarSettingsScreen(
                     Text(
                         text = if (isMerge) "Real-time preview with current button layout and styling"
                         else "Previewing standard split bar layout",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
@@ -203,7 +204,7 @@ fun AddressBarSettingsScreen(
                 ) {
                     Text(
                         text = "Choose between separate address/bottom bars or a unified Merge bar.",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(6.dp))
@@ -227,7 +228,7 @@ fun AddressBarSettingsScreen(
                     targetHighlightId = targetHighlightItemId,
                     onInfoClick = { showPositionExplainer = true }
                 ) {
-                    Text(stringResource(R.string.ui_choose_where_the_compact_address), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ui_choose_where_the_compact_address), style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.height(6.dp))
                     PetalChoiceButtonGroup(
                         options = listOf(
@@ -250,7 +251,7 @@ fun AddressBarSettingsScreen(
                     ) {
                         Text(
                             text = "Single row fits controls side-by-side; Stacked places URL above controls.",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.caption,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.height(6.dp))
@@ -274,7 +275,7 @@ fun AddressBarSettingsScreen(
                     ) {
                         Text(
                             text = "Customize action buttons shown on either side of the URL pill (max 5 total). Menu is always required.",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.rowSubtitle,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(Modifier.height(10.dp))
@@ -282,8 +283,7 @@ fun AddressBarSettingsScreen(
                         // Leading List Section
                         Text(
                             text = "Leading Buttons (${leadingActions.size})",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.height(4.dp))
@@ -335,7 +335,7 @@ fun AddressBarSettingsScreen(
                             ) {
                                 Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                                 Spacer(Modifier.width(6.dp))
-                                Text("Add Leading", fontWeight = FontWeight.SemiBold)
+                                Text("Add Leading", style = PetalText.button)
                             }
                         }
 
@@ -344,8 +344,7 @@ fun AddressBarSettingsScreen(
                         // Trailing List Section
                         Text(
                             text = "Trailing Buttons (${trailingActions.size})",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.primary
                         )
                         Spacer(Modifier.height(6.dp))
@@ -422,7 +421,7 @@ fun AddressBarSettingsScreen(
                 // ── Right-Side Action (Classic bar only) ──────────────────────────────
                 if (!isMerge) {
                     PetalSettingsSection("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
-                        Text(stringResource(R.string.ui_choose_the_optional_action_shown), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.ui_choose_the_optional_action_shown), style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(4.dp))
                         PetalChoiceButtonGroup(
                             options = listOf(
@@ -507,8 +506,7 @@ fun AddressBarSettingsScreen(
                         Spacer(Modifier.height(10.dp))
                         Text(
                             text = "Scroll Minimize Style",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.sectionHeader,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(4.dp))
@@ -584,13 +582,12 @@ fun AddressBarSettingsScreen(
                         Column {
                             Text(
                                 text = if (forLeading) "Add Leading Button" else "Add Trailing Button",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.sheetTitle,
                                 color = MaterialTheme.colorScheme.onSurface
                             )
                             Text(
                                 text = if (forLeading) "Placed before the URL address pill" else "Placed after the URL address pill",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.pageSubtitle,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -609,8 +606,7 @@ fun AddressBarSettingsScreen(
                     ) {
                         Text(
                             text = "${availableCandidates.size} available",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.badge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                         )
@@ -626,7 +622,7 @@ fun AddressBarSettingsScreen(
                     ) {
                         Text(
                             text = "All available actions have already been added.",
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = PetalText.emptyState,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -692,13 +688,12 @@ fun AddressBarSettingsScreen(
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = candidate.label,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            fontWeight = FontWeight.Bold,
+                                            style = PetalText.rowTitle,
                                             color = MaterialTheme.colorScheme.onSurface
                                         )
                                         Text(
                                             text = getActionDescription(candidate),
-                                            style = MaterialTheme.typography.bodySmall,
+                                            style = PetalText.rowSubtitle,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }
@@ -759,7 +754,7 @@ private fun ActionsEditorList(
     if (actions.isEmpty()) {
         Text(
             text = "None",
-            style = MaterialTheme.typography.bodySmall,
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
             modifier = Modifier.padding(vertical = 4.dp)
         )
@@ -812,8 +807,7 @@ private fun ActionsEditorList(
                     Spacer(Modifier.width(12.dp))
                     Text(
                         text = action.localizedLabel(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f)
                     )
@@ -845,8 +839,7 @@ private fun ActionsEditorList(
                         ) {
                             Text(
                                 text = "Required",
-                                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.badge,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                             )

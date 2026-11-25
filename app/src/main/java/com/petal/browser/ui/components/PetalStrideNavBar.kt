@@ -63,6 +63,7 @@ import com.petal.browser.ui.glass.navIconMotion
 import com.petal.browser.ui.glass.rememberGlassBar
 import kotlin.math.roundToInt
 import androidx.compose.material3.Icon
+import com.petal.browser.ui.theme.PetalText
 
 private val NavOrder4 = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
 /** Off the home page: no AI tab. */
@@ -239,7 +240,7 @@ internal fun PetalStrideNavBar(
                     PetalNavTab.SEARCH -> onSearchClick
                 }
                 val tint = if (selected) scheme.primary else scheme.onSurfaceVariant
-                val labelStyle = MaterialTheme.typography.labelLarge.copy(color = scheme.primary)
+                val labelStyle = PetalText.tabLabel.copy(color = scheme.primary)
                 Box(
                     modifier = Modifier
                         .onGloballyPositioned { itemBounds[tab] = it.boundsInRoot() }

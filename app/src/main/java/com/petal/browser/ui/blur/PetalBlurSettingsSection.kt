@@ -21,6 +21,7 @@
 package com.petal.browser.ui.blur
 
 import android.content.SharedPreferences
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -114,7 +115,7 @@ fun PetalBlurSettingsSection(targetHighlightId: String? = null) {
     ) {
         Text(
             text = "Blurs the live page behind menus, sheets and dialogs. Works the same with Material 3 Expressive and Liquid Glass, and never changes the surface itself.",
-            style = MaterialTheme.typography.bodySmall,
+            style = PetalText.cardBody,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         PetalSettingsToggleRow(
@@ -131,7 +132,7 @@ fun PetalBlurSettingsSection(targetHighlightId: String? = null) {
         if (masterOn) {
             Text(
                 text = "Blur method",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sectionHeader,
                 color = MaterialTheme.colorScheme.onSurface
             )
             ExpressiveButtonGroup(
@@ -187,7 +188,7 @@ fun PetalBlurSettingsSection(targetHighlightId: String? = null) {
             }
             Text(
                 text = "Where to blur",
-                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                style = PetalText.sectionHeader,
                 color = MaterialTheme.colorScheme.onSurface
             )
             SURFACE_ROWS.forEachIndexed { index, row ->
@@ -221,12 +222,12 @@ private fun SliderHeader(label: String, value: String) {
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.rowTitle,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+            style = PetalText.value,
             color = MaterialTheme.colorScheme.primary
         )
     }
@@ -246,7 +247,7 @@ private fun PetalSettingsToggleRowNote(text: String) {
         )
         Text(
             text = text,
-            style = MaterialTheme.typography.bodySmall,
+            style = PetalText.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }

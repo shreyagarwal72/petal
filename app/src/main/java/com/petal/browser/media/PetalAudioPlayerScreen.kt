@@ -18,6 +18,7 @@
 package com.petal.browser.media
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.containment.PetalSheetPill
 import com.petal.browser.ui.containment.PetalSheetActionRow
@@ -540,15 +541,14 @@ fun PetalAudioPlayerScreen(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = metadata.title,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
+                    style = PetalText.listItemTitle,
                     color = audioPalette.onSurface,
                     maxLines = 1,
                     modifier = Modifier.basicMarquee()
                 )
                 Text(
                     text = metadata.artist,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = PetalText.listItemMeta,
                     color = audioPalette.onSurfaceVariant,
                     maxLines = 1
                 )
@@ -751,10 +751,7 @@ fun PetalAudioPlayerScreen(
                         ) {
                             Text(
                                 text = metadata.title,
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 22.sp
-                                ),
+                                style = PetalText.pageTitle,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -763,7 +760,7 @@ fun PetalAudioPlayerScreen(
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = "${metadata.artist} • ${metadata.album}",
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = PetalText.pageSubtitle,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -999,8 +996,7 @@ fun PetalAudioPlayerScreen(
                             // Playback Speed Selector
                             Text(
                                 text = "Playback Speed",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
+                                style = PetalText.sectionHeader,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Row(
@@ -1029,8 +1025,7 @@ fun PetalAudioPlayerScreen(
                                         Text(
                                             text = if (speed == 1.0f) "1x" else "${speed}x",
                                             color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
-                                            fontWeight = FontWeight.SemiBold,
-                                            fontSize = 13.sp
+                                            style = PetalText.chip,
                                         )
                                     }
                                 }

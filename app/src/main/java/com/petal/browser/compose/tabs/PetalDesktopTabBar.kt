@@ -1,6 +1,7 @@
 package com.petal.browser.compose.tabs
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import android.content.Context
 import android.graphics.Bitmap
@@ -312,8 +313,8 @@ private fun PetalDesktopTabChip(
         }
         Text(
             text = entry.title,
+            style = PetalText.tabLabel,
             color = content,
-            fontSize = 13.sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f).padding(horizontal = 8.dp)

@@ -12,6 +12,8 @@
 
 package com.petal.browser.compose.settings.screens
 
+import com.petal.browser.ui.theme.PetalText
+
 import com.petal.browser.ui.components.PetalSpring
 
 import android.content.Context
@@ -111,7 +113,7 @@ fun PetalAdBlockSettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         "Websites added here will completely bypass ad blocking and tracking shields.",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.dialogBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Row(
@@ -145,7 +147,7 @@ fun PetalAdBlockSettingsScreen(
                     if (whitelistedDomains.isEmpty()) {
                         Text(
                             "No websites currently whitelisted.",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.emptyState,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(vertical = 8.dp)
                         )
@@ -166,8 +168,7 @@ fun PetalAdBlockSettingsScreen(
                                 ) {
                                     Text(
                                         text = domain,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium
+                                        style = PetalText.listItemTitle
                                     )
                                     IconButton(
                                         onClick = {
@@ -206,7 +207,7 @@ fun PetalAdBlockSettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         "Write or paste custom EasyList/uBlock rules (one per line, e.g. ||doubleclick.net^ or @@||example.com^).",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.dialogBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     TextField(
@@ -252,7 +253,7 @@ fun PetalAdBlockSettingsScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
                         "Enter the URL of an EasyList, uBlock, or hosts format filter list.",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.dialogBody,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     TextField(
@@ -370,14 +371,13 @@ fun PetalAdBlockSettingsScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = if (isShieldEnabled) "Petal Shield Active" else "Petal Shield Disabled",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
+                                style = PetalText.cardTitle,
                                 color = heroTitleColor
                             )
                             Spacer(Modifier.height(2.dp))
                             Text(
                                 text = if (isShieldEnabled) blockedLabel else "Browsing without ad or tracker defense",
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = PetalText.cardBody,
                                 color = heroBodyColor
                             )
                         }
@@ -425,12 +425,11 @@ fun PetalAdBlockSettingsScreen(
                             content = {
                                 Text(
                                     text = "Standard (Recommended)",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold
+                                    style = PetalText.rowTitle
                                 )
                                 Text(
                                     text = "Blocks cross-site trackers, ads, and cookies while preserving first-party page features.",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.rowSubtitle,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -454,12 +453,11 @@ fun PetalAdBlockSettingsScreen(
                             content = {
                                 Text(
                                     text = "Aggressive",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.SemiBold
+                                    style = PetalText.rowTitle
                                 )
                                 Text(
                                     text = "Strictly blocks all advertising scripts, first-party tracking, and telemetry pings.",
-                                    style = MaterialTheme.typography.bodySmall,
+                                    style = PetalText.rowSubtitle,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -566,8 +564,7 @@ fun PetalAdBlockSettingsScreen(
                         content = {
                             Text(
                                 text = "Update Built-in Rules",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium
+                                style = PetalText.rowTitle
                             )
                             val lastUpdate = PetalFilterSubscriptionManager.getLastUpdatedVersion(context)
                             val dateStr = if (lastUpdate > 0) {
@@ -575,10 +572,8 @@ fun PetalAdBlockSettingsScreen(
                             } else "Bundled"
                             Text(
                                 text = updateStatusMessage ?: "EasyList, EasyPrivacy & uBlock · Last updated: $dateStr",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                style = PetalText.rowSubtitle,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
                         trailing = {
@@ -616,8 +611,7 @@ fun PetalAdBlockSettingsScreen(
                         content = {
                             Text(
                                 text = if (showAdvancedLists) "Hide Detailed Filter Lists" else "Show All Filter Lists (${subscriptions.size})",
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Medium,
+                                style = PetalText.rowTitle,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
@@ -648,15 +642,12 @@ fun PetalAdBlockSettingsScreen(
                                 content = {
                                     Text(
                                         text = sub.name,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium
+                                        style = PetalText.rowTitle
                                     )
                                     Text(
                                         text = sub.description,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
+                                        style = PetalText.rowSubtitle,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 },
                                 trailing = {
@@ -677,8 +668,7 @@ fun PetalAdBlockSettingsScreen(
                             content = {
                                 Text(
                                     text = "Add Custom Filter Subscription URL",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.SemiBold,
+                                    style = PetalText.rowTitle,
                                     color = MaterialTheme.colorScheme.primary
                                 )
                             }

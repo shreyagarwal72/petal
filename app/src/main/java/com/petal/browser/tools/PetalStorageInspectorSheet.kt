@@ -1,6 +1,7 @@
 package com.petal.browser.tools
 
 import androidx.compose.animation.AnimatedVisibility
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -160,12 +161,11 @@ fun PetalStorageInspectorSheet(
                 Column {
                     Text(
                         text = "Site Storage & Cookies",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
+                        style = PetalText.sheetTitle
                     )
                     Text(
                         text = domain,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -199,7 +199,7 @@ fun PetalStorageInspectorSheet(
                                 StorageType.LOCAL_STORAGE -> localStorageItems.size
                                 StorageType.SESSION_STORAGE -> sessionStorageItems.size
                             }
-                            Text("${type.label} ($count)", fontWeight = FontWeight.SemiBold, fontSize = 12.sp)
+                            Text("${type.label} ($count)", style = PetalText.tabLabel)
                         }
                     )
                 }
@@ -239,7 +239,7 @@ fun PetalStorageInspectorSheet(
                 ) {
                     Text(
                         text = if (isLoading) "Reading storage data…" else "No entries found in ${selectedType.label}",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.emptyState,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

@@ -30,10 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.petal.browser.ui.theme.PetalText
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
@@ -74,12 +73,12 @@ fun PetalImageGrabberSheet(
                 Column {
                     Text(
                         text = stringResource(R.string.ui_image_grabber),
-                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                        style = PetalText.sheetTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
                         text = stringResource(R.string.ui_images_found_on_page, images.size),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -93,7 +92,7 @@ fun PetalImageGrabberSheet(
                         ) {
                             Icon(Icons.Rounded.Download, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text(stringResource(R.string.ui_download_all), fontSize = 12.sp)
+                            Text(stringResource(R.string.ui_download_all), style = PetalText.button)
                         }
                     }
                     IconButton(onClick = onDismissRequest) {
@@ -113,7 +112,7 @@ fun PetalImageGrabberSheet(
                 ) {
                     Text(
                         text = stringResource(R.string.ui_no_images_found_on_this),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = PetalText.emptyState,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

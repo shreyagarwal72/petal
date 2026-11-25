@@ -47,6 +47,7 @@ import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.petalGroupSurfaceColor
 import androidx.compose.ui.res.stringResource
 import com.petal.browser.R
+import com.petal.browser.ui.theme.PetalText
 
 /**
  * Main Settings Hub Screen matching RvSystem-Monitor's SettingsScreen.kt visual structure:
@@ -167,18 +168,18 @@ fun SettingsHubScreen(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = stringResource(R.string.ui_did_you_mean),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = PetalText.caption,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f)
                             )
                             Text(
                                 text = didYouMean,
-                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                style = PetalText.rowTitle,
                                 color = MaterialTheme.colorScheme.onTertiaryContainer
                             )
                         }
                         Text(
                             text = stringResource(R.string.ui_apply),
-                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                            style = PetalText.button,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -258,23 +259,18 @@ fun SettingsHubScreen(
                             content = {
                                 Text(
                                     item.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    style = PetalText.rowTitle,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.secondaryContainer,
                                     contentColor = MaterialTheme.colorScheme.onSecondaryContainer) {
-                                    Text(item.category.title, style = MaterialTheme.typography.labelSmall,
+                                    Text(item.category.title, style = PetalText.badge,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                 }
                                 Text(
                                     item.subtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis
+                                    style = PetalText.rowSubtitle,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             },
                             trailing = { Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -314,18 +310,13 @@ fun SettingsHubScreen(
                             content = {
                                 Text(
                                     category.title,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    style = PetalText.rowTitle,
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     category.subtitle,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    style = PetalText.rowSubtitle,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             },
                             trailing = { Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) }
@@ -351,7 +342,7 @@ fun SettingsHubScreen(
                                 )
                                 Text(
                                     text = stringResource(R.string.ui_no_settings_found_for, searchQuery),
-                                    style = MaterialTheme.typography.bodyLarge,
+                                    style = PetalText.emptyState,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }

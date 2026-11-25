@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import com.petal.browser.ui.containment.PetalSettingsSection
 import com.petal.browser.ui.containment.liquidGlassChrome
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.ui.theme.layout.UiExperience
 import com.petal.browser.ui.theme.layout.PetalLayoutState
 import com.petal.browser.ui.theme.layout.PetalLayoutSettings
@@ -127,10 +128,10 @@ fun AppearanceAdvancedColorsPage(
                             }
                         },
                         content = {
-                            Text(slotTitle, style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold), color = MaterialTheme.colorScheme.onSurface)
+                            Text(slotTitle, style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
                             Text(
                                 if (slotColor != 0) "#%06X".format(slotColor and 0xFFFFFF) else slotHint,
-                                style = MaterialTheme.typography.bodySmall,
+                                style = PetalText.rowSubtitle,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
@@ -158,13 +159,13 @@ fun AppearanceAdvancedColorsPage(
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
                             "Custom palette not active",
-                            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+                            style = PetalText.cardTitle,
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "Select the 'Custom' palette preset on the Theme & Colors page (with Material You disabled) to customize your primary seed, secondary and tertiary colors.",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.cardBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

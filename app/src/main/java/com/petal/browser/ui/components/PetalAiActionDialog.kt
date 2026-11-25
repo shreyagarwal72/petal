@@ -20,10 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
+import com.petal.browser.ui.theme.PetalText
 import com.petal.browser.R
 import com.petal.browser.ui.containment.isLiquidGlassEnabled
 import com.petal.browser.ui.containment.liquidGlassChrome
@@ -78,13 +77,13 @@ fun PetalAiActionDialog(
                         ) {
                             Text(
                                 stringResource(R.string.ui_ai_web_research),
-                                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                                style = PetalText.badge,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         }
                         Text(
                             stringResource(R.string.ui_choose_ai_action_for_webpage),
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.dialogBody,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -140,7 +139,7 @@ fun PetalAiActionDialog(
                 ) {
                     Text(
                         stringResource(R.string.ui_remember_choice_as_default),
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                        style = PetalText.rowTitle,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Checkbox(
@@ -197,12 +196,12 @@ private fun AiActionTile(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    style = PetalText.rowTitle,
                     color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = PetalText.rowSubtitle,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }

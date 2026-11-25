@@ -15,6 +15,7 @@
 package com.petal.browser.media.lyrics
 
 import com.petal.browser.ui.components.PetalSpring
+import com.petal.browser.ui.theme.PetalText
 
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
@@ -231,8 +232,7 @@ fun PetalLyricsSheet(
                     ) {
                         Text(
                             text = "Lyrics",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.sheetTitle,
                             color = audioPalette.onSurface
                         )
                         if (lyrics.isSynced) {
@@ -243,8 +243,7 @@ fun PetalLyricsSheet(
                             ) {
                                 Text(
                                     text = "SYNCED",
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.ExtraBold,
+                                    style = PetalText.badge,
                                     color = audioPalette.seed,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                 )
@@ -253,7 +252,7 @@ fun PetalLyricsSheet(
                     }
                     Text(
                         text = "$title • $artist",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = PetalText.pageSubtitle,
                         color = audioPalette.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -336,7 +335,7 @@ fun PetalLyricsSheet(
 
                             Text(
                                 text = line.text.ifBlank { "♪" },
-                                fontSize = if (isActive) 23.sp else 18.sp,
+                                style = if (isActive) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleMedium,
                                 fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
                                 color = animatedColor,
                                 lineHeight = if (isActive) 30.sp else 24.sp,
@@ -364,8 +363,7 @@ fun PetalLyricsSheet(
                         itemsIndexed(lyrics.plain, key = { index, line -> "${index}_${line.hashCode()}" }) { _, line ->
                             Text(
                                 text = line.ifBlank { "♪" },
-                                style = MaterialTheme.typography.bodyLarge,
-                                fontWeight = FontWeight.Normal,
+                                style = PetalText.cardBody,
                                 color = audioPalette.onSurface.copy(alpha = 0.85f),
                                 lineHeight = 26.sp,
                                 modifier = Modifier.fillMaxWidth()
@@ -390,13 +388,12 @@ fun PetalLyricsSheet(
                         Spacer(Modifier.height(12.dp))
                         Text(
                             text = "No lyrics found for this track",
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold,
+                            style = PetalText.emptyState,
                             color = audioPalette.onSurface
                         )
                         Text(
                             text = "Import a companion .lrc file to view synchronized karaoke lines",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.pageSubtitle,
                             color = audioPalette.onSurfaceVariant,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.padding(top = 4.dp, bottom = 16.dp)
@@ -467,15 +464,14 @@ fun PetalLyricsSheet(
                     ) {
                         Text(
                             text = title,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
+                            style = PetalText.listItemTitle,
                             color = audioPalette.onSurface,
                             maxLines = 1,
                             modifier = Modifier.basicMarquee()
                         )
                         Text(
                             text = artist,
-                            style = MaterialTheme.typography.bodySmall,
+                            style = PetalText.listItemMeta,
                             color = audioPalette.onSurfaceVariant,
                             maxLines = 1
                         )
