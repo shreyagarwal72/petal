@@ -1008,6 +1008,7 @@ fun PetalHomeScreen(
                     editingItem?.let { (current, isCustom) ->
                         EditShortcutDialog(
                             dialogTitle = if (isCustom) stringResource(R.string.ui_edit_shortcut) else stringResource(R.string.ui_hide_from_home),
+                            deleteLabelRes = if (isCustom) R.string.ui_delete else R.string.ui_hide,
                             initialId = current.id,
                             initialName = current.label,
                             initialUrl = current.url,
@@ -1662,6 +1663,7 @@ private fun deriveShortcutName(url: String): String? = try {
 @Composable
 private fun EditShortcutDialog(
     dialogTitle: String,
+    deleteLabelRes: Int = R.string.ui_delete,
     initialId: String? = null,
     initialName: String,
     initialUrl: String,
@@ -1755,7 +1757,7 @@ private fun EditShortcutDialog(
                     singleLine = true,
                     placeholder = { Text("example.com") },
                     isError = showUrlError,
-                    supportingText = if (showUrlError && urlValidation.errorRes != null) {
+                    supportingText = if (!urlValidation.isValid && urlValidation.errorRes != null) {
                         { Text(stringResource(urlValidation.errorRes)) }
                     } else null,
                     glass = isGlass,
@@ -2097,7 +2099,7 @@ private fun EditShortcutDialog(
                             .heightIn(min = 48.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Text(stringResource(R.string.ui_delete), maxLines = 1)
+                        Text(stringResource(deleteLabelRes), maxLines = 1)
                     }
                     FilledTonalButton(
                         onClick = onDismiss,

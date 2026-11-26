@@ -70,4 +70,12 @@ class PetalMaterialShapesCatalogTest {
         assertEquals(35, partitioned.size)
         assertEquals(PetalMaterialShapes.allShapes.toSet(), partitioned.toSet())
     }
+
+    @Test
+    fun `homescreenShapes and MaterialShapes alias contain only official shapes`() {
+        assertEquals(PetalMaterialShapes.allShapes, MaterialShapes.allShapes)
+        assertEquals(17, PetalMaterialShapes.homescreenShapes.size)
+        assertEquals(17, PetalMaterialShapes.homescreenShapes.map { it.name }.toSet().size)
+        assertTrue(PetalMaterialShapes.allShapes.containsAll(PetalMaterialShapes.homescreenShapes))
+    }
 }

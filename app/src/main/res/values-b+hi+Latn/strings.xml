@@ -1953,4 +1953,5 @@
     <string name="ui_shape_cat_dynamic">Dynamic</string>
     <string name="ui_shape_cat_organic">Organic</string>
     <string name="ui_shape_cat_energetic">Energetic</string>
+    <string name="ui_hide">Hide</string>
 </resources>
