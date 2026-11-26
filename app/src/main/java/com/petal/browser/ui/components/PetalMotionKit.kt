@@ -335,6 +335,34 @@ fun PetalMorphBlob(
 }
 
 /**
+ * Remembers a [PetalMorphShape] that morphs between [offPolygon] and [onPolygon] using [PetalSpring]
+ * when [checked] changes, or snaps immediately when [MotionGate.isReduceMotion] is enabled.
+ */
+@Composable
+fun rememberPetalToggleMorphShape(
+    checked: Boolean,
+    offPolygon: RoundedPolygon = com.petal.browser.ui.theme.PetalMaterialShapes.Square.polygon,
+    onPolygon: RoundedPolygon = com.petal.browser.ui.theme.PetalMaterialShapes.Cookie9Sided.polygon,
+): Shape {
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val reduceMotion = com.petal.browser.motion.MotionGate.isReduceMotion(context) || rememberReduceMotion()
+    val morph = remember(offPolygon, onPolygon) {
+        Morph(offPolygon.normalized(), onPolygon.normalized())
+    }
+    val progress = remember { Animatable(if (checked) 1f else 0f) }
+    val springSpec: FiniteAnimationSpec<Float> = PetalSpring.playful()
+    LaunchedEffect(checked, reduceMotion) {
+        val target = if (checked) 1f else 0f
+        if (reduceMotion) {
+            progress.snapTo(target)
+        } else {
+            progress.animateTo(target, springSpec)
+        }
+    }
+    return PetalMorphShape(morph, progress.value.coerceIn(0f, 1f))
+}
+
+/**
  * One-shot source rect (window coordinates) of the element a full-screen overlay should grow out of,
  * e.g. a download row opening its viewer. The overlay reads it once with [take].
  */

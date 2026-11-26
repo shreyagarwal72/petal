@@ -314,10 +314,12 @@ private fun Modifier.liquidGlassSheen(
 }
 
 @Composable
-fun petalGroupSurfaceColor(): Color {
+fun petalGroupSurfaceColor(
+    enableLiquidGlass: Boolean = isLiquidGlassEnabled("sp_liquid_glass_containments"),
+): Color {
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val isGlass = enableLiquidGlass
     LocalPetalGlassRevision.current
     val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
@@ -816,10 +818,14 @@ fun PetalSettingsToggleRow(
     variant: PetalBadgeVariant? = null,
     /** Optional small label drawn right after the title (for example a "Beta" badge). */
     titleSuffix: (@Composable () -> Unit)? = null,
+    /** Optional custom shape (such as an animated morph shape) for the leading icon badge. */
+    badgeShape: Shape? = null,
+    /** Controls whether Liquid Glass chrome & translucent surface are active for this row. */
+    enableLiquidGlass: Boolean = isLiquidGlassEnabled("sp_liquid_glass_containments"),
 ) {
     val source = remember { MutableInteractionSource() }
     val scale = rememberPetalGroupPressScale(source)
-    val isGlass = isLiquidGlassEnabled("sp_liquid_glass_containments")
+    val isGlass = enableLiquidGlass
     val context = androidx.compose.ui.platform.LocalContext.current
     val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
     val sheen = com.petal.browser.ui.glass.rememberGlassSheen(isGlass)
@@ -827,7 +833,7 @@ fun PetalSettingsToggleRow(
     val variantColors = variant?.colors()
     val badgeContainer = variantColors?.first ?: if (checked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.secondaryContainer
     val badgeTint = variantColors?.second ?: if (checked) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSecondaryContainer
-    val activeSurfaceColor = petalGroupSurfaceColor()
+    val activeSurfaceColor = petalGroupSurfaceColor(enableLiquidGlass = isGlass)
     val disabledContainerColor = if (isGlass) {
         activeSurfaceColor.copy(alpha = (activeSurfaceColor.alpha * 0.7f).coerceAtLeast(0.12f))
     } else {
@@ -852,7 +858,18 @@ fun PetalSettingsToggleRow(
             Modifier.fillMaxWidth().heightIn(min = 70.dp).padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            PetalGroupIconBadge(icon, badgeContainer, badgeTint)
+            if (badgeShape != null) {
+                PetalGroupIconBadge(
+                    shape = badgeShape,
+                    containerColor = badgeContainer,
+                    contentColor = badgeTint,
+                    iconSize = 22.dp,
+                ) {
+                    Icon(icon, contentDescription = null, tint = badgeTint, modifier = Modifier.size(22.dp))
+                }
+            } else {
+                PetalGroupIconBadge(icon, badgeContainer, badgeTint)
+            }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f).padding(end = 6.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {

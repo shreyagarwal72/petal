@@ -109,6 +109,7 @@ fun ExpressiveHeader(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
+    backContentDescription: String = "Back",
     enableLiquidGlass: Boolean = com.petal.browser.ui.containment.isLiquidGlassEnabled(),
     // Optional real-glass backdrop (must be a sibling of the screen background, see PetalLiquidGlass.kt)
     backdrop: com.petal.browser.ui.containment.PetalBackdrop? = null,
@@ -289,10 +290,10 @@ fun ExpressiveHeader(
                             }
                         ) {
                             if (useLastWaveGlass) {
-                                GlassBackButton(onClick = { onBack?.invoke() }, isDark = isDarkSurface)
+                                GlassBackButton(onClick = { onBack?.invoke() }, isDark = isDarkSurface, contentDescription = backContentDescription)
                             } else com.petal.browser.ui.theme.ExpressiveIconButton(
                                 icon = Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = backContentDescription,
                                 onClick = { onBack?.invoke() },
                                 size = 44.dp,
                                 containerColor = if (enableLiquidGlass) {
@@ -452,7 +453,7 @@ fun ExpressiveHeader(
 
 /** Round frosted chip with a hairline rim: the glass header's back button (M3E keeps its morphing shape). */
 @Composable
-private fun GlassBackButton(onClick: () -> Unit, isDark: Boolean) {
+private fun GlassBackButton(onClick: () -> Unit, isDark: Boolean, contentDescription: String = "Back") {
     val rim = Brush.verticalGradient(
         listOf(Color.White.copy(alpha = if (isDark) 0.28f else 0.85f), Color.White.copy(alpha = if (isDark) 0.06f else 0.25f))
     )
@@ -465,7 +466,7 @@ private fun GlassBackButton(onClick: () -> Unit, isDark: Boolean) {
         modifier = Modifier.size(40.dp)
     ) {
         Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
-            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "Back", modifier = Modifier.size(22.dp))
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = contentDescription, modifier = Modifier.size(22.dp))
         }
     }
 }

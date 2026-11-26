@@ -2230,5 +2230,34 @@
     <string name="shield_site_permissions_summary_format">%1$d allowed · %2$d blocked</string>
     <string name="shield_reload_to_apply">Reload to apply</string>
     <string name="shield_current_website">Current website</string>
+    <string name="scanner_back">Back</string>
+    <string name="scanner_settings_title">Scanner Settings</string>
+    <string name="scanner_settings_subtitle">Scan behavior, feedback and link safety</string>
+    <string name="scanner_settings_section_behavior">Behavior &amp; Feedback</string>
+    <string name="scanner_settings_section_safety">Safety &amp; Privacy</string>
+    <string name="scanner_settings_auto_open_title">Auto-open web links</string>
+    <string name="scanner_settings_auto_open_desc">Immediately open recognized website links in the browser</string>
+    <string name="scanner_settings_vibrate_title">Haptic feedback</string>
+    <string name="scanner_settings_vibrate_desc">Vibrate when a barcode is recognized</string>
+    <string name="scanner_settings_beep_title">Audio beep</string>
+    <string name="scanner_settings_beep_desc">Play a short beep sound on detection</string>
+    <string name="scanner_settings_safety_title">Link safety inspection</string>
+    <string name="scanner_settings_safety_desc">Flag punycode, lookalike domains, shorteners, and unencrypted HTTP</string>
+    <string name="scanner_settings_history_title">Save scan history</string>
+    <string name="scanner_settings_history_desc">Retain local scan history on this device</string>
+    <string name="scanner_settings_state_on">On</string>
+    <string name="scanner_settings_state_off">Off</string>
+    <string name="scanner_history_title">Scan History</string>
+    <string name="scanner_history_subtitle">Search, pin and manage scanned codes</string>
+    <string name="scanner_history_clear_all">Clear history</string>
+    <string name="scanner_history_search_hint">Search scanned codes…</string>
+    <string name="scanner_history_clear_search">Clear search</string>
+    <string name="scanner_history_empty">No scan history yet</string>
+    <string name="scanner_history_empty_search">No matching results</string>
+    <string name="scanner_history_pinned">Pinned</string>
+    <string name="scanner_history_pin">Pin</string>
+    <string name="scanner_history_unpin">Unpin</string>
+    <string name="scanner_history_delete">Delete</string>
+    <string name="scanner_history_meta_format">%1$s • %2$s</string>
 </resources>
 
