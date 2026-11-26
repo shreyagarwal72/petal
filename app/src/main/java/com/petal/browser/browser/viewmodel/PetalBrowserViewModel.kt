@@ -367,13 +367,19 @@ class PetalBrowserViewModel @Inject constructor(
         parentId: String? = null
     ): String {
         val tabId = java.util.UUID.randomUUID().toString()
-        if (!groupId.isNullOrBlank() || !parentId.isNullOrBlank()) {
+        val targetWorkspaceId = if (!private && PetalWorkspaceManager.isWorkspaceChipsEnabled(context)) {
+            PetalWorkspaceManager.getActiveWorkspace(context).id.takeIf { it != PetalWorkspaceManager.DEFAULT_WORKSPACE_ID }
+        } else {
+            null
+        }
+        if (!groupId.isNullOrBlank() || !parentId.isNullOrBlank() || targetWorkspaceId != null) {
             PetalTabMetadataStore.put(
                 context,
                 PetalTabMetadata(
                     tabId = tabId,
                     tabGroupId = groupId,
                     tabGroupTitle = groupTitle ?: if (groupId != null) "Group" else null,
+                    workspaceId = targetWorkspaceId,
                     parentId = parentId
                 )
             )
@@ -640,8 +646,13 @@ class PetalBrowserViewModel @Inject constructor(
             groupTitle = meta?.tabGroupTitle,
             parentId = tab.id
         )
-        if (meta?.workspaceId != null) {
-            PetalTabMetadataStore.setWorkspace(context, newTabId, meta.workspaceId)
+        val duplicateWorkspaceId = if (!tab.isIncognito && PetalWorkspaceManager.isWorkspaceChipsEnabled(context)) {
+            meta?.workspaceId
+        } else {
+            null
+        }
+        if (duplicateWorkspaceId != null) {
+            PetalTabMetadataStore.setWorkspace(context, newTabId, duplicateWorkspaceId)
         }
     }
 

@@ -1,7 +1,16 @@
 package com.petal.browser.compose.tabs
 
 import android.content.Context
+import android.content.SharedPreferences
+import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.preference.PreferenceManager
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.petal.browser.browser.PetalTabMetadataStore
@@ -68,6 +77,8 @@ val WorkspaceIconPresets = listOf(
  */
 object PetalWorkspaceManager {
     const val DEFAULT_WORKSPACE_ID = "ws_default"
+    const val PREF_SHOW_WORKSPACE_CHIPS = "sp_show_workspace_chips"
+    const val PREF_WORKSPACE_CHIPS_MIGRATED = "sp_workspace_chips_migrated"
 
     private const val PREFS_NAME = "petal_workspaces_prefs"
     private const val KEY_WORKSPACES_JSON = "workspaces_json"
@@ -149,7 +160,143 @@ object PetalWorkspaceManager {
             DEFAULT_WORKSPACE_ID
         }
 
+        migrateWorkspaceChipsVisibility(appContext)
         isInitialized = true
+    }
+
+    @JvmStatic
+    fun isWorkspaceChipsEnabled(context: Context): Boolean {
+        return PreferenceManager.getDefaultSharedPreferences(context)
+            .getBoolean(PREF_SHOW_WORKSPACE_CHIPS, false)
+    }
+
+    @Composable
+    fun rememberShowWorkspaceChips(): State<Boolean> {
+        val context = LocalContext.current
+        val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+        val state = remember(sp) { mutableStateOf(sp.getBoolean(PREF_SHOW_WORKSPACE_CHIPS, false)) }
+        DisposableEffect(sp) {
+            state.value = sp.getBoolean(PREF_SHOW_WORKSPACE_CHIPS, false)
+            val listener = SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+                if (key == null || key == PREF_SHOW_WORKSPACE_CHIPS) {
+                    state.value = prefs.getBoolean(PREF_SHOW_WORKSPACE_CHIPS, false)
+                }
+            }
+            sp.registerOnSharedPreferenceChangeListener(listener)
+            onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+        }
+        return state
+    }
+
+    /**
+     * One-time startup migration for existing workspace users: enables [PREF_SHOW_WORKSPACE_CHIPS]
+     * only if the user already persisted a non-default workspace or has a tab assigned to a
+     * non-default workspace. Runs once and never overrides a user choice.
+     */
+    @Synchronized
+    fun migrateWorkspaceChipsVisibility(context: Context) {
+        val appContext = context.applicationContext ?: context
+        val defaultSp = PreferenceManager.getDefaultSharedPreferences(appContext)
+        if (defaultSp.getBoolean(PREF_WORKSPACE_CHIPS_MIGRATED, false)) return
+
+        // Respect any explicit preference the user already chose before migration ran.
+        if (defaultSp.contains(PREF_SHOW_WORKSPACE_CHIPS)) {
+            defaultSp.edit().putBoolean(PREF_WORKSPACE_CHIPS_MIGRATED, true).apply()
+            return
+        }
+
+        val wsPrefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val savedJson = wsPrefs.getString(KEY_WORKSPACES_JSON, null)
+        val hasPersistedNonDefaultWorkspace = hasCustomOrNonDefaultWorkspace(savedJson)
+        val hasTabInNonDefaultWorkspace = PetalTabMetadataStore.getAll(appContext).values.any { meta ->
+            val wsId = meta.workspaceId
+            !wsId.isNullOrBlank() && wsId != DEFAULT_WORKSPACE_ID
+        }
+
+        val editor = defaultSp.edit().putBoolean(PREF_WORKSPACE_CHIPS_MIGRATED, true)
+        if (hasPersistedNonDefaultWorkspace || hasTabInNonDefaultWorkspace) {
+            editor.putBoolean(PREF_SHOW_WORKSPACE_CHIPS, true)
+        }
+        editor.apply()
+    }
+
+    private fun hasCustomOrNonDefaultWorkspace(savedJson: String?): Boolean {
+        if (savedJson.isNullOrBlank()) return false
+        return try {
+            val type = object : TypeToken<List<PetalWorkspace>>() {}.type
+            val parsed = gson.fromJson<List<PetalWorkspace>>(savedJson, type).orEmpty()
+            parsed.any { !it.isDefault && it.id != DEFAULT_WORKSPACE_ID }
+        } catch (_: Exception) {
+            false
+        }
+    }
+
+    fun restoreActiveWorkspace(context: Context) {
+        init(context)
+        val appContext = context.applicationContext ?: context
+        val sp = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val savedActiveId = sp.getString(KEY_ACTIVE_WORKSPACE_ID, DEFAULT_WORKSPACE_ID) ?: DEFAULT_WORKSPACE_ID
+        _activeWorkspaceId.value = effectiveActiveWorkspaceId(
+            workspaces = _workspaces.value,
+            storedActiveWorkspaceId = savedActiveId,
+            showWorkspaceChips = true,
+        )
+    }
+
+    fun effectiveActiveWorkspaceId(
+        workspaces: List<PetalWorkspace>,
+        storedActiveWorkspaceId: String,
+        showWorkspaceChips: Boolean,
+    ): String {
+        if (!showWorkspaceChips) return DEFAULT_WORKSPACE_ID
+        return if (workspaces.any { it.id == storedActiveWorkspaceId }) {
+            storedActiveWorkspaceId
+        } else {
+            DEFAULT_WORKSPACE_ID
+        }
+    }
+
+    fun tabMatchesActiveWorkspace(
+        tab: PetalTabItem,
+        activeWorkspaceId: String,
+        showWorkspaceChips: Boolean,
+    ): Boolean {
+        if (tab.isIncognito) return false
+        if (!showWorkspaceChips) return true
+        return (tab.workspaceId == activeWorkspaceId) ||
+            (tab.workspaceId == null && activeWorkspaceId == DEFAULT_WORKSPACE_ID) ||
+            (tab.isPinned && tab.isPinnedGlobal)
+    }
+
+    fun filterRegularTabs(
+        tabs: List<PetalTabItem>,
+        activeWorkspaceId: String,
+        showWorkspaceChips: Boolean,
+    ): List<PetalTabItem> {
+        return tabs.filter { tabMatchesActiveWorkspace(it, activeWorkspaceId, showWorkspaceChips) }
+    }
+
+    fun filterPinnedTabs(
+        regularTabs: List<PetalTabItem>,
+        pinnedTabIds: Collection<String>,
+        activeWorkspaceId: String,
+        showWorkspaceChips: Boolean,
+    ): List<PetalTabItem> {
+        return regularTabs.filter { tab ->
+            (pinnedTabIds.contains(tab.id) || tab.isPinned) &&
+                (!showWorkspaceChips ||
+                    tab.isPinnedGlobal ||
+                    tab.workspaceId == activeWorkspaceId ||
+                    (tab.workspaceId == null && activeWorkspaceId == DEFAULT_WORKSPACE_ID))
+        }
+    }
+
+    @VisibleForTesting
+    @Synchronized
+    fun resetForTest() {
+        isInitialized = false
+        _workspaces.value = defaultWorkspaces
+        _activeWorkspaceId.value = DEFAULT_WORKSPACE_ID
     }
 
     @Synchronized

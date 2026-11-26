@@ -459,6 +459,15 @@ object PetalSettingsSearchIndex {
         ),
 
 
+        // ==================== TABS ====================
+        SettingsSearchItem(
+            id = "tabs_management",
+            title = "Show workspace chips",
+            subtitle = "Show General, Personal and Work chips in the Tab Manager",
+            category = SettingsCategory.TABS,
+            keywords = listOf("workspace", "workspace chips", "general", "personal", "work", "tabs", "tab manager")
+        ),
+
         // ==================== MISCELLANEOUS ====================
         SettingsSearchItem(
             id = "misc_custom_tabs",

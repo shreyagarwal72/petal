@@ -92,6 +92,7 @@ fun PetalTabGlanceSheet(
     tab: PetalTabItem,
     availableWorkspaces: List<PetalWorkspace> = emptyList(),
     availableGroups: List<PetalTabGroup> = emptyList(),
+    showWorkspaceChips: Boolean = true,
     onDismiss: () -> Unit,
     onSelectTab: (PetalTabItem) -> Unit,
     onSplitTab: (PetalTabItem) -> Unit,
@@ -166,21 +167,23 @@ fun PetalTabGlanceSheet(
                     }
 
                     PetalSheetActionRow {
-                        PetalSheetPill(
-                            text = "Workspace",
-                            icon = Icons.Rounded.Workspaces,
-                            tone = PetalSheetTone.Tertiary,
-                            modifier = Modifier.weight(0.55f),
-                            onClick = {
-                                showWorkspacePicker = !showWorkspacePicker
-                                showGroupPicker = false
-                            }
-                        )
+                        if (showWorkspaceChips) {
+                            PetalSheetPill(
+                                text = "Workspace",
+                                icon = Icons.Rounded.Workspaces,
+                                tone = PetalSheetTone.Tertiary,
+                                modifier = Modifier.weight(0.55f),
+                                onClick = {
+                                    showWorkspacePicker = !showWorkspacePicker
+                                    showGroupPicker = false
+                                }
+                            )
+                        }
                         PetalSheetPill(
                             text = if (tab.groupId != null) (tab.groupTitle ?: "Group") else "Group",
                             icon = Icons.Rounded.Folder,
                             tone = PetalSheetTone.TertiaryStrong,
-                            modifier = Modifier.weight(0.45f),
+                            modifier = Modifier.weight(if (showWorkspaceChips) 0.45f else 1f),
                             onClick = {
                                 showGroupPicker = !showGroupPicker
                                 showWorkspacePicker = false
@@ -188,7 +191,7 @@ fun PetalTabGlanceSheet(
                         )
                     }
 
-                    AnimatedVisibility(visible = showWorkspacePicker, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
+                    AnimatedVisibility(visible = showWorkspaceChips && showWorkspacePicker, enter = androidx.compose.animation.fadeIn(PetalSpring.calm()) + androidx.compose.animation.expandIn(PetalSpring.calm()), exit = androidx.compose.animation.fadeOut(PetalSpring.calm()) + androidx.compose.animation.shrinkOut(PetalSpring.calm())) {
                         GlancePickerCard(title = "Move to workspace") {
                             availableWorkspaces.forEach { ws ->
                                 val isCurrent = (tab.workspaceId == ws.id) || (tab.workspaceId == null && ws.isDefault)
@@ -272,8 +275,10 @@ fun PetalTabGlanceSheet(
                             add("Pinned" to if (tab.isPinned) "Yes" else "No")
                             add("Audio" to if (tab.isMuted) "Muted" else "On")
                             add("Group" to (tab.groupTitle ?: "None"))
-                            val ws = availableWorkspaces.firstOrNull { (tab.workspaceId == it.id) || (tab.workspaceId == null && it.isDefault) }
-                            add("Workspace" to (ws?.name ?: "Default"))
+                            if (showWorkspaceChips) {
+                                val ws = availableWorkspaces.firstOrNull { (tab.workspaceId == it.id) || (tab.workspaceId == null && it.isDefault) }
+                                add("Workspace" to (ws?.name ?: "Default"))
+                            }
                             if (tab.isIncognito) add("Mode" to "Incognito")
                         }
                     )

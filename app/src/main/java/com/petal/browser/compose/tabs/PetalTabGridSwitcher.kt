@@ -234,6 +234,7 @@ fun PetalTabGridSwitcher(
     // ── Zen Browser Workspace and Glance State ──
     val workspaces by PetalWorkspaceManager.workspaces.collectAsState()
     val activeWorkspaceId by PetalWorkspaceManager.activeWorkspaceId.collectAsState()
+    val showWorkspaceChips by PetalWorkspaceManager.rememberShowWorkspaceChips()
     var editingWorkspace by remember { mutableStateOf<PetalWorkspace?>(null) }
     var creatingWorkspace by remember { mutableStateOf(false) }
     var glanceTab by remember { mutableStateOf<PetalTabItem?>(null) }
@@ -241,6 +242,21 @@ fun PetalTabGridSwitcher(
     LaunchedEffect(Unit) {
         PetalWorkspaceManager.init(context)
     }
+
+    LaunchedEffect(showWorkspaceChips) {
+        if (showWorkspaceChips) {
+            PetalWorkspaceManager.restoreActiveWorkspace(context)
+        } else {
+            creatingWorkspace = false
+            editingWorkspace = null
+        }
+    }
+
+    val effectiveWorkspaceId = PetalWorkspaceManager.effectiveActiveWorkspaceId(
+        workspaces = workspaces,
+        storedActiveWorkspaceId = activeWorkspaceId,
+        showWorkspaceChips = showWorkspaceChips,
+    )
 
     // State for the "Add selected tabs to group" dialog
     var showAddToGroupDialog by remember { mutableStateOf(false) }
@@ -554,10 +570,12 @@ fun PetalTabGridSwitcher(
 
     // Tab counts
     val regularTabCount = tabs.count { !it.isIncognito }
-    // Header count must match what the grid/workspace chips show for the active workspace.
-    val activeWorkspaceTabCount = tabs.count { tab ->
-        !tab.isIncognito && (tab.workspaceId == activeWorkspaceId || (tab.workspaceId == null && activeWorkspaceId == PetalWorkspaceManager.DEFAULT_WORKSPACE_ID) || (tab.isPinned && tab.isPinnedGlobal))
-    }
+    // Header count must match what the grid/workspace chips show for the active workspace (or all regular tabs when chips are off).
+    val activeWorkspaceTabCount = PetalWorkspaceManager.filterRegularTabs(
+        tabs = tabs,
+        activeWorkspaceId = effectiveWorkspaceId,
+        showWorkspaceChips = showWorkspaceChips,
+    ).size
     val incognitoTabCount = tabs.count { it.isIncognito }
     val groupsCount = tabGroups.size
 
@@ -571,22 +589,22 @@ fun PetalTabGridSwitcher(
             }
         }
     }
-    val currentPinnedTabs = remember(regularTabs, pinnedTabIds, activeWorkspaceId) {
-        regularTabs.filter { tab ->
-            (pinnedTabIds.contains(tab.id) || tab.isPinned) &&
-            (tab.isPinnedGlobal || tab.workspaceId == activeWorkspaceId || (tab.workspaceId == null && activeWorkspaceId == PetalWorkspaceManager.DEFAULT_WORKSPACE_ID))
-        }
+    val currentPinnedTabs = remember(regularTabs, pinnedTabIds, effectiveWorkspaceId, showWorkspaceChips) {
+        PetalWorkspaceManager.filterPinnedTabs(
+            regularTabs = regularTabs,
+            pinnedTabIds = pinnedTabIds,
+            activeWorkspaceId = effectiveWorkspaceId,
+            showWorkspaceChips = showWorkspaceChips,
+        )
     }
 
     // Category tabs & filtering
     val categoryTabs = when (selectedCategory) {
-        TabCategory.REGULAR -> {
-            regularTabs.filter { tab ->
-                (tab.workspaceId == activeWorkspaceId) ||
-                (tab.workspaceId == null && activeWorkspaceId == PetalWorkspaceManager.DEFAULT_WORKSPACE_ID) ||
-                (tab.isPinned && tab.isPinnedGlobal)
-            }
-        }
+        TabCategory.REGULAR -> PetalWorkspaceManager.filterRegularTabs(
+            tabs = regularTabs,
+            activeWorkspaceId = effectiveWorkspaceId,
+            showWorkspaceChips = showWorkspaceChips,
+        )
         TabCategory.INCOGNITO -> tabs.filter { it.isIncognito }
         TabCategory.GROUPS -> regularTabs
     }
@@ -980,11 +998,11 @@ fun PetalTabGridSwitcher(
                     )
 
                     // ── Zen Browser Workspace Carousel (Regular Tabs) ──
-                    if (selectedCategory == TabCategory.REGULAR) {
+                    if (selectedCategory == TabCategory.REGULAR && showWorkspaceChips) {
                         Spacer(Modifier.height(8.dp))
                         PetalWorkspaceCarousel(
                             workspaces = workspaces,
-                            activeWorkspaceId = activeWorkspaceId,
+                            activeWorkspaceId = effectiveWorkspaceId,
                             tabCountsByWorkspace = tabCountsByWorkspace,
                             onSelectWorkspace = { wsId ->
                                 PetalWorkspaceManager.setActiveWorkspace(context, wsId)
@@ -1178,13 +1196,11 @@ fun PetalTabGridSwitcher(
                             modifier = Modifier.fillMaxSize()
                         ) { currentCategory ->
                             val currentCategoryTabs = when (currentCategory) {
-                                TabCategory.REGULAR -> {
-                                    regularTabs.filter { tab ->
-                                        (tab.workspaceId == activeWorkspaceId) ||
-                                        (tab.workspaceId == null && activeWorkspaceId == PetalWorkspaceManager.DEFAULT_WORKSPACE_ID) ||
-                                        (tab.isPinned && tab.isPinnedGlobal)
-                                    }
-                                }
+                                TabCategory.REGULAR -> PetalWorkspaceManager.filterRegularTabs(
+                                    tabs = regularTabs,
+                                    activeWorkspaceId = effectiveWorkspaceId,
+                                    showWorkspaceChips = showWorkspaceChips,
+                                )
                                 TabCategory.INCOGNITO -> tabs.filter { it.isIncognito }
                                 TabCategory.GROUPS -> regularTabs
                             }
@@ -2065,6 +2081,7 @@ fun PetalTabGridSwitcher(
             tab = tab,
             availableWorkspaces = workspaces,
             availableGroups = tabGroups,
+            showWorkspaceChips = showWorkspaceChips,
             onDismiss = { glanceTab = null },
             onSelectTab = { selectedTab ->
                 heroSelect(selectedTab)
@@ -2094,7 +2111,7 @@ fun PetalTabGridSwitcher(
     }
 
     // ── Zen Workspace Creation & Editing Sheet ──
-    if (creatingWorkspace || editingWorkspace != null) {
+    if (showWorkspaceChips && (creatingWorkspace || editingWorkspace != null)) {
         PetalWorkspaceSheet(
             targetWorkspace = editingWorkspace,
             onDismiss = {

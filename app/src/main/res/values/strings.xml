@@ -2259,5 +2259,7 @@
     <string name="scanner_history_unpin">Unpin</string>
     <string name="scanner_history_delete">Delete</string>
     <string name="scanner_history_meta_format">%1$s • %2$s</string>
+    <string name="ui_show_workspace_chips">Show workspace chips</string>
+    <string name="ui_show_workspace_chips_desc">Show General, Personal and Work chips in the Tab Manager</string>
 </resources>
 

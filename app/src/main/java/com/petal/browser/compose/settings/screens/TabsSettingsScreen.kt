@@ -48,6 +48,14 @@ fun TabsSettingsScreen(
     var autoOpenFromOtherDevices by remember {
         mutableStateOf(sp.getBoolean("sp_auto_open_tab_groups_other_devices", true))
     }
+    var showWorkspaceChips by remember {
+        mutableStateOf(sp.getBoolean(com.petal.browser.compose.tabs.PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false))
+    }
+
+    LaunchedEffect(Unit) {
+        com.petal.browser.compose.tabs.PetalWorkspaceManager.migrateWorkspaceChipsVisibility(context)
+        showWorkspaceChips = sp.getBoolean(com.petal.browser.compose.tabs.PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false)
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         com.petal.browser.ui.components.PetalGlassHeaderLayout(
@@ -80,7 +88,7 @@ fun TabsSettingsScreen(
                     cardId = "tabs_management",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
                         when (index) {
                             0 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -118,6 +126,19 @@ fun TabsSettingsScreen(
                                     onCheckedChange = {
                                         confirmTabClose = it
                                         sp.edit().putBoolean("sp_close_tab_confirm", it).apply()
+                                    }
+                                )
+                            }
+                            3 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = stringResource(R.string.ui_show_workspace_chips),
+                                    subtitle = stringResource(R.string.ui_show_workspace_chips_desc),
+                                    icon = Icons.Rounded.Workspaces,
+                                    checked = showWorkspaceChips,
+                                    position = position,
+                                    onCheckedChange = {
+                                        showWorkspaceChips = it
+                                        sp.edit().putBoolean(com.petal.browser.compose.tabs.PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, it).apply()
                                     }
                                 )
                             }

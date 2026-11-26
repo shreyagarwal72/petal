@@ -156,6 +156,13 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             )
             TabThumbnailCache.initDiskCache(this)
             com.petal.browser.appleduo.AppleDuoManager.init(this)
+            CoroutineScope(Dispatchers.IO).launch {
+                try {
+                    com.petal.browser.compose.tabs.PetalWorkspaceManager.migrateWorkspaceChipsVisibility(this@PetalApplication)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Workspace chips migration failed", t)
+                }
+            }
             try {
                 com.petal.browser.profile.PetalProfileManager.init(this)
                 com.petal.browser.wallpaper.PetalWallpaperManager.init(this)
