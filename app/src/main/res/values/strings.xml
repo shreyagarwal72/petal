@@ -2275,5 +2275,7 @@
     <string name="ui_shape_cat_organic">Organic</string>
     <string name="ui_shape_cat_energetic">Energetic</string>
     <string name="ui_hide">Hide</string>
+    <string name="ui_move_files">Move</string>
+    <string name="ui_also_delete_files_switch">Also delete files from device</string>
 </resources>
 

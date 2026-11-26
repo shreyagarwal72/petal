@@ -883,6 +883,10 @@ private fun FilePickerRowItem(
         selected = isSelected,
         leading = {
             when {
+                allowMultiple && isSelected -> PetalGroupIconBadge(
+                    Icons.Rounded.Check,
+                    variant = PetalBadgeVariant.PRIMARY
+                )
                 isDir -> PetalGroupIconBadge(
                     Icons.Rounded.Folder,
                     variant = PetalBadgeVariant.SECONDARY
@@ -914,9 +918,7 @@ private fun FilePickerRowItem(
             Text(detailText, style = PetalText.listItemMeta, color = MaterialTheme.colorScheme.onSurfaceVariant)
         },
         trailing = {
-            if (allowMultiple) {
-                Checkbox(checked = isSelected, onCheckedChange = { onClick() })
-            } else if (!isDir) {
+            if (!allowMultiple && !isDir) {
                 IconButton(onClick = onPreview, modifier = Modifier.size(36.dp)) {
                     Icon(Icons.Rounded.Visibility, contentDescription = stringResource(R.string.file_picker_preview), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 }

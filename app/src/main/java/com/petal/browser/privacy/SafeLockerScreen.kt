@@ -527,16 +527,12 @@ fun SafeLockerScreen(
                                                 horizontalArrangement = Arrangement.spacedBy(14.dp)
                                             ) {
                                                 // Icon or selection indicator
-                                                if (isSelectionMode) {
-                                                    Checkbox(
-                                                        checked = isSelected,
-                                                        onCheckedChange = { checked ->
-                                                            selectedFileIds = if (checked) {
-                                                                selectedFileIds + item.id
-                                                            } else {
-                                                                selectedFileIds - item.id
-                                                            }
-                                                        }
+                                                if (isSelectionMode && isSelected) {
+                                                    PetalGroupIconBadge(
+                                                        icon = Icons.Rounded.Check,
+                                                        variant = PetalBadgeVariant.PRIMARY,
+                                                        size = 46.dp,
+                                                        iconSize = 22.dp
                                                     )
                                                 } else {
                                                 val (variant, icon) = when {

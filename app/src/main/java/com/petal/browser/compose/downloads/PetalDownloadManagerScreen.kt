@@ -500,7 +500,7 @@ fun PetalDownloadManagerScreen(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             icon = { Icon(Icons.Rounded.DeleteForever, null, tint = MaterialTheme.colorScheme.error) },
             title = { Text(stringResource(R.string.ui_delete_downloads), fontWeight = FontWeight.Bold) },
-            text = { Column { Text(stringResource(R.string.ui_remove_downloads_from_the_list, pendingDeleteItems.size)); Row(verticalAlignment = Alignment.CenterVertically) { Checkbox(checked = deleteSelectedFiles, onCheckedChange = { deleteSelectedFiles = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() }); Text(stringResource(R.string.ui_also_delete_files_from_device)) } } },
+            text = { Column { Text(stringResource(R.string.ui_remove_downloads_from_the_list, pendingDeleteItems.size)); Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) { Text(stringResource(R.string.ui_also_delete_files_from_device), modifier = Modifier.weight(1f)); androidx.compose.material3.Switch(checked = deleteSelectedFiles, onCheckedChange = { deleteSelectedFiles = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() }) } } },
             dismissButton = { TextButton(onClick = { pendingDeleteItems = emptyList() }) { Text(stringResource(R.string.ui_cancel)) } },
             confirmButton = { Button(onClick = { val items = pendingDeleteItems; pendingDeleteItems = emptyList(); performStagedDelete(items, deleteSelectedFiles) }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)) { Text(stringResource(R.string.ui_delete)) } }
         )
@@ -628,7 +628,7 @@ fun PetalDownloadManagerScreen(
                     backdrop = headerBackdrop,
 
                 title = if (isSelectionMode) "${selectedIds.size} Selected" else "Downloads",
-                subtitle = if (isSelectionMode) "Selecting Mode" else "${downloadList.size} files",
+                subtitle = if (isSelectionMode) android.text.format.Formatter.formatFileSize(context, downloadList.filter { selectedIds.contains(it.id) }.sumOf { if (it.totalSize > 0) it.totalSize else it.bytesDownloaded }) else "${downloadList.size} files",
                 onBack = { if (hasSubOverlay) handleDismiss() else onBackPress() },
                 actions = {
                     if (isSelectionMode) {
@@ -721,7 +721,7 @@ fun PetalDownloadManagerScreen(
                         .fillMaxSize()
                         .scrollMotionBlur(downloadsListState),
                     verticalArrangement = Arrangement.spacedBy(3.dp),
-                    contentPadding = PaddingValues(top = topInset, bottom = innerPadding.calculateBottomPadding() + 24.dp)
+                    contentPadding = PaddingValues(top = topInset, bottom = innerPadding.calculateBottomPadding() + (if (isSelectionMode) 120.dp else 24.dp))
                 ) {
                     item(key = "status_filter") {
                         com.petal.browser.ui.components.PetalChoiceButtonGroup(
@@ -1014,48 +1014,57 @@ fun PetalDownloadManagerScreen(
             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp, start = 16.dp, end = 16.dp).navigationBarsPadding()
         ) {
             val picked = downloadList.filter { selectedIds.contains(it.id) }
-            com.petal.browser.ui.containment.PetalFloatingToolbar(modifier = Modifier.fillMaxWidth(), elevation = 6.dp) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ToolbarAction(Icons.Rounded.Pause, "Pause") {
-                        picked.filter { it.status == DownloadStatus.STATUS_RUNNING }.forEach { PetalFetchDownloadBridge.pause(context, it.id) }
+            val pausable = picked.filter { it.status == DownloadStatus.STATUS_RUNNING && it.source.isMozillaOwned }
+            val resumable = picked.filter { it.status == DownloadStatus.STATUS_PAUSED }
+            val retryable = picked.filter { it.status == DownloadStatus.STATUS_FAILED && it.source != com.petal.browser.download.DownloadSource.BLOB }
+            val finished = picked.filter { it.status == DownloadStatus.STATUS_SUCCESSFUL }
+            val labelPause = stringResource(R.string.ui_pause)
+            val labelResume = stringResource(R.string.ui_resume)
+            val labelRetry = stringResource(R.string.ui_retry)
+            val labelShare = stringResource(R.string.ui_share)
+            val labelMove = stringResource(R.string.ui_move_files)
+            val labelDelete = stringResource(R.string.ui_delete)
+            val selectionActions = buildList {
+                if (pausable.isNotEmpty()) add(com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.Pause, labelPause) {
+                    pausable.forEach { PetalFetchDownloadBridge.pause(context, it.id) }
+                    selectedIds = emptySet()
+                })
+                if (resumable.isNotEmpty()) add(com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.PlayArrow, labelResume) {
+                    resumable.forEach { PetalFetchDownloadBridge.resume(context, it.id) }
+                    selectedIds = emptySet()
+                })
+                if (retryable.isNotEmpty()) add(com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.Refresh, labelRetry) {
+                    retryable.forEach { PetalFetchDownloadBridge.retry(context, it.id) }
+                    selectedIds = emptySet()
+                })
+                if (finished.isNotEmpty()) {
+                    add(com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.Share, labelShare) {
+                        shareMultipleFiles(context, finished)
                         selectedIds = emptySet()
-                    }
-                    ToolbarAction(Icons.Rounded.PlayArrow, "Resume") {
-                        picked.filter { it.status == DownloadStatus.STATUS_PAUSED }.forEach { PetalFetchDownloadBridge.resume(context, it.id) }
-                        selectedIds = emptySet()
-                    }
-                    ToolbarAction(Icons.Rounded.Refresh, "Retry") {
-                        picked.filter { it.status == DownloadStatus.STATUS_FAILED }.forEach { PetalFetchDownloadBridge.retry(context, it.id) }
-                        selectedIds = emptySet()
-                    }
-                    ToolbarAction(Icons.Rounded.Share, "Share") {
-                        shareMultipleFiles(context, picked)
-                        selectedIds = emptySet()
-                    }
-                    ToolbarAction(Icons.Rounded.DriveFileMove, "Move") {
+                    })
+                    add(com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.DriveFileMove, labelMove) {
                         // Moves finished files into their category folder (Android 10+: MediaStore row update).
-                        val moved = picked.count { item ->
-                            item.status == DownloadStatus.STATUS_SUCCESSFUL &&
-                                com.petal.browser.download.PetalDownloadStorage.relocateCompleted(
-                                    context, item.fileName, null, item.localUri?.let { android.net.Uri.parse(it).path }, force = true
-                                ) != null
+                        val moved = finished.count { item ->
+                            com.petal.browser.download.PetalDownloadStorage.relocateCompleted(
+                                context, item.fileName, null, item.localUri?.let { android.net.Uri.parse(it).path }, force = true
+                            ) != null
                         }
                         com.petal.browser.view.PetalToast.show(context, if (moved > 0) "Moved $moved file(s)" else "Nothing to move")
                         selectedIds = emptySet()
-                    }
-                    ToolbarAction(Icons.Rounded.Delete, stringResource(R.string.ui_delete_selected)) {
-                        val deletePrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-                        deleteSelectedFiles = deletePrefs.getBoolean("sp_delete_download_file", false)
-                        if (deletePrefs.getBoolean("sp_confirm_download_delete", true)) pendingDeleteItems = picked
-                        else performStagedDelete(picked)
-                        selectedIds = emptySet()
-                    }
+                    })
                 }
+                add(com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.Delete, labelDelete, destructive = true) {
+                    val deletePrefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                    deleteSelectedFiles = deletePrefs.getBoolean("sp_delete_download_file", false)
+                    if (deletePrefs.getBoolean("sp_confirm_download_delete", true)) pendingDeleteItems = picked
+                    else performStagedDelete(picked)
+                    selectedIds = emptySet()
+                })
             }
+            com.petal.browser.ui.containment.PetalSelectionBar(
+                actions = selectionActions,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     } // closes Box (inner)
     } // closes innerPadding lambda
@@ -1189,18 +1198,6 @@ private fun isUniversalViewable(name: String): Boolean {
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-private fun ToolbarAction(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.clickable(onClick = onClick).padding(horizontal = 8.dp, vertical = 4.dp)
-    ) {
-        Icon(icon, contentDescription = label, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.height(2.dp))
-        Text(label, style = PetalText.chip, color = MaterialTheme.colorScheme.onSurface, maxLines = 1)
-    }
-}
-
-@Composable
 private fun DownloadRowItem(
     item: DownloadItem,
     isSelected: Boolean,
@@ -1237,9 +1234,9 @@ private fun DownloadRowItem(
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Checkbox(checked = deleteFile, onCheckedChange = { deleteFile = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() })
-                        Text(stringResource(R.string.ui_also_delete_the_file_from))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                        Text(stringResource(R.string.ui_also_delete_the_file_from), modifier = Modifier.weight(1f))
+                        androidx.compose.material3.Switch(checked = deleteFile, onCheckedChange = { deleteFile = it; androidx.preference.PreferenceManager.getDefaultSharedPreferences(context).edit().putBoolean("sp_delete_download_file", it).apply() })
                     }
                 }
             },
@@ -1319,14 +1316,6 @@ private fun DownloadRowItem(
         modifier = modifier.fillMaxWidth(),
         leading = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (isSelectionMode) {
-                    Checkbox(
-                        checked = isSelected,
-                        onCheckedChange = { onToggleSelect() },
-                        modifier = Modifier.padding(end = 12.dp)
-                    )
-                }
-
                 // Leading avatar: a Play Store-style circular progress ring with a Chrome-style
                 // pause/resume glyph in the center while active, falling back to the plain file
                 // type icon once the download is finished/idle.

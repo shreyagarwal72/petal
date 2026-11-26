@@ -1739,87 +1739,47 @@ fun PetalTabGridSwitcher(
                     .padding(bottom = 16.dp, start = 16.dp, end = 16.dp)
             ) {
                 val selectedTabs = filteredTabs.filter { selectedTabIds.contains(it.id) }
-                com.petal.browser.ui.containment.PetalFloatingToolbar(
+                val groupLabel = stringResource(R.string.ui_group)
+                val bookmarkLabel = stringResource(R.string.ui_bookmark)
+                val shareLabel = stringResource(R.string.ui_share)
+                val closeLabel = stringResource(R.string.ui_close)
+                com.petal.browser.ui.containment.PetalSelectionBar(
                     modifier = Modifier.fillMaxWidth(),
-                    elevation = 6.dp,
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceAround,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Move / Add to Group
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable {
-                                if (tabGroups.isNotEmpty()) {
-                                    showAddToGroupDialog = true
-                                } else {
-                                    // Create a new group with the selected tabs
-                                    if (selectedTabs.isNotEmpty()) {
-                                        val first = selectedTabs[0]
-                                        val rest = selectedTabs.drop(1)
-                                        val grp = PetalTabGroupManager.createGroupWithTab(context, first)
-                                        rest.forEach { PetalTabGroupManager.addTabToGroup(context, grp.id, it.id) }
-                                        refreshGroups()
-                                    }
-                                    leaveSelectionMode()
+                    actions = listOf(
+                        com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.FolderCopy, groupLabel) {
+                            if (tabGroups.isNotEmpty()) {
+                                showAddToGroupDialog = true
+                            } else {
+                                if (selectedTabs.isNotEmpty()) {
+                                    val first = selectedTabs[0]
+                                    val rest = selectedTabs.drop(1)
+                                    val grp = PetalTabGroupManager.createGroupWithTab(context, first)
+                                    rest.forEach { PetalTabGroupManager.addTabToGroup(context, grp.id, it.id) }
+                                    refreshGroups()
                                 }
-                            }
-                        ) {
-                            Icon(Icons.Rounded.FolderCopy, contentDescription = stringResource(R.string.ui_group), tint = accentColor, modifier = Modifier.size(22.dp))
-                            Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_group), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.onSurface)
-                        }
-
-                        // Bookmark All
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable {
-                                selectedTabs.forEach { onBookmarkTab(it) }
                                 leaveSelectionMode()
                             }
-                        ) {
-                            Icon(Icons.Rounded.BookmarkAdd, contentDescription = stringResource(R.string.ui_bookmark), tint = accentColor, modifier = Modifier.size(22.dp))
-                            Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_bookmark), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.onSurface)
-                        }
-
-                        // Share All (URLs joined by newline)
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable {
-                                val shareText = selectedTabs.joinToString("\n") { it.url }
-                                val sendIntent = android.content.Intent().apply {
-                                    action = android.content.Intent.ACTION_SEND
-                                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
-                                    type = "text/plain"
-                                }
-                                context.startActivity(android.content.Intent.createChooser(sendIntent, "Share ${selectedTabs.size} Tabs"))
-                                leaveSelectionMode()
+                        },
+                        com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.BookmarkAdd, bookmarkLabel) {
+                            selectedTabs.forEach { onBookmarkTab(it) }
+                            leaveSelectionMode()
+                        },
+                        com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.Share, shareLabel) {
+                            val shareText = selectedTabs.joinToString("\n") { it.url }
+                            val sendIntent = android.content.Intent().apply {
+                                action = android.content.Intent.ACTION_SEND
+                                putExtra(android.content.Intent.EXTRA_TEXT, shareText)
+                                type = "text/plain"
                             }
-                        ) {
-                            Icon(Icons.Rounded.Share, contentDescription = stringResource(R.string.ui_share), tint = accentColor, modifier = Modifier.size(22.dp))
-                            Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_share), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.onSurface)
-                        }
-
-                        // Close Selected
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.clickable {
-                                selectedTabs.forEach { requestOptimisticClose(it) }
-                                leaveSelectionMode()
-                            }
-                        ) {
-                            Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_close), tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(22.dp))
-                            Spacer(Modifier.height(2.dp))
-                            Text(stringResource(R.string.ui_close), style = PetalText.tabLabel, color = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                }
+                            context.startActivity(android.content.Intent.createChooser(sendIntent, "Share ${selectedTabs.size} Tabs"))
+                            leaveSelectionMode()
+                        },
+                        com.petal.browser.ui.containment.SelectionAction(Icons.Rounded.Close, closeLabel, destructive = true) {
+                            selectedTabs.forEach { requestOptimisticClose(it) }
+                            leaveSelectionMode()
+                        },
+                    )
+                )
             }
 
             // Floating Material 3 Expressive Undo Banner with slide-to-hide gesture and LIFO undo stack
