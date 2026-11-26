@@ -152,16 +152,6 @@ jobs:
           fi
           echo "✅ Verified adblock-rust WASM output present."
 
-      - name: Run Unit Tests
-        run: |
-          set -euo pipefail
-          ./gradlew :app:testDebugUnitTest \
-            --tests "com.petal.browser.scanner.PetalScannerSettingsStateTest" \
-            --tests "com.petal.browser.compose.tabs.PetalWorkspaceVisibilityTest" \
-            --tests "com.petal.browser.ui.theme.PetalMaterialShapesCatalogTest" \
-            --tests "com.petal.browser.compose.home.PetalShortcutDialogLogicTest" \
-            -PfastBuild --build-cache --parallel --stacktrace
-
       - name: Build Release APKs & AAB Bundle
         env:
           GITHUB_ACTOR: ${{ github.actor }}

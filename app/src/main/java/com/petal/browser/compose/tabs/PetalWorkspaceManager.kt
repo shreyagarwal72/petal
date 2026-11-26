@@ -197,6 +197,21 @@ object PetalWorkspaceManager {
     fun migrateWorkspaceChipsVisibility(context: Context) {
         val appContext = context.applicationContext ?: context
         val defaultSp = PreferenceManager.getDefaultSharedPreferences(appContext)
+        val wsPrefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (defaultSp.getBoolean(PREF_WORKSPACE_CHIPS_MIGRATED, false)) return
+        migrateWorkspaceChipsVisibility(
+            defaultSp = defaultSp,
+            wsPrefs = wsPrefs,
+            tabMetadata = PetalTabMetadataStore.getAll(appContext).values,
+        )
+    }
+
+    @Synchronized
+    fun migrateWorkspaceChipsVisibility(
+        defaultSp: SharedPreferences,
+        wsPrefs: SharedPreferences,
+        tabMetadata: Collection<com.petal.browser.browser.PetalTabMetadata> = emptyList(),
+    ) {
         if (defaultSp.getBoolean(PREF_WORKSPACE_CHIPS_MIGRATED, false)) return
 
         // Respect any explicit preference the user already chose before migration ran.
@@ -205,10 +220,9 @@ object PetalWorkspaceManager {
             return
         }
 
-        val wsPrefs = appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val savedJson = wsPrefs.getString(KEY_WORKSPACES_JSON, null)
         val hasPersistedNonDefaultWorkspace = hasCustomOrNonDefaultWorkspace(savedJson)
-        val hasTabInNonDefaultWorkspace = PetalTabMetadataStore.getAll(appContext).values.any { meta ->
+        val hasTabInNonDefaultWorkspace = tabMetadata.any { meta ->
             val wsId = meta.workspaceId
             !wsId.isNullOrBlank() && wsId != DEFAULT_WORKSPACE_ID
         }

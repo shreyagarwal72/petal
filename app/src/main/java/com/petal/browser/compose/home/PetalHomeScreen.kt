@@ -209,13 +209,26 @@ fun saveRemovedShortcutUrls(context: Context, set: Set<String>) {
         .apply()
 }
 
-fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    val scopedKey = com.petal.browser.profile.PetalProfileManager.getScopedKey("sp_custom_home_shortcuts_json_v3")
-    val jsonStr = sp.getString(scopedKey, null) ?: if (com.petal.browser.profile.PetalProfileManager.activeProfile.isDefault) {
-        sp.getString("sp_custom_home_shortcuts_json_v3", null)
-    } else null
+internal fun parseShortcutHexColor(colorStr: String?): Color {
+    if (colorStr.isNullOrBlank()) return Color(0xFF4285F4)
+    val hex = colorStr.trim().removePrefix("#")
+    return try {
+        when (hex.length) {
+            6 -> Color((0xFF000000L or hex.toLong(16)).toInt())
+            8 -> Color(hex.toLong(16).toInt())
+            else -> Color(0xFF4285F4)
+        }
+    } catch (_: Throwable) {
+        Color(0xFF4285F4)
+    }
+}
 
+fun loadHomeShortcutsFromPrefs(
+    sp: android.content.SharedPreferences,
+    scopedKey: String,
+    defaultFallbackKey: String? = "sp_custom_home_shortcuts_json_v3",
+): List<PetalShortcut> {
+    val jsonStr = sp.getString(scopedKey, null) ?: defaultFallbackKey?.let { sp.getString(it, null) }
     if (jsonStr != null) {
         try {
             val array = JSONArray(jsonStr)
@@ -228,18 +241,44 @@ fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
                 val colorStr = obj.optString("color", "#4285F4")
                 val shapeName = if (obj.has("shapeName")) obj.optString("shapeName") else null
                 val id = obj.optString("id").takeIf { it.isNotBlank() } ?: stableLegacyShortcutId(i, label, url)
-                val parsedColor = try {
-                    Color(android.graphics.Color.parseColor(colorStr))
-                } catch (_: Throwable) {
-                    Color(0xFF4285F4)
-                }
+                val parsedColor = parseShortcutHexColor(colorStr)
                 list.add(PetalShortcut(label = label, url = url, siteId = siteId, containerColor = parsedColor, shapeName = shapeName, id = id))
             }
             return list
         } catch (_: Throwable) { }
     }
-
     return emptyList()
+}
+
+fun saveHomeShortcutsToPrefs(
+    sp: android.content.SharedPreferences,
+    scopedKey: String,
+    list: List<PetalShortcut>,
+) {
+    val array = JSONArray()
+    for (item in list) {
+        val obj = JSONObject()
+        obj.put("id", item.id)
+        obj.put("label", item.label)
+        obj.put("url", item.url)
+        obj.put("siteId", item.siteId)
+        val argb = item.containerColor.toArgb()
+        obj.put("color", String.format("#%08X", argb))
+        if (item.shapeName != null) {
+            obj.put("shapeName", item.shapeName)
+        }
+        array.put(obj)
+    }
+    sp.edit().putString(scopedKey, array.toString()).apply()
+}
+
+fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    val scopedKey = com.petal.browser.profile.PetalProfileManager.getScopedKey("sp_custom_home_shortcuts_json_v3")
+    val fallback = if (com.petal.browser.profile.PetalProfileManager.activeProfile.isDefault) {
+        "sp_custom_home_shortcuts_json_v3"
+    } else null
+    return loadHomeShortcutsFromPrefs(sp, scopedKey, fallback)
 }
 
 fun fetchTopVisitedShortcuts(context: Context): List<PetalShortcut> {
@@ -304,25 +343,8 @@ fun fetchTopVisitedShortcuts(context: Context): List<PetalShortcut> {
 }
 
 fun saveHomeShortcuts(context: Context, list: List<PetalShortcut>) {
-    val array = JSONArray()
-    for (item in list) {
-        val obj = JSONObject()
-        obj.put("id", item.id)
-        obj.put("label", item.label)
-        obj.put("url", item.url)
-        obj.put("siteId", item.siteId)
-        val argb = item.containerColor.toArgb()
-        obj.put("color", String.format("#%08X", argb))
-        if (item.shapeName != null) {
-            obj.put("shapeName", item.shapeName)
-        }
-        array.put(obj)
-    }
     val scopedKey = com.petal.browser.profile.PetalProfileManager.getScopedKey("sp_custom_home_shortcuts_json_v3")
-    PreferenceManager.getDefaultSharedPreferences(context)
-        .edit()
-        .putString(scopedKey, array.toString())
-        .apply()
+    saveHomeShortcutsToPrefs(PreferenceManager.getDefaultSharedPreferences(context), scopedKey, list)
 }
 
 val availableColors = listOf(

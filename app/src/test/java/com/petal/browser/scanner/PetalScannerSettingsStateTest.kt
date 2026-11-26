@@ -1,30 +1,90 @@
 package com.petal.browser.scanner
 
 import android.content.Context
-import androidx.preference.PreferenceManager
-import androidx.test.core.app.ApplicationProvider
+import android.content.SharedPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
+import org.mockito.kotlin.mock
 
-@RunWith(RobolectricTestRunner::class)
 class PetalScannerSettingsStateTest {
 
+    private class FakePreferences : SharedPreferences {
+        private val map = linkedMapOf<String, Any?>()
+        private val listeners = linkedSetOf<SharedPreferences.OnSharedPreferenceChangeListener>()
+
+        override fun getAll(): MutableMap<String, *> = map.toMutableMap()
+        override fun getString(key: String?, defValue: String?): String? = (map[key] as? String) ?: defValue
+        override fun getStringSet(key: String?, defValues: MutableSet<String>?): MutableSet<String>? = defValues
+        override fun getInt(key: String?, defValue: Int): Int = (map[key] as? Int) ?: defValue
+        override fun getLong(key: String?, defValue: Long): Long = (map[key] as? Long) ?: defValue
+        override fun getFloat(key: String?, defValue: Float): Float = (map[key] as? Float) ?: defValue
+        override fun getBoolean(key: String?, defValue: Boolean): Boolean = (map[key] as? Boolean) ?: defValue
+        override fun contains(key: String?): Boolean = map.containsKey(key)
+
+        override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
+            if (listener != null) listeners.add(listener)
+        }
+
+        override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {
+            if (listener != null) listeners.remove(listener)
+        }
+
+        override fun edit(): SharedPreferences.Editor = object : SharedPreferences.Editor {
+            private val pending = linkedMapOf<String, Any?>()
+            private var clearAll = false
+
+            override fun putString(key: String?, value: String?) = apply { if (key != null) pending[key] = value }
+            override fun putStringSet(key: String?, values: MutableSet<String>?) = this
+            override fun putInt(key: String?, value: Int) = apply { if (key != null) pending[key] = value }
+            override fun putLong(key: String?, value: Long) = apply { if (key != null) pending[key] = value }
+            override fun putFloat(key: String?, value: Float) = apply { if (key != null) pending[key] = value }
+            override fun putBoolean(key: String?, value: Boolean) = apply { if (key != null) pending[key] = value }
+            override fun remove(key: String?) = apply { if (key != null) pending[key] = REMOVE }
+            override fun clear() = apply { clearAll = true }
+            override fun commit(): Boolean {
+                apply()
+                return true
+            }
+
+            override fun apply() {
+                val changed = mutableListOf<String>()
+                if (clearAll) {
+                    changed.addAll(map.keys)
+                    map.clear()
+                }
+                for ((k, v) in pending) {
+                    if (v === REMOVE) map.remove(k) else map[k] = v
+                    changed.add(k)
+                }
+                val snapshot = listeners.toList()
+                for (k in changed) {
+                    for (listener in snapshot) {
+                        listener.onSharedPreferenceChanged(this@FakePreferences, k)
+                    }
+                }
+            }
+        }
+
+        private companion object {
+            val REMOVE = Any()
+        }
+    }
+
     private lateinit var context: Context
+    private lateinit var prefs: FakePreferences
 
     @Before
     fun setUp() {
-        context = ApplicationProvider.getApplicationContext()
-        PreferenceManager.getDefaultSharedPreferences(context).edit().clear().commit()
+        context = mock()
+        prefs = FakePreferences()
     }
 
     @Test
     fun `state holder reads default scanner settings`() {
-        val holder = PetalScannerSettingsStateHolder(context)
+        val holder = PetalScannerSettingsStateHolder(context, prefs)
         try {
             holder.start()
             val state = holder.state.value
@@ -40,7 +100,7 @@ class PetalScannerSettingsStateTest {
 
     @Test
     fun `state holder updates both SharedPreferences and UI state`() {
-        val holder = PetalScannerSettingsStateHolder(context)
+        val holder = PetalScannerSettingsStateHolder(context, prefs)
         try {
             holder.start()
             holder.setAutoOpenEnabled(true)
@@ -56,28 +116,25 @@ class PetalScannerSettingsStateTest {
             assertFalse(state.safetyWarnings)
             assertFalse(state.historyEnabled)
 
-            assertTrue(PetalScannerSettings.isAutoOpenEnabled(context))
-            assertFalse(PetalScannerSettings.isVibrateEnabled(context))
-            assertTrue(PetalScannerSettings.isBeepEnabled(context))
-            assertFalse(PetalScannerSettings.isSafetyWarningsEnabled(context))
-            assertFalse(PetalScannerSettings.isHistoryEnabled(context))
+            val reloaded = PetalScannerSettings.readState(prefs)
+            assertEquals(state, reloaded)
         } finally {
             holder.dispose()
         }
     }
 
     @Test
-    fun `state holder reacts to external PetalScannerSettings mutations`() {
-        val holder = PetalScannerSettingsStateHolder(context)
-        try {
-            holder.start()
-            PetalScannerSettings.setAutoOpenEnabled(context, true)
-            PetalScannerSettings.setSafetyWarningsEnabled(context, false)
+    fun `state holder reacts to external preference changes and stops after dispose`() {
+        val holder = PetalScannerSettingsStateHolder(context, prefs)
+        holder.start()
+        prefs.edit().putBoolean(PetalScannerSettings.PREF_AUTO_OPEN, true).commit()
+        prefs.edit().putBoolean(PetalScannerSettings.PREF_SAFETY_WARNINGS, false).commit()
 
-            assertEquals(true, holder.state.value.autoOpen)
-            assertEquals(false, holder.state.value.safetyWarnings)
-        } finally {
-            holder.dispose()
-        }
+        assertEquals(true, holder.state.value.autoOpen)
+        assertEquals(false, holder.state.value.safetyWarnings)
+
+        holder.dispose()
+        prefs.edit().putBoolean(PetalScannerSettings.PREF_AUTO_OPEN, false).commit()
+        assertEquals(true, holder.state.value.autoOpen)
     }
 }

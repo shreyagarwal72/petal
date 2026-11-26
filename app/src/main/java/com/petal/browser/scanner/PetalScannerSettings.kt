@@ -115,9 +115,10 @@ object PetalScannerSettings {
  * Reactive state holder synchronized with [PetalScannerSettings] via [SharedPreferences],
  * keeping [PetalScannerSettingsScreen], the scanner camera screen, and [ScannerHost] in sync.
  */
-class PetalScannerSettingsStateHolder(context: Context) {
-    private val appContext = context.applicationContext ?: context
-    private val prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(appContext)
+class PetalScannerSettingsStateHolder(
+    context: Context,
+    private val prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context.applicationContext ?: context),
+) {
     private val _state = MutableStateFlow(PetalScannerSettings.readState(prefs))
     val state: StateFlow<PetalScannerSettingsUiState> = _state.asStateFlow()
 
@@ -144,27 +145,27 @@ class PetalScannerSettingsStateHolder(context: Context) {
     }
 
     fun setAutoOpenEnabled(enabled: Boolean) {
-        PetalScannerSettings.setAutoOpenEnabled(appContext, enabled)
+        prefs.edit().putBoolean(PetalScannerSettings.PREF_AUTO_OPEN, enabled).apply()
         _state.value = _state.value.copy(autoOpen = enabled)
     }
 
     fun setVibrateEnabled(enabled: Boolean) {
-        PetalScannerSettings.setVibrateEnabled(appContext, enabled)
+        prefs.edit().putBoolean(PetalScannerSettings.PREF_VIBRATE, enabled).apply()
         _state.value = _state.value.copy(vibrate = enabled)
     }
 
     fun setBeepEnabled(enabled: Boolean) {
-        PetalScannerSettings.setBeepEnabled(appContext, enabled)
+        prefs.edit().putBoolean(PetalScannerSettings.PREF_BEEP, enabled).apply()
         _state.value = _state.value.copy(beep = enabled)
     }
 
     fun setHistoryEnabled(enabled: Boolean) {
-        PetalScannerSettings.setHistoryEnabled(appContext, enabled)
+        prefs.edit().putBoolean(PetalScannerSettings.PREF_HISTORY_ENABLED, enabled).apply()
         _state.value = _state.value.copy(historyEnabled = enabled)
     }
 
     fun setSafetyWarningsEnabled(enabled: Boolean) {
-        PetalScannerSettings.setSafetyWarningsEnabled(appContext, enabled)
+        prefs.edit().putBoolean(PetalScannerSettings.PREF_SAFETY_WARNINGS, enabled).apply()
         _state.value = _state.value.copy(safetyWarnings = enabled)
     }
 

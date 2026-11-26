@@ -1,84 +1,120 @@
 package com.petal.browser.compose.tabs
 
-import android.content.Context
-import androidx.preference.PreferenceManager
-import androidx.test.core.app.ApplicationProvider
+import android.content.SharedPreferences
 import com.google.gson.Gson
-import com.petal.browser.browser.PetalTabMetadataStore
-import org.junit.After
+import com.petal.browser.browser.PetalTabMetadata
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
 class PetalWorkspaceVisibilityTest {
 
-    private lateinit var context: Context
+    private class FakePreferences : SharedPreferences {
+        private val map = linkedMapOf<String, Any?>()
+
+        override fun getAll(): MutableMap<String, *> = map.toMutableMap()
+        override fun getString(key: String?, defValue: String?): String? = (map[key] as? String) ?: defValue
+        override fun getStringSet(key: String?, defValues: MutableSet<String>?): MutableSet<String>? = defValues
+        override fun getInt(key: String?, defValue: Int): Int = (map[key] as? Int) ?: defValue
+        override fun getLong(key: String?, defValue: Long): Long = (map[key] as? Long) ?: defValue
+        override fun getFloat(key: String?, defValue: Float): Float = (map[key] as? Float) ?: defValue
+        override fun getBoolean(key: String?, defValue: Boolean): Boolean = (map[key] as? Boolean) ?: defValue
+        override fun contains(key: String?): Boolean = map.containsKey(key)
+        override fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {}
+        override fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener?) {}
+
+        override fun edit(): SharedPreferences.Editor = object : SharedPreferences.Editor {
+            private val pending = linkedMapOf<String, Any?>()
+            private var clearAll = false
+
+            override fun putString(key: String?, value: String?) = apply { if (key != null) pending[key] = value }
+            override fun putStringSet(key: String?, values: MutableSet<String>?) = this
+            override fun putInt(key: String?, value: Int) = apply { if (key != null) pending[key] = value }
+            override fun putLong(key: String?, value: Long) = apply { if (key != null) pending[key] = value }
+            override fun putFloat(key: String?, value: Float) = apply { if (key != null) pending[key] = value }
+            override fun putBoolean(key: String?, value: Boolean) = apply { if (key != null) pending[key] = value }
+            override fun remove(key: String?) = apply { if (key != null) pending[key] = REMOVE }
+            override fun clear() = apply { clearAll = true }
+            override fun commit(): Boolean {
+                apply()
+                return true
+            }
+
+            override fun apply() {
+                if (clearAll) map.clear()
+                for ((k, v) in pending) {
+                    if (v === REMOVE) map.remove(k) else map[k] = v
+                }
+            }
+        }
+
+        private companion object {
+            val REMOVE = Any()
+        }
+    }
+
+    private lateinit var defaultSp: FakePreferences
+    private lateinit var wsPrefs: FakePreferences
 
     @Before
     fun setUp() {
-        context = ApplicationProvider.getApplicationContext()
-        PreferenceManager.getDefaultSharedPreferences(context).edit().clear().commit()
-        context.getSharedPreferences("petal_workspaces_prefs", Context.MODE_PRIVATE).edit().clear().commit()
-        PetalTabMetadataStore.clear(context)
-        PetalWorkspaceManager.resetForTest()
-    }
-
-    @After
-    fun tearDown() {
+        defaultSp = FakePreferences()
+        wsPrefs = FakePreferences()
         PetalWorkspaceManager.resetForTest()
     }
 
     @Test
     fun `migration keeps workspace chips off on fresh install`() {
-        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(context)
+        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(defaultSp, wsPrefs, emptyList())
 
-        val defaultSp = PreferenceManager.getDefaultSharedPreferences(context)
         assertFalse(defaultSp.getBoolean(PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false))
         assertTrue(defaultSp.getBoolean(PetalWorkspaceManager.PREF_WORKSPACE_CHIPS_MIGRATED, false))
     }
 
     @Test
-    fun `migration enables workspace chips when user already created a custom workspace`() {
-        PetalWorkspaceManager.createWorkspace(context, "Gaming", "Work", "#10B981")
+    fun `migration enables workspace chips when user already persisted a non-default workspace`() {
+        val custom = listOf(
+            PetalWorkspace(PetalWorkspaceManager.DEFAULT_WORKSPACE_ID, "General", "Home", "#3B82F6", 0, true),
+            PetalWorkspace("ws_custom1", "Gaming", "Work", "#10B981", 1, false),
+        )
+        wsPrefs.edit().putString("workspaces_json", Gson().toJson(custom)).commit()
 
-        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(context)
+        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(defaultSp, wsPrefs, emptyList())
 
-        assertTrue(PetalWorkspaceManager.isWorkspaceChipsEnabled(context))
+        assertTrue(defaultSp.getBoolean(PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false))
+        assertTrue(defaultSp.getBoolean(PetalWorkspaceManager.PREF_WORKSPACE_CHIPS_MIGRATED, false))
     }
 
     @Test
     fun `migration enables workspace chips when any tab is assigned to a non-default workspace`() {
-        PetalTabMetadataStore.setWorkspace(context, "tab-work", "ws_work")
+        val meta = listOf(PetalTabMetadata(tabId = "tab-work", workspaceId = "ws_work"))
 
-        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(context)
+        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(defaultSp, wsPrefs, meta)
 
-        assertTrue(PetalWorkspaceManager.isWorkspaceChipsEnabled(context))
+        assertTrue(defaultSp.getBoolean(PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false))
     }
 
     @Test
-    fun `migration never overrides an explicit user preference later or beforehand`() {
-        val defaultSp = PreferenceManager.getDefaultSharedPreferences(context)
-        // Explicit OFF before migration even with custom workspace persisted:
-        PetalWorkspaceManager.createWorkspace(context, "Custom", "Home", "#3B82F6")
+    fun `migration never overrides an explicit user preference before or after running`() {
+        val custom = listOf(
+            PetalWorkspace(PetalWorkspaceManager.DEFAULT_WORKSPACE_ID, "General", "Home", "#3B82F6", 0, true),
+            PetalWorkspace("ws_custom1", "Custom", "Home", "#3B82F6", 1, false),
+        )
+        wsPrefs.edit().putString("workspaces_json", Gson().toJson(custom)).commit()
         defaultSp.edit().putBoolean(PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false).commit()
 
-        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(context)
-        assertFalse(PetalWorkspaceManager.isWorkspaceChipsEnabled(context))
+        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(defaultSp, wsPrefs, emptyList())
+        assertFalse(defaultSp.getBoolean(PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false))
 
-        // Reset custom state, flip ON, verify re-running migration does not flip OFF:
         defaultSp.edit().putBoolean(PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, true).commit()
-        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(context)
-        assertTrue(PetalWorkspaceManager.isWorkspaceChipsEnabled(context))
+        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(defaultSp, wsPrefs, emptyList())
+        assertTrue(defaultSp.getBoolean(PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false))
 
-        // After migration completed, even if user flips to OFF and migration runs again, stays OFF:
         defaultSp.edit().putBoolean(PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false).commit()
-        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(context)
-        assertFalse(PetalWorkspaceManager.isWorkspaceChipsEnabled(context))
+        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(defaultSp, wsPrefs, emptyList())
+        assertFalse(defaultSp.getBoolean(PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false))
     }
 
     @Test
@@ -91,7 +127,6 @@ class PetalWorkspaceVisibilityTest {
             PetalTabItem(id = "t5", title = "Private", url = "https://e.example", workspaceId = null, isIncognito = true),
         )
 
-        // When workspace chips are OFF, all regular non-incognito tabs appear together regardless of workspaceId.
         val whenOff = PetalWorkspaceManager.filterRegularTabs(
             tabs = tabs,
             activeWorkspaceId = "ws_work",
@@ -99,7 +134,6 @@ class PetalWorkspaceVisibilityTest {
         )
         assertEquals(listOf("t1", "t2", "t3", "t4"), whenOff.map { it.id })
 
-        // When workspace chips are ON for ws_work, only ws_work + global pinned tabs appear.
         val whenOnWork = PetalWorkspaceManager.filterRegularTabs(
             tabs = tabs,
             activeWorkspaceId = "ws_work",
@@ -107,7 +141,6 @@ class PetalWorkspaceVisibilityTest {
         )
         assertEquals(listOf("t3", "t4"), whenOnWork.map { it.id })
 
-        // When workspace chips are ON for General (default), default/null + global pinned tabs appear.
         val whenOnDefault = PetalWorkspaceManager.filterRegularTabs(
             tabs = tabs,
             activeWorkspaceId = PetalWorkspaceManager.DEFAULT_WORKSPACE_ID,
@@ -134,18 +167,5 @@ class PetalWorkspaceVisibilityTest {
             PetalWorkspaceManager.DEFAULT_WORKSPACE_ID,
             PetalWorkspaceManager.effectiveActiveWorkspaceId(workspaces, "ws_deleted", showWorkspaceChips = true)
         )
-    }
-
-    @Test
-    fun `persisted custom workspaces array parses cleanly after migration flag`() {
-        val wsPrefs = context.getSharedPreferences("petal_workspaces_prefs", Context.MODE_PRIVATE)
-        val customOnly = listOf(
-            PetalWorkspace(PetalWorkspaceManager.DEFAULT_WORKSPACE_ID, "General", "Home", "#3B82F6", 0, true),
-            PetalWorkspace("ws_custom1", "Study", "School", "#F59E0B", 1, false),
-        )
-        wsPrefs.edit().putString("workspaces_json", Gson().toJson(customOnly)).commit()
-
-        PetalWorkspaceManager.migrateWorkspaceChipsVisibility(context)
-        assertTrue(PetalWorkspaceManager.isWorkspaceChipsEnabled(context))
     }
 }

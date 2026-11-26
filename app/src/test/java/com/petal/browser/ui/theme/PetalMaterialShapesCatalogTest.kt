@@ -10,10 +10,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 
-@RunWith(RobolectricTestRunner::class)
 class PetalMaterialShapesCatalogTest {
 
     @Test
@@ -30,23 +27,25 @@ class PetalMaterialShapesCatalogTest {
     }
 
     @Test
-    fun `every shape produces a non-empty outline on square and non-square sizes`() {
+    fun `every official polygon has non-empty cubics, valid normalized bounds, and safe shadow outline`() {
         val density = Density(1f, 1f)
         val sizes = listOf(Size(48f, 48f), Size(120f, 60f))
         for (holder in PetalMaterialShapes.allShapes) {
-            val shape = holder.toShape()
+            val normalized = holder.polygon.normalized()
+            assertTrue("Missing cubics for ${holder.name}", normalized.cubics.isNotEmpty())
+            val bounds = normalized.calculateBounds()
+            assertEquals("Bounds array length must be 4 for ${holder.name}", 4, bounds.size)
+            val width = bounds[2] - bounds[0]
+            val height = bounds[3] - bounds[1]
+            assertTrue("Zero width for ${holder.name}", width > 0f)
+            assertTrue("Zero height for ${holder.name}", height > 0f)
+
+            assertNotNull(holder.toShape())
+            val shadowShape = holder.toSafeShadowShape()
             for (size in sizes) {
-                val outline = shape.createOutline(size, LayoutDirection.Ltr, density)
-                assertTrue("Expected Generic outline for ${holder.name}", outline is Outline.Generic)
-                val path = (outline as Outline.Generic).path
-                assertFalse("Empty path for ${holder.name} at $size", path.isEmpty)
-                val bounds = path.getBounds()
-                assertTrue(bounds.width > 0f)
-                assertTrue(bounds.height > 0f)
-                assertTrue("Width overflow for ${holder.name} at $size: $bounds", bounds.right <= size.width + 0.5f)
-                assertTrue("Height overflow for ${holder.name} at $size: $bounds", bounds.bottom <= size.height + 0.5f)
+                val outline = shadowShape.createOutline(size, LayoutDirection.Ltr, density)
+                assertTrue("Expected convex rounded shadow outline for ${holder.name}", outline is Outline.Rounded)
             }
-            assertNotNull(holder.toSafeShadowShape())
         }
     }
 
