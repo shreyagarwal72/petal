@@ -256,6 +256,7 @@ object PetalFeedbackManager {
     @JvmStatic
     fun openPlayStoreListing(context: Context) {
         try {
+            if (com.petal.browser.util.PetalStoreLinks.openPlayStore(context)) return
             PetalPlayUpdateManager.getInstance(context).openPlayStore(context)
         } catch (_: Throwable) {
             openUrl(context, "https://play.google.com/store/apps/details?id=${context.packageName}")
@@ -279,6 +280,8 @@ object PetalFeedbackManager {
 
     @JvmStatic
     fun openUrl(context: Context, url: String) {
+        // GitHub links open straight in the GitHub app when it's installed.
+        if (com.petal.browser.util.PetalStoreLinks.openGitHub(context, url)) return
         try {
             PetalBrowserUtils.intentURL(context, Uri.parse(url))
         } catch (_: Throwable) {

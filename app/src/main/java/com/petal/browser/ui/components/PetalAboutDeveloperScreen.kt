@@ -239,6 +239,7 @@ fun PetalAboutDeveloperScreen(
     }
 
     fun openUrl(url: String) {
+        if (com.petal.browser.util.PetalStoreLinks.openGitHub(context, url)) return
         try {
             PetalBrowserUtils.intentURL(context, Uri.parse(url))
         } catch (_: Exception) {

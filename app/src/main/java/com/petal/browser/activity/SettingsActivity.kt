@@ -68,7 +68,9 @@ open class SettingsActivity : AppCompatActivity() {
             finish()
         } else if (menuItem.itemId == R.id.menu_help) {
             val webpage = Uri.parse("https://github.com/shreyagarwal72/petal")
-            PetalBrowserUtils.intentURL(this, webpage)
+            if (!com.petal.browser.util.PetalStoreLinks.openGitHub(this, webpage.toString())) {
+                PetalBrowserUtils.intentURL(this, webpage)
+            }
         }
         return true
     }

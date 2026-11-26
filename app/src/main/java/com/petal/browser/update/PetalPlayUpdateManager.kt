@@ -210,6 +210,7 @@ class PetalPlayUpdateManager private constructor(private val context: Context) {
 
     fun openPlayStore(context: Context) {
         val packageName = context.packageName
+        if (com.petal.browser.util.PetalStoreLinks.openPlayStore(context, packageName)) return
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$packageName")).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

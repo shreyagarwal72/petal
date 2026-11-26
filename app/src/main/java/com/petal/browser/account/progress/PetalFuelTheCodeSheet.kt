@@ -215,10 +215,12 @@ fun PetalFuelTheCodeSheet(
                 onClick = {
                     try {
                         val githubUrl = "https://github.com/shreyagarwal72/petal"
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl)).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        if (!com.petal.browser.util.PetalStoreLinks.openGitHub(ctx, githubUrl)) {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(githubUrl)).apply {
+                                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            }
+                            ctx.startActivity(intent)
                         }
-                        ctx.startActivity(intent)
                     } catch (_: Exception) {}
                 },
                 modifier = Modifier.fillMaxWidth()

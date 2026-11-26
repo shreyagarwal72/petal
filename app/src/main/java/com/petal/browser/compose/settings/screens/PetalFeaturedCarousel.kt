@@ -224,8 +224,10 @@ fun PetalFeaturedCarousel(
                 isTertiary = true,
                 onClick = {
                     try {
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/shreyagarwal72/petal"))
-                        context.startActivity(intent)
+                        val repoUrl = "https://github.com/shreyagarwal72/petal"
+                        if (!com.petal.browser.util.PetalStoreLinks.openGitHub(context, repoUrl)) {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(repoUrl)))
+                        }
                     } catch (_: Exception) {
                         onCategoryClick(SettingsCategory.ABOUT, "about_developer")
                     }
