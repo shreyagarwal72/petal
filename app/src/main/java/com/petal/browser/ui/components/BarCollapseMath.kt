@@ -43,6 +43,18 @@ object BarCollapseMath {
         val navVisible: Boolean = barVisible
     )
 
+    /**
+     * How much of the freed space the web page should have claimed at [collapsedFraction].
+     * PILL bars are fully gone at [PILL_HANDOFF], so the page must finish moving by then; a linear
+     * 0..1 page shift leaves an empty band under the already-invisible bar. HIDE bars slide
+     * linearly, so the page follows linearly too.
+     */
+    @JvmStatic
+    fun pageFraction(style: BarCollapseStyle, collapsedFraction: Float): Float {
+        val f = collapsedFraction.coerceIn(0f, 1f)
+        return if (style == BarCollapseStyle.PILL) (f / PILL_HANDOFF).coerceIn(0f, 1f) else f
+    }
+
     @JvmStatic
     fun compute(style: BarCollapseStyle, collapsedFraction: Float, isBottom: Boolean): Visuals {
         val f = collapsedFraction.coerceIn(0f, 1f)

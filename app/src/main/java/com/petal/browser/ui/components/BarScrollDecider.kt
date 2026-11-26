@@ -22,6 +22,7 @@ import kotlin.math.abs
  */
 class BarScrollDecider(
     private val isSettling: () -> Boolean = { BarCollapseState.isViewportSettling() },
+    private val isBarMoving: () -> Boolean = { BarCollapseState.isBarMoving() },
     private val onSettlingScroll: () -> Unit = { BarCollapseState.onGeckoScrollWhileSettling() },
     private val nowMs: () -> Long = { SystemClock.uptimeMillis() }
 ) {
@@ -97,6 +98,10 @@ class BarScrollDecider(
             restart(scrollY)
             return 0
         }
+
+        // The bars themselves are moving: the dynamic toolbar shifts Gecko's reported offset, so it is
+        // not the user's input. Rebase on it, otherwise the shift reads as a reversal and flips the bars.
+        if (isBarMoving()) { restart(scrollY); return 0 }
 
         // At the top the bars are always shown.
         if (scrollY <= (TOP_ZONE_DP * density).toInt()) {

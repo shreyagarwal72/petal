@@ -355,7 +355,12 @@ fun ComposeEngineViewport(
                 lastDynamicMaxHeight[0] = dynamicToolbarMaxPx
                 try { engineView.setDynamicToolbarMaxHeight(dynamicToolbarMaxPx) } catch (_: Throwable) {}
             }
-            snapshotFlow { BarCollapseState.collapsedFraction }
+            snapshotFlow {
+                com.petal.browser.ui.components.BarCollapseMath.pageFraction(
+                    com.petal.browser.ui.components.BarSettings.collapseStyle,
+                    BarCollapseState.collapsedFraction
+                )
+            }
                 .collect { f ->
                     val remaining = (1f - f).coerceIn(0f, 1f)
                     val topShift = dynamicTopPx * remaining
@@ -548,7 +553,10 @@ fun ComposeEngineViewport(
                 .align(Alignment.TopCenter)
                 .padding(top = topPadding)
                 .graphicsLayer {
-                    translationY = -dynamicTopPx * BarCollapseState.collapsedFraction.coerceIn(0f, 1f)
+                    translationY = -dynamicTopPx * com.petal.browser.ui.components.BarCollapseMath.pageFraction(
+                        com.petal.browser.ui.components.BarSettings.collapseStyle,
+                        BarCollapseState.collapsedFraction
+                    )
                 }
         )
     }

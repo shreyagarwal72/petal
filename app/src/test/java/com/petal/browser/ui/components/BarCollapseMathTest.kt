@@ -12,6 +12,13 @@ class BarCollapseMathTest {
         assertFalse(BarCollapseMath.compute(BarCollapseStyle.HIDE, 1f, true).barVisible)
     }
 
+    @Test fun pageFraction_finishesWhenPillBarIsGone_andIsLinearForHide() {
+        assertEquals(0f, BarCollapseMath.pageFraction(BarCollapseStyle.PILL, 0f), 0f)
+        assertEquals(1f, BarCollapseMath.pageFraction(BarCollapseStyle.PILL, BarCollapseMath.PILL_HANDOFF), 0f)
+        assertEquals(1f, BarCollapseMath.pageFraction(BarCollapseStyle.PILL, 1f), 0f)
+        assertEquals(0.5f, BarCollapseMath.pageFraction(BarCollapseStyle.HIDE, 0.5f), 0f)
+    }
+
     @Test fun pill_fadesBarAndShowsPill() {
         val open = BarCollapseMath.compute(BarCollapseStyle.PILL, 0f, true)
         assertEquals(1f, open.fullBarAlpha, 0f); assertFalse(open.showPill)
@@ -65,7 +72,7 @@ class BarCollapseMathTest {
 
     @Test fun scrollDeciderDetectsFlingCandidateAfterTouchRelease() {
         var now = 1000L
-        val decider = BarScrollDecider(nowMs = { now })
+        val decider = BarScrollDecider(isBarMoving = { false }, nowMs = { now })
         decider.touchTrackingAvailable = true
         decider.onTouch(true)
         assertFalse(decider.isFlingCandidate())

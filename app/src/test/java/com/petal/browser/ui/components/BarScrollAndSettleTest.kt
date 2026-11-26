@@ -16,6 +16,7 @@ class BarScrollAndSettleTest {
         var now = 1000L
         val decider = BarScrollDecider(
             isSettling = { false },
+            isBarMoving = { false },
             onSettlingScroll = {},
             nowMs = { now },
         ).apply {
@@ -41,6 +42,7 @@ class BarScrollAndSettleTest {
         var now = 1000L
         val decider = BarScrollDecider(
             isSettling = { false },
+            isBarMoving = { false },
             onSettlingScroll = {},
             nowMs = { now },
         ).apply {
@@ -65,6 +67,7 @@ class BarScrollAndSettleTest {
         var now = 1000L
         val decider = BarScrollDecider(
             isSettling = { false },
+            isBarMoving = { false },
             onSettlingScroll = {},
             nowMs = { now },
         ).apply {
@@ -91,6 +94,7 @@ class BarScrollAndSettleTest {
         var now = 1000L
         val decider = BarScrollDecider(
             isSettling = { false },
+            isBarMoving = { false },
             onSettlingScroll = {},
             nowMs = { now },
         ).apply {
@@ -115,6 +119,7 @@ class BarScrollAndSettleTest {
         var now = 1000L
         val decider = BarScrollDecider(
             isSettling = { false },
+            isBarMoving = { false },
             onSettlingScroll = {},
             nowMs = { now },
         ).apply {
@@ -199,6 +204,7 @@ class BarScrollAndSettleTest {
         val tracker = ViewportSettleTracker(nowMs = { now })
         val decider = BarScrollDecider(
             isSettling = { tracker.isSettling() },
+            isBarMoving = { false },
             onSettlingScroll = { tracker.onGeckoScroll() },
             nowMs = { now },
         ).apply {
@@ -218,5 +224,25 @@ class BarScrollAndSettleTest {
         assertEquals(0, decider.onScroll(px(230f), density, collapsed = false))
         // Reaching 242dp collapses normally.
         assertEquals(1, decider.onScroll(px(242f), density, collapsed = false))
+    }
+
+    @Test fun offsetShiftWhileBarsMove_isIgnored() {
+        var now = 0L
+        var moving = false
+        val decider = BarScrollDecider(
+            isSettling = { false },
+            isBarMoving = { moving },
+            onSettlingScroll = {},
+            nowMs = { now },
+        ).apply { touchTrackingAvailable = true; onTouch(true) }
+        val d = 3f
+        decider.onScroll(1000, d, false)
+        var flip = 0
+        var y = 1000
+        repeat(20) { y += 10; now += 16; flip = decider.onScroll(y, d, false); if (flip != 0) return@repeat }
+        // Bars now animating: Gecko reports a large synthetic upward shift. It must not expand the bars.
+        moving = true
+        now += 16
+        assertEquals(0, decider.onScroll(y - 400, d, true))
     }
 }

@@ -138,6 +138,20 @@ object BarCollapseState {
     var lastViewportFlipUptimeMs: Long = 0L
         private set
 
+    @Volatile
+    private var lastFractionChangeUptimeMs: Long = 0L
+
+    /**
+     * True while the bars are animating, and for a short tail after, so Gecko's async scroll-offset
+     * shift from the changing dynamic toolbar is never mistaken for the user's finger (which made the
+     * bars flip back and forth mid-scroll).
+     */
+    @JvmStatic
+    fun isBarMoving(): Boolean =
+        SystemClock.uptimeMillis() - lastFractionChangeUptimeMs < BAR_MOTION_TAIL_MS
+
+    const val BAR_MOTION_TAIL_MS = 120L
+
     @JvmStatic
     fun onViewportResizeRequested() {
         lastViewportFlipUptimeMs = SystemClock.uptimeMillis()
@@ -196,12 +210,15 @@ object BarCollapseState {
     fun updateCollapsed(collapsed: Boolean) {
         isCollapsed = collapsed
         viewportCollapsed = collapsed
-        collapsedFraction = if (collapsed) 1f else 0f
+        val target = if (collapsed) 1f else 0f
+        if (collapsedFraction != target) lastFractionChangeUptimeMs = SystemClock.uptimeMillis()
+        collapsedFraction = target
     }
 
     @JvmStatic
     fun setFraction(fraction: Float) {
         val clamped = fraction.coerceIn(0f, 1f)
+        if (collapsedFraction != clamped) lastFractionChangeUptimeMs = SystemClock.uptimeMillis()
         collapsedFraction = clamped
         isCollapsed = clamped >= 0.5f
         viewportCollapsed = clamped > 0.001f
