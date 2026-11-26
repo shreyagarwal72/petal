@@ -292,6 +292,13 @@ object PetalSettingsSearchIndex {
             keywords = listOf("autofill", "autofill logins", "saved logins", "forms", "passwords")
         ),
         SettingsSearchItem(
+            id = "privacy_shortcut_favicons",
+            title = "Shortcut favicons",
+            subtitle = "Advanced: Fetch website icons for home screen shortcuts from the network",
+            category = SettingsCategory.PRIVACY,
+            keywords = listOf("favicon", "shortcut favicons", "shortcut icons", "home screen icons", "privacy")
+        ),
+        SettingsSearchItem(
             id = "privacy_private_dns",
             title = "Secure Private DNS (DoH)",
             subtitle = "Advanced: DNS-over-HTTPS via Cloudflare, AdGuard, Google, Quad9, Mullvad, NextDNS, or custom DNS",

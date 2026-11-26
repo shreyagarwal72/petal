@@ -368,6 +368,10 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_login_autofill_enabled", true)
     }
 
+    override val fetchShortcutFavicons: Flow<Boolean> = preferenceFlow("sp_fetch_shortcut_favicons") {
+        sp.getBoolean("sp_fetch_shortcut_favicons", true)
+    }
+
     // ── Accessibility & Display ───────────────────────────────────────────────
     override val immersiveFullScreen: Flow<Boolean> = preferenceFlow("sp_immersive_fullscreen") {
         sp.getBoolean("sp_immersive_fullscreen", false)
@@ -967,6 +971,10 @@ class SettingsRepositoryImpl @Inject constructor(
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
+    override suspend fun setFetchShortcutFavicons(enabled: Boolean) {
+        sp.edit().putBoolean("sp_fetch_shortcut_favicons", enabled).apply()
+    }
+
     override suspend fun setCrossSiteTracking(strict: Boolean) {
         sp.edit()
             .putBoolean("sp_etp_strict", strict)
@@ -1002,6 +1010,7 @@ class SettingsRepositoryImpl @Inject constructor(
             .putBoolean("sp_canvas_letterboxing", false)
             .putBoolean("sp_drm", true)
             .putBoolean("sp_login_autofill_enabled", true)
+            .putBoolean("sp_fetch_shortcut_favicons", true)
             .putString("sp_private_dns_mode", "OFF")
             .putString("sp_custom_doh_url", "")
             .putString("sp_nextdns_profile_id", "")

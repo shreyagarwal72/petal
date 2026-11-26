@@ -87,6 +87,7 @@ fun PrivacySettingsScreen(
     val canvasLetterboxing by viewModel.canvasLetterboxing.collectAsStateWithLifecycle()
     val drmEnabled by viewModel.drmEnabled.collectAsStateWithLifecycle()
     val loginAutofillEnabled by viewModel.loginAutofillEnabled.collectAsStateWithLifecycle()
+    val fetchShortcutFavicons by viewModel.fetchShortcutFavicons.collectAsStateWithLifecycle()
 
     PrivacySettingsScreenContent(
         privacyProfile = privacyProfile,
@@ -111,6 +112,7 @@ fun PrivacySettingsScreen(
         canvasLetterboxing = canvasLetterboxing,
         drmEnabled = drmEnabled,
         loginAutofillEnabled = loginAutofillEnabled,
+        fetchShortcutFavicons = fetchShortcutFavicons,
         onPrivacyProfileChange = viewModel::setPrivacyProfile,
         onAdBlockEnabledChange = viewModel::setAdBlockEnabled,
         onBlockThirdPartyCookiesChange = viewModel::setBlockThirdPartyCookies,
@@ -134,6 +136,7 @@ fun PrivacySettingsScreen(
         onCanvasLetterboxingChange = viewModel::setCanvasLetterboxing,
         onDrmEnabledChange = viewModel::setDrmEnabled,
         onLoginAutofillEnabledChange = viewModel::setLoginAutofillEnabled,
+        onFetchShortcutFaviconsChange = viewModel::setFetchShortcutFavicons,
         onResetPrivacyToRecommended = viewModel::resetPrivacyToRecommended,
         onNavigateBack = onNavigateBack,
         onNavigateToAppLock = onNavigateToAppLock,
@@ -167,6 +170,7 @@ fun PrivacySettingsScreenContent(
     canvasLetterboxing: Boolean = false,
     drmEnabled: Boolean = true,
     loginAutofillEnabled: Boolean = true,
+    fetchShortcutFavicons: Boolean = true,
     onPrivacyProfileChange: (String) -> Unit = {},
     onAdBlockEnabledChange: (Boolean) -> Unit,
     onBlockThirdPartyCookiesChange: (Boolean) -> Unit,
@@ -190,6 +194,7 @@ fun PrivacySettingsScreenContent(
     onCanvasLetterboxingChange: (Boolean) -> Unit = {},
     onDrmEnabledChange: (Boolean) -> Unit = {},
     onLoginAutofillEnabledChange: (Boolean) -> Unit = {},
+    onFetchShortcutFaviconsChange: (Boolean) -> Unit = {},
     onResetPrivacyToRecommended: () -> Unit = {},
     onNavigateBack: () -> Unit,
     onNavigateToAppLock: () -> Unit = {},
@@ -225,6 +230,7 @@ fun PrivacySettingsScreenContent(
             "privacy_trim_referrers",
             "privacy_drm",
             "privacy_autofill",
+            "privacy_shortcut_favicons",
             "privacy_private_dns",
             "privacy_javascript",
         )
@@ -855,12 +861,22 @@ fun PrivacySettingsScreenContent(
 
                         PetalSettingsToggleRow(
                             variant = privacyRowVariants[1],
-                            position = PetalGroupPosition.BOTTOM,
+                            position = PetalGroupPosition.MIDDLE,
                             title = "JavaScript",
                             subtitle = "Enable JavaScript execution for web pages",
                             icon = Icons.Rounded.Code,
                             checked = javaScriptEnabled,
                             onCheckedChange = onJavaScriptEnabledChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
+                            position = PetalGroupPosition.BOTTOM,
+                            title = stringResource(R.string.ui_shortcut_favicon_fetching),
+                            subtitle = stringResource(R.string.ui_shortcut_favicon_fetching_desc),
+                            icon = Icons.Rounded.Public,
+                            checked = fetchShortcutFavicons,
+                            onCheckedChange = onFetchShortcutFaviconsChange
                         )
 
                         Spacer(Modifier.height(4.dp))

@@ -93,6 +93,9 @@ class PrivacySettingsViewModel @Inject constructor(
     val loginAutofillEnabled: StateFlow<Boolean> = settingsRepository.loginAutofillEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
+    val fetchShortcutFavicons: StateFlow<Boolean> = settingsRepository.fetchShortcutFavicons
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
     fun setAdBlockEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setAdBlockEnabled(enabled)
     }
@@ -195,6 +198,10 @@ class PrivacySettingsViewModel @Inject constructor(
 
     fun setLoginAutofillEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setLoginAutofillEnabled(enabled)
+    }
+
+    fun setFetchShortcutFavicons(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setFetchShortcutFavicons(enabled)
     }
 
     fun setCrossSiteTracking(strict: Boolean) = viewModelScope.launch {

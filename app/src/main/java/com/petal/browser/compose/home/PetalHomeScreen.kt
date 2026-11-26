@@ -58,7 +58,17 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import com.petal.browser.ui.theme.PetalShapeGroup
 import com.petal.browser.ui.theme.toSafeShadowShape
 import kotlinx.coroutines.launch
 import androidx.compose.ui.graphics.Color
@@ -114,6 +124,8 @@ import com.petal.browser.R
 
 // ── 1. Data model & Persistence ───────────────────────────────────────────
 
+const val PREF_FETCH_SHORTCUT_FAVICONS = "sp_fetch_shortcut_favicons"
+
 @Immutable
 data class PetalShortcut(
     val label: String,
@@ -121,8 +133,67 @@ data class PetalShortcut(
     val siteId: String,
     val containerColor: Color,
     val contentColor: Color = Color.White,
-    val shapeName: String? = null
+    val shapeName: String? = null,
+    val id: String = java.util.UUID.randomUUID().toString(),
 )
+
+data class ShortcutUrlValidation(
+    val isValid: Boolean,
+    val normalizedUrl: String? = null,
+    val errorRes: Int? = null,
+)
+
+fun validateShortcutUrl(rawUrl: String): ShortcutUrlValidation {
+    val trimmed = rawUrl.trim()
+    if (trimmed.isEmpty()) {
+        return ShortcutUrlValidation(isValid = false, errorRes = R.string.ui_shortcut_url_required)
+    }
+    if (trimmed.any { it.isWhitespace() }) {
+        return ShortcutUrlValidation(isValid = false, errorRes = R.string.ui_shortcut_url_invalid)
+    }
+    val hasScheme = trimmed.contains("://")
+    if (hasScheme && !trimmed.startsWith("http://", ignoreCase = true) && !trimmed.startsWith("https://", ignoreCase = true)) {
+        return ShortcutUrlValidation(isValid = false, errorRes = R.string.ui_shortcut_url_invalid)
+    }
+    if (!hasScheme && (trimmed.startsWith("javascript:", ignoreCase = true) || trimmed.startsWith("data:", ignoreCase = true))) {
+        return ShortcutUrlValidation(isValid = false, errorRes = R.string.ui_shortcut_url_invalid)
+    }
+    val candidate = if (hasScheme) trimmed else "https://$trimmed"
+    val host = try {
+        java.net.URI(candidate).host
+    } catch (_: Throwable) {
+        null
+    }
+    val isHostValid = !host.isNullOrBlank() && (host.contains('.') || host.equals("localhost", ignoreCase = true))
+    return if (isHostValid) {
+        ShortcutUrlValidation(isValid = true, normalizedUrl = candidate, errorRes = null)
+    } else {
+        ShortcutUrlValidation(isValid = false, errorRes = R.string.ui_shortcut_url_invalid)
+    }
+}
+
+@Composable
+fun rememberFetchShortcutFaviconsEnabled(): Boolean {
+    val context = LocalContext.current
+    val sp = remember(context) { PreferenceManager.getDefaultSharedPreferences(context) }
+    var enabled by remember(sp) { mutableStateOf(sp.getBoolean(PREF_FETCH_SHORTCUT_FAVICONS, true)) }
+    DisposableEffect(sp) {
+        enabled = sp.getBoolean(PREF_FETCH_SHORTCUT_FAVICONS, true)
+        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+            if (key == null || key == PREF_FETCH_SHORTCUT_FAVICONS) {
+                enabled = prefs.getBoolean(PREF_FETCH_SHORTCUT_FAVICONS, true)
+            }
+        }
+        sp.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+    return enabled
+}
+
+private fun stableLegacyShortcutId(index: Int, label: String, url: String): String {
+    val seed = "petal_shortcut:$index:$label:$url"
+    return java.util.UUID.nameUUIDFromBytes(seed.toByteArray(Charsets.UTF_8)).toString()
+}
 
 fun loadRemovedShortcutUrls(context: Context): Set<String> {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -156,12 +227,13 @@ fun loadHomeShortcuts(context: Context): List<PetalShortcut> {
                 val siteId = obj.optString("siteId", "globe")
                 val colorStr = obj.optString("color", "#4285F4")
                 val shapeName = if (obj.has("shapeName")) obj.optString("shapeName") else null
+                val id = obj.optString("id").takeIf { it.isNotBlank() } ?: stableLegacyShortcutId(i, label, url)
                 val parsedColor = try {
                     Color(android.graphics.Color.parseColor(colorStr))
                 } catch (_: Throwable) {
                     Color(0xFF4285F4)
                 }
-                list.add(PetalShortcut(label, url, siteId, parsedColor, shapeName = shapeName))
+                list.add(PetalShortcut(label = label, url = url, siteId = siteId, containerColor = parsedColor, shapeName = shapeName, id = id))
             }
             return list
         } catch (_: Throwable) { }
@@ -215,7 +287,15 @@ fun fetchTopVisitedShortcuts(context: Context): List<PetalShortcut> {
             }
 
             val color = paletteColors[idx % paletteColors.size]
-            list.add(PetalShortcut(label = rawLabel, url = firstRecord.url, siteId = siteId, containerColor = color))
+            list.add(
+                PetalShortcut(
+                    label = rawLabel,
+                    url = firstRecord.url,
+                    siteId = siteId,
+                    containerColor = color,
+                    id = stableLegacyShortcutId(idx, rawLabel, firstRecord.url),
+                )
+            )
         }
     } catch (e: Exception) {
         e.printStackTrace()
@@ -227,6 +307,7 @@ fun saveHomeShortcuts(context: Context, list: List<PetalShortcut>) {
     val array = JSONArray()
     for (item in list) {
         val obj = JSONObject()
+        obj.put("id", item.id)
         obj.put("label", item.label)
         obj.put("url", item.url)
         obj.put("siteId", item.siteId)
@@ -906,7 +987,8 @@ fun PetalHomeScreen(
                     // ── Create New Shortcut Dialog ────────────────────────────────────
                     if (isAddingNewShortcut) {
                         EditShortcutDialog(
-                            dialogTitle = "Add Shortcut",
+                            dialogTitle = stringResource(R.string.ui_add_shortcut),
+                            initialId = null,
                             initialName = "",
                             initialUrl = "",
                             initialColor = Color(0xFF4285F4),
@@ -922,10 +1004,11 @@ fun PetalHomeScreen(
                         )
                     }
 
-                    // ── Edit / Remove Shortcut Dialog ─────────────────────────────────
+                    // ── Edit / Hide Shortcut Dialog ───────────────────────────────────
                     editingItem?.let { (current, isCustom) ->
                         EditShortcutDialog(
-                            dialogTitle = if (isCustom) "Edit Shortcut" else "Remove Shortcut",
+                            dialogTitle = if (isCustom) stringResource(R.string.ui_edit_shortcut) else stringResource(R.string.ui_hide_from_home),
+                            initialId = current.id,
                             initialName = current.label,
                             initialUrl = current.url,
                             initialColor = current.containerColor,
@@ -934,7 +1017,7 @@ fun PetalHomeScreen(
                             onSave = { updatedShortcut ->
                                 if (isCustom) {
                                     val newList = shortcuts.toMutableList()
-                                    val idx = newList.indexOfFirst { it.url == current.url }
+                                    val idx = newList.indexOfFirst { it.id == current.id }
                                     if (idx != -1) {
                                         newList[idx] = updatedShortcut
                                     } else {
@@ -958,7 +1041,7 @@ fun PetalHomeScreen(
                             onDelete = {
                                 if (isCustom) {
                                     val newList = shortcuts.toMutableList()
-                                    newList.removeAll { it.url == current.url }
+                                    newList.removeAll { it.id == current.id }
                                     shortcuts = newList
                                     saveHomeShortcuts(context, newList)
                                 }
@@ -997,14 +1080,16 @@ private fun PetalShortcutGrid(
     ) {
         items.forEachIndexed { index, item ->
             val (shortcut, isEditable) = item
-            Box(modifier = Modifier.width(68.dp)) {
-                ShortcutTile(
-                    shortcut = shortcut,
-                    isEditable = isEditable,
-                    index = index,
-                    onClick = { onOpenShortcut(shortcut) },
-                    onLongClick = { onEditShortcutItem(item) }
-                )
+            key(shortcut.id) {
+                Box(modifier = Modifier.width(68.dp)) {
+                    ShortcutTile(
+                        shortcut = shortcut,
+                        isEditable = isEditable,
+                        index = index,
+                        onClick = { onOpenShortcut(shortcut) },
+                        onLongClick = { onEditShortcutItem(item) }
+                    )
+                }
             }
         }
 
@@ -1045,17 +1130,15 @@ private fun ShortcutTile(
         label = "shortcut_press_scale"
     )
 
-    val faviconUrl = remember(shortcut.url) { getFaviconUrl(shortcut.url) }
-    var isImageError by remember(shortcut.url) { mutableStateOf(false) }
+    val fetchFaviconsEnabled = rememberFetchShortcutFaviconsEnabled()
+    val faviconUrl = remember(shortcut.url, fetchFaviconsEnabled) {
+        if (fetchFaviconsEnabled) getFaviconUrl(shortcut.url) else null
+    }
+    var isImageError by remember(shortcut.url, fetchFaviconsEnabled) { mutableStateOf(false) }
 
-    val defaultShape = homeShortcutShape(index, shortcut.url.ifBlank { shortcut.label })
-    val tileShape = remember(shortcut.shapeName, index) {
-        if (!shortcut.shapeName.isNullOrBlank()) {
-            val matched = PetalMaterialShapes.allShapes.find { it.name.equals(shortcut.shapeName, ignoreCase = true) }
-            matched?.toShape() ?: defaultShape
-        } else {
-            defaultShape
-        }
+    val defaultShape = homeShortcutShape(index, shortcut.id.ifBlank { shortcut.url.ifBlank { shortcut.label } })
+    val tileShape = remember(shortcut.shapeName, index, shortcut.id) {
+        PetalMaterialShapes.resolveByName(shortcut.shapeName)?.toShape() ?: defaultShape
     }
 
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
@@ -1510,9 +1593,76 @@ private fun SiteBrandIcon(siteId: String, label: String) {
 
 // ── 8. Edit Shortcut Dialog ───────────────────────────────────────────────
 
+private fun Modifier.horizontalScrollEdgeFade(
+    scrollState: androidx.compose.foundation.ScrollState,
+    fadeWidth: Dp = 20.dp,
+): Modifier = this
+    .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+    .drawWithContent {
+        drawContent()
+        val fadePx = fadeWidth.toPx().coerceAtMost(size.width / 3f)
+        if (scrollState.canScrollBackward && fadePx > 0f) {
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(Color.Transparent, Color.Black),
+                    startX = 0f,
+                    endX = fadePx,
+                ),
+                size = androidx.compose.ui.geometry.Size(fadePx, size.height),
+                blendMode = BlendMode.DstIn,
+            )
+        }
+        if (scrollState.canScrollForward && fadePx > 0f) {
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    colors = listOf(Color.Black, Color.Transparent),
+                    startX = size.width - fadePx,
+                    endX = size.width,
+                ),
+                topLeft = androidx.compose.ui.geometry.Offset(size.width - fadePx, 0f),
+                size = androidx.compose.ui.geometry.Size(fadePx, size.height),
+                blendMode = BlendMode.DstIn,
+            )
+        }
+    }
+
+@Composable
+private fun shapeGroupLabel(group: PetalShapeGroup): String = when (group) {
+    PetalShapeGroup.BASIC -> stringResource(R.string.ui_shape_cat_basic)
+    PetalShapeGroup.COOKIE -> stringResource(R.string.ui_shape_cat_cookie)
+    PetalShapeGroup.DYNAMIC -> stringResource(R.string.ui_shape_cat_dynamic)
+    PetalShapeGroup.ORGANIC -> stringResource(R.string.ui_shape_cat_organic)
+    PetalShapeGroup.ENERGETIC -> stringResource(R.string.ui_shape_cat_energetic)
+}
+
+private fun deriveShortcutSiteId(url: String): String = try {
+    val host = Uri.parse(url).host.orEmpty()
+    when {
+        host.contains("youtube") -> "youtube"
+        host.contains("github") -> "github"
+        host.contains("wikipedia") -> "wikipedia"
+        host.contains("duckduckgo") -> "duckduckgo"
+        host.contains("google") -> "google"
+        else -> "globe"
+    }
+} catch (_: Throwable) {
+    "globe"
+}
+
+private fun deriveShortcutName(url: String): String? = try {
+    Uri.parse(url).host
+        ?.removePrefix("www.")
+        ?.substringBefore(".")
+        ?.takeIf { it.isNotBlank() }
+        ?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
+} catch (_: Throwable) {
+    null
+}
+
 @Composable
 private fun EditShortcutDialog(
     dialogTitle: String,
+    initialId: String? = null,
     initialName: String,
     initialUrl: String,
     initialColor: Color,
@@ -1521,17 +1671,53 @@ private fun EditShortcutDialog(
     onSave: (PetalShortcut) -> Unit,
     onDelete: (() -> Unit)? = null
 ) {
+    val context = LocalContext.current
+    val resolvedInitialShape = remember(initialShapeName) {
+        PetalMaterialShapes.resolveByName(initialShapeName) ?: PetalMaterialShapes.Flower
+    }
     var nameText by remember(initialName) { mutableStateOf(initialName) }
     var urlText by remember(initialUrl) { mutableStateOf(initialUrl) }
-    var selectedShapeName by remember(initialShapeName) { mutableStateOf(initialShapeName ?: "Flower") }
+    var urlTouched by remember(initialUrl) { mutableStateOf(initialUrl.isNotBlank()) }
+    var selectedColor by remember(initialColor) { mutableStateOf(initialColor) }
+    var selectedShapeName by remember(resolvedInitialShape) { mutableStateOf(resolvedInitialShape.name) }
+    var selectedGroup by remember(resolvedInitialShape) { mutableStateOf(PetalMaterialShapes.groupFor(resolvedInitialShape)) }
 
-    val currentFaviconUrl = remember(urlText) { getFaviconUrl(urlText) }
-    var isImageError by remember(urlText) { mutableStateOf(false) }
+    val urlValidation = remember(urlText) { validateShortcutUrl(urlText) }
+    val showUrlError = !urlValidation.isValid && (urlTouched || urlText.isNotBlank())
 
-    val previewTileShape = remember(selectedShapeName) {
-        val matched = PetalMaterialShapes.allShapes.find { it.name.equals(selectedShapeName, ignoreCase = true) }
-        matched?.toShape() ?: PetalMaterialShapes.Flower.toShape()
+    val fetchFaviconsEnabled = rememberFetchShortcutFaviconsEnabled()
+    var debouncedUrl by remember(initialUrl) { mutableStateOf(initialUrl) }
+    LaunchedEffect(urlText, fetchFaviconsEnabled) {
+        if (!fetchFaviconsEnabled) {
+            debouncedUrl = ""
+        } else {
+            kotlinx.coroutines.delay(400L)
+            debouncedUrl = urlText
+        }
     }
+    val currentFaviconUrl = remember(debouncedUrl, fetchFaviconsEnabled) {
+        val debouncedValidation = validateShortcutUrl(debouncedUrl)
+        if (fetchFaviconsEnabled && debouncedValidation.isValid && debouncedValidation.normalizedUrl != null) {
+            getFaviconUrl(debouncedValidation.normalizedUrl)
+        } else null
+    }
+    var isImageError by remember(currentFaviconUrl) { mutableStateOf(false) }
+
+    val selectedShapeHolder = remember(selectedShapeName) {
+        PetalMaterialShapes.resolveByName(selectedShapeName) ?: PetalMaterialShapes.Flower
+    }
+    val previewTileShape = selectedShapeHolder.toShape()
+    val previewDerivedTitle = remember(nameText, urlValidation.normalizedUrl) {
+        nameText.trim().ifBlank {
+            urlValidation.normalizedUrl?.let { deriveShortcutName(it) } ?: "Shortcut"
+        }
+    }
+    val previewSiteId = remember(urlValidation.normalizedUrl) {
+        urlValidation.normalizedUrl?.let { deriveShortcutSiteId(it) } ?: "globe"
+    }
+
+    val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments") &&
+        !com.petal.browser.motion.MotionGate.isLowEndDevice(context)
 
     com.petal.browser.ui.containment.PetalMaterialAlertDialog(
         onDismissRequest = onDismiss,
@@ -1548,6 +1734,7 @@ private fun EditShortcutDialog(
                     onValueChange = { nameText = it },
                     label = { Text(stringResource(R.string.ui_name)) },
                     singleLine = true,
+                    glass = isGlass,
                     shape = RoundedCornerShape(16.dp),
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -1560,10 +1747,18 @@ private fun EditShortcutDialog(
 
                 TextField(
                     value = urlText,
-                    onValueChange = { urlText = it },
+                    onValueChange = {
+                        urlText = it
+                        urlTouched = true
+                    },
                     label = { Text(stringResource(R.string.ui_url)) },
                     singleLine = true,
                     placeholder = { Text("example.com") },
+                    isError = showUrlError,
+                    supportingText = if (showUrlError && urlValidation.errorRes != null) {
+                        { Text(stringResource(urlValidation.errorRes)) }
+                    } else null,
+                    glass = isGlass,
                     shape = RoundedCornerShape(16.dp),
                     colors = TextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
@@ -1574,58 +1769,209 @@ private fun EditShortcutDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
+                // Color picker swatches
+                Text(
+                    text = stringResource(R.string.ui_shortcut_color),
+                    style = PetalText.sectionHeader,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                val colorRowScrollState = rememberScrollState()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScrollEdgeFade(colorRowScrollState)
+                        .horizontalScroll(colorRowScrollState)
+                        .padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    availableColors.forEach { (swatchColor, colorLabel) ->
+                        val isColorSelected = swatchColor.toArgb() == selectedColor.toArgb()
+                        val checkScale by animateFloatAsState(
+                            targetValue = if (isColorSelected) 1f else 0f,
+                            animationSpec = PetalSpring.playful(),
+                            label = "color_check_scale"
+                        )
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(swatchColor)
+                                .then(if (isGlass) Modifier.liquidGlassChrome(CircleShape, enabled = true, sheenIntensity = 0.35f) else Modifier)
+                                .border(
+                                    width = if (isColorSelected) 2.5.dp else 1.dp,
+                                    color = if (isColorSelected) MaterialTheme.colorScheme.onSurface else Color.White.copy(alpha = 0.28f),
+                                    shape = CircleShape
+                                )
+                                .clickable { selectedColor = swatchColor }
+                                .semantics {
+                                    contentDescription = colorLabel
+                                    selected = isColorSelected
+                                    role = Role.RadioButton
+                                }
+                        ) {
+                            if (checkScale > 0.05f) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier
+                                        .size(18.dp)
+                                        .graphicsLayer { scaleX = checkScale; scaleY = checkScale }
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Text(
                     text = stringResource(R.string.ui_material_3_expressive_shape),
                     style = PetalText.sectionHeader,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
-
-                // Shape selector horizontal carousel showcasing all 35 M3 Expressive shapes
+                // Category filter chips above the shape carousel so 35 shapes are organized cleanly
+                val categoryScrollState = rememberScrollState()
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        .horizontalScrollEdgeFade(categoryScrollState)
+                        .horizontalScroll(categoryScrollState),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    PetalMaterialShapes.allShapes.forEach { shapeHolder ->
-                        val isSelected = shapeHolder.name.equals(selectedShapeName, ignoreCase = true)
-                        val shape = shapeHolder.toShape()
+                    PetalShapeGroup.entries.forEach { group ->
+                        val catSelected = group == selectedGroup
+                        val catLabel = shapeGroupLabel(group)
+                        val catShape = RoundedCornerShape(50)
+                        val catContainer = when {
+                            catSelected -> MaterialTheme.colorScheme.primaryContainer
+                            isGlass -> com.petal.browser.ui.containment.petalGroupSurfaceColor()
+                            else -> MaterialTheme.colorScheme.surfaceContainerHighest
+                        }
                         Box(
                             contentAlignment = Alignment.Center,
                             modifier = Modifier
-                                .size(46.dp)
+                                .clip(catShape)
+                                .background(catContainer, catShape)
+                                .then(
+                                    if (isGlass) {
+                                        Modifier.liquidGlassChrome(
+                                            shape = catShape,
+                                            enabled = true,
+                                            tintColor = if (catSelected) MaterialTheme.colorScheme.primaryContainer else Color.Unspecified,
+                                            sheenIntensity = 0.35f,
+                                            pressFx = true
+                                        )
+                                    } else Modifier
+                                )
+                                .border(
+                                    width = if (catSelected) 1.5.dp else if (isGlass) 0.dp else 0.5.dp,
+                                    color = if (catSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    shape = catShape
+                                )
+                                .clickable { selectedGroup = group }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .semantics {
+                                    contentDescription = catLabel
+                                    selected = catSelected
+                                    role = Role.Tab
+                                }
+                        ) {
+                            Text(
+                                text = catLabel,
+                                style = PetalText.chip,
+                                color = if (catSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                // Shape selector horizontal carousel drawing filled 48dp expressive shapes with left/right fade edges
+                val categoryShapes = remember(selectedGroup) { PetalMaterialShapes.shapesInGroup(selectedGroup) }
+                val shapeRowScrollState = rememberScrollState()
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScrollEdgeFade(shapeRowScrollState)
+                        .horizontalScroll(shapeRowScrollState)
+                        .padding(vertical = 2.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    categoryShapes.forEach { shapeHolder ->
+                        val isSelected = shapeHolder.name.equals(selectedShapeHolder.name, ignoreCase = true)
+                        val shape = shapeHolder.toShape()
+                        val selectionScale by animateFloatAsState(
+                            targetValue = if (isSelected) 1.06f else 0.96f,
+                            animationSpec = PetalSpring.playful(),
+                            label = "shape_chip_scale"
+                        )
+                        val checkAlpha by animateFloatAsState(
+                            targetValue = if (isSelected) 1f else 0f,
+                            animationSpec = PetalSpring.quick(),
+                            label = "shape_check_alpha"
+                        )
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(48.dp)
+                                .graphicsLayer {
+                                    scaleX = selectionScale
+                                    scaleY = selectionScale
+                                }
                                 .clip(shape)
                                 .background(
                                     if (isSelected) MaterialTheme.colorScheme.primary
                                     else if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor()
                                     else MaterialTheme.colorScheme.surfaceContainerHighest
                                 )
-                                .then(if (isGlass) Modifier.liquidGlassChrome(shape, enabled = true, sheenIntensity = 0.35f, pressFx = true) else Modifier)
+                                .then(
+                                    if (isGlass) {
+                                        Modifier.liquidGlassChrome(
+                                            shape = shape,
+                                            enabled = true,
+                                            tintColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Unspecified,
+                                            sheenIntensity = 0.40f,
+                                            pressFx = true
+                                        )
+                                    } else Modifier
+                                )
                                 .border(
-                                    width = if (isSelected) 2.dp else if (isGlass) 0.dp else 0.5.dp,
-                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+                                    width = if (isSelected) 2.5.dp else if (isGlass) 0.dp else 0.75.dp,
+                                    color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.outlineVariant,
                                     shape = shape
                                 )
                                 .clickable {
                                     selectedShapeName = shapeHolder.name
                                 }
+                                .semantics {
+                                    contentDescription = shapeHolder.name
+                                    selected = isSelected
+                                    role = Role.RadioButton
+                                }
                         ) {
-                            Text(
-                                text = shapeHolder.name.take(2),
-                                style = PetalText.badge,
-                                color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            if (checkAlpha > 0.05f) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier
+                                        .size(20.dp)
+                                        .graphicsLayer {
+                                            alpha = checkAlpha
+                                            scaleX = checkAlpha
+                                            scaleY = checkAlpha
+                                        }
+                                )
+                            }
                         }
                     }
                 }
 
-                // Live Preview with 0-padding full-bleed expressive shape
+                // Live Preview at exact home screen tile size (60.dp) with 0-padding clipping and label
                 val previewRowShape = RoundedCornerShape(16.dp)
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
                         .liquidGlassChrome(shape = previewRowShape, enabled = isGlass)
@@ -1635,38 +1981,79 @@ private fun EditShortcutDialog(
                         )
                         .padding(12.dp)
                 ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier
-                            .size(54.dp)
-                            .then(if (isGlass) Modifier.liquidGlassChrome(previewTileShape, enabled = true, sheenIntensity = 0.45f) else Modifier.shadow(elevation = 2.dp, shape = previewTileShape.toSafeShadowShape()))
-                            .clip(previewTileShape)
-                            .background(if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.width(68.dp)
                     ) {
-                        if (!currentFaviconUrl.isNullOrEmpty() && !isImageError) {
-                            // 0-padding full bleed
-                            AsyncImage(
-                                model = currentFaviconUrl,
-                                contentDescription = nameText,
-                                contentScale = ContentScale.Crop,
-                                onError = { isImageError = true },
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .clip(previewTileShape)
-                            )
-                        } else {
-                            Text(
-                                nameText.ifBlank { "S" }.take(1).uppercase(),
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.primary
-                            )
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier
+                                .size(60.dp)
+                                .then(
+                                    if (isGlass) Modifier.liquidGlassChrome(previewTileShape, enabled = true, sheenIntensity = 0.45f)
+                                    else Modifier.shadow(elevation = 2.dp, shape = previewTileShape.toSafeShadowShape(), clip = false)
+                                )
+                                .clip(previewTileShape)
+                                .background(if (isGlass) com.petal.browser.ui.containment.petalGroupSurfaceColor() else MaterialTheme.colorScheme.surfaceContainerHighest)
+                        ) {
+                            if (!currentFaviconUrl.isNullOrEmpty() && !isImageError) {
+                                AsyncImage(
+                                    model = currentFaviconUrl,
+                                    contentDescription = previewDerivedTitle,
+                                    contentScale = ContentScale.Crop,
+                                    onError = { isImageError = true },
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(previewTileShape)
+                                )
+                            } else {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(previewTileShape)
+                                        .background(selectedColor.copy(alpha = 0.22f))
+                                ) {
+                                    SiteBrandIconTinted(
+                                        siteId = previewSiteId,
+                                        label = previewDerivedTitle,
+                                        tint = selectedColor
+                                    )
+                                }
+                            }
                         }
-                    }
-                    Column {
-                        Text(stringResource(R.string.ui_live_preview, selectedShapeName), style = PetalText.cardTitle)
+                        Spacer(Modifier.height(5.dp))
                         Text(
-                            nameText.ifBlank { "Shortcut" },
+                            text = previewDerivedTitle,
+                            style = PetalText.tabLabel,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.ui_shortcut_preview),
+                            style = PetalText.caption,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = previewDerivedTitle,
                             style = PetalText.rowTitle,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            text = selectedShapeHolder.name,
+                            style = PetalText.badge,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -1674,43 +2061,22 @@ private fun EditShortcutDialog(
         },
         confirmButton = {
             val onSaveAction = {
-                val finalUrl = if (urlText.isNotBlank() && !urlText.startsWith("http://") && !urlText.startsWith("https://")) {
-                    "https://$urlText"
-                } else urlText.ifBlank { "https://google.com" }
-
-                val derivedName = if (nameText.isNotBlank()) {
-                    nameText
-                } else {
-                    try {
-                        Uri.parse(finalUrl).host?.removePrefix("www.")?.substringBefore(".")
-                            ?.replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString() }
-                            ?: "Shortcut"
-                    } catch (_: Throwable) {
-                        "Shortcut"
+                val finalUrl = urlValidation.normalizedUrl
+                if (finalUrl != null) {
+                    val derivedName = nameText.trim().ifBlank {
+                        deriveShortcutName(finalUrl) ?: "Shortcut"
                     }
-                }
-
-                val siteId = try {
-                    val host = Uri.parse(finalUrl).host ?: ""
-                    when {
-                        host.contains("youtube") -> "youtube"
-                        host.contains("github") -> "github"
-                        host.contains("wikipedia") -> "wikipedia"
-                        host.contains("duckduckgo") -> "duckduckgo"
-                        host.contains("google") -> "google"
-                        else -> "globe"
-                    }
-                } catch (_: Throwable) { "globe" }
-
-                onSave(
-                    PetalShortcut(
-                        label = derivedName,
-                        url = finalUrl,
-                        siteId = siteId,
-                        containerColor = initialColor,
-                        shapeName = selectedShapeName
+                    onSave(
+                        PetalShortcut(
+                            label = derivedName,
+                            url = finalUrl,
+                            siteId = deriveShortcutSiteId(finalUrl),
+                            containerColor = selectedColor,
+                            shapeName = selectedShapeHolder.name,
+                            id = initialId ?: java.util.UUID.randomUUID().toString(),
+                        )
                     )
-                )
+                }
             }
 
             if (onDelete != null) {
@@ -1749,6 +2115,7 @@ private fun EditShortcutDialog(
                     }
                     Button(
                         onClick = onSaveAction,
+                        enabled = urlValidation.isValid,
                         shape = petalConnectedShape(2, 3),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
@@ -1784,6 +2151,7 @@ private fun EditShortcutDialog(
                     }
                     Button(
                         onClick = onSaveAction,
+                        enabled = urlValidation.isValid,
                         shape = petalConnectedShape(1, 2),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,

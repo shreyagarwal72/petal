@@ -2261,5 +2261,18 @@
     <string name="scanner_history_meta_format">%1$s • %2$s</string>
     <string name="ui_show_workspace_chips">Show workspace chips</string>
     <string name="ui_show_workspace_chips_desc">Show General, Personal and Work chips in the Tab Manager</string>
+    <string name="ui_edit_shortcut">Edit Shortcut</string>
+    <string name="ui_hide_from_home">Hide from home</string>
+    <string name="ui_shortcut_url_required">Enter a website URL</string>
+    <string name="ui_shortcut_url_invalid">Enter a valid website address (e.g. example.com)</string>
+    <string name="ui_shortcut_color">Tile color</string>
+    <string name="ui_shortcut_preview">Home tile preview</string>
+    <string name="ui_shortcut_favicon_fetching">Shortcut favicons</string>
+    <string name="ui_shortcut_favicon_fetching_desc">Fetch website icons for home screen shortcuts from the network</string>
+    <string name="ui_shape_cat_basic">Basic</string>
+    <string name="ui_shape_cat_cookie">Cookie</string>
+    <string name="ui_shape_cat_dynamic">Dynamic</string>
+    <string name="ui_shape_cat_organic">Organic</string>
+    <string name="ui_shape_cat_energetic">Energetic</string>
 </resources>
 

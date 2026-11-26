@@ -97,6 +97,7 @@ interface SettingsRepository {
     val canvasLetterboxing: Flow<Boolean>
     val drmEnabled: Flow<Boolean>
     val loginAutofillEnabled: Flow<Boolean>
+    val fetchShortcutFavicons: Flow<Boolean>
 
     // Accessibility & Display
     val immersiveFullScreen: Flow<Boolean>
@@ -242,6 +243,7 @@ interface SettingsRepository {
     suspend fun setCanvasLetterboxing(enabled: Boolean)
     suspend fun setDrmEnabled(enabled: Boolean)
     suspend fun setLoginAutofillEnabled(enabled: Boolean)
+    suspend fun setFetchShortcutFavicons(enabled: Boolean)
     suspend fun setCrossSiteTracking(strict: Boolean)
     suspend fun resetPrivacyToRecommended()
 

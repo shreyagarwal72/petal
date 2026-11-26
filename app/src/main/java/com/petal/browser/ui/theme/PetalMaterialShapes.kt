@@ -7,11 +7,9 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.unit.dp
-import androidx.graphics.shapes.CornerRounding
 import androidx.graphics.shapes.RoundedPolygon
-import androidx.graphics.shapes.circle
-import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
+import java.util.Locale
 
 /**
  * CompositionLocal providing global enablement of the 35 Material 3 Expressive shapes.
@@ -20,51 +18,25 @@ import androidx.graphics.shapes.toPath
 val LocalExpressiveShapesEnabled = compositionLocalOf { true }
 
 /**
+ * High-level shape picker categories corresponding to curated tabs in the UI.
+ */
+enum class PetalShapeGroup(val label: String) {
+    BASIC("Basic"),
+    COOKIE("Cookie"),
+    DYNAMIC("Dynamic"),
+    ORGANIC("Organic"),
+    ENERGETIC("Energetic"),
+}
+
+/**
  * PetalMaterialShapes
  *
- * Full official implementation of ALL 35 Material 3 Expressive Shapes according to the official Material 3
- * Expressive shape system specification (androidx.compose.material3.MaterialShapes / M3 Design Kit).
+ * Official catalog of all 35 Material 3 Expressive shapes backed directly by
+ * [androidx.compose.material3.MaterialShapes].
  *
- * Complete Official Catalog of 35 Shapes:
- * 1. Circle
- * 2. Square
- * 3. Slanted
- * 4. Arch
- * 5. SemiCircle
- * 6. Oval
- * 7. Pill
- * 8. Triangle
- * 9. Arrow
- * 10. Fan
- * 11. Diamond
- * 12. ClamShell
- * 13. Pentagon
- * 14. Gem
- * 15. Sunny
- * 16. VerySunny
- * 17. Cookie4Sided
- * 18. Cookie6Sided
- * 19. Cookie7Sided
- * 20. Cookie9Sided
- * 21. Cookie12Sided
- * 22. Ghostish
- * 23. Clover4Leaf
- * 24. Clover8Leaf
- * 25. Burst
- * 26. SoftBurst
- * 27. Boom
- * 28. SoftBoom
- * 29. Flower
- * 30. Puffy
- * 31. PuffyDiamond
- * 32. PixelCircle
- * 33. PixelTriangle
- * 34. Bun
- * 35. Heart
- *
- * Provides [toShape] extension converting any [RoundedPolygon] or [ExpressiveShapeHolder] seamlessly to Compose [Shape].
+ * Provides [toShape] converting any [RoundedPolygon] or [ExpressiveShapeHolder] cleanly to a
+ * Compose [Shape] with uniform scaling and centering inside arbitrary bounds.
  */
-
 data class ExpressiveShapeHolder(
     val name: String,
     val category: String,
@@ -73,17 +45,31 @@ data class ExpressiveShapeHolder(
     val cachedShape: Shape by lazy { polygon.toShape() }
     fun toShape(): Shape = cachedShape
     val shadowShape: Shape get() = ExpressiveShadowShape
+    fun toSafeShadowShape(): Shape = cachedShape.toSafeShadowShape()
 }
 
 /**
- * Converts a [RoundedPolygon] into a Jetpack Compose [Shape].
+ * Converts an official [RoundedPolygon] into a Jetpack Compose [Shape].
+ *
+ * Scales uniformly by `minOf(width / boundsWidth, height / boundsHeight)` and centers
+ * inside the target layout bounds so non-square containers never distort or clip.
  */
 fun RoundedPolygon.toShape(): Shape {
-    // Normalised polygons live in the 0..1 box, so a plain scale to the target size is enough.
-    val unit = android.graphics.Path().also { this.normalized().toPath(it) }
+    val normalized = this.normalized()
+    val unit = android.graphics.Path().also { normalized.toPath(it) }
     return GenericShape { size, _ ->
+        val w = size.width
+        val h = size.height
+        if (w <= 0f || h <= 0f) return@GenericShape
+        val bounds = android.graphics.RectF()
+        unit.computeBounds(bounds, true)
+        val bw = bounds.width().coerceAtLeast(1e-4f)
+        val bh = bounds.height().coerceAtLeast(1e-4f)
+        val scale = minOf(w / bw, h / bh)
         val matrix = android.graphics.Matrix()
-        matrix.setScale(size.width, size.height)
+        matrix.postTranslate(-bounds.centerX(), -bounds.centerY())
+        matrix.postScale(scale, scale)
+        matrix.postTranslate(w / 2f, h / 2f)
         val out = android.graphics.Path()
         unit.transform(matrix, out)
         this.addPath(out.asComposePath())
@@ -93,7 +79,7 @@ fun RoundedPolygon.toShape(): Shape {
 object PetalMaterialShapes {
     const val PREF_EXPRESSIVE_SHAPES_ENABLED = "sp_expressive_shapes_35_enabled"
 
-    // --- 1. Basic & Geometric (8 Shapes) ---
+    // --- 1. Basic & Geometric ---
     val Circle: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder("Circle", "Basic", androidx.compose.material3.MaterialShapes.Circle)
     }
@@ -126,7 +112,7 @@ object PetalMaterialShapes {
         ExpressiveShapeHolder("Triangle", "Basic", androidx.compose.material3.MaterialShapes.Triangle)
     }
 
-    // --- 2. Dynamic & Architectural (6 Shapes) ---
+    // --- 2. Dynamic & Architectural ---
     val Arrow: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder("Arrow", "Dynamic", androidx.compose.material3.MaterialShapes.Arrow)
     }
@@ -151,21 +137,9 @@ object PetalMaterialShapes {
         ExpressiveShapeHolder("Gem", "Geometric", androidx.compose.material3.MaterialShapes.Gem)
     }
 
-    // --- 3. Sunny & Cookie Series (7 Shapes) ---
+    // --- 3. Sunny & Cookie Series ---
     val Sunny: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder("Sunny", "Celestial", androidx.compose.material3.MaterialShapes.Sunny)
-    }
-
-    val Sun: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Sun",
-            "Celestial",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 8,
-                innerRadius = 0.58f,
-                rounding = CornerRounding(0.18f, 0.45f)
-            )
-        )
     }
 
     val VerySunny: ExpressiveShapeHolder by lazy {
@@ -188,23 +162,11 @@ object PetalMaterialShapes {
         ExpressiveShapeHolder("Cookie 9-Sided", "Cookies", androidx.compose.material3.MaterialShapes.Cookie9Sided)
     }
 
-    val Cookie10Sided: ExpressiveShapeHolder by lazy {
-        ExpressiveShapeHolder(
-            "Cookie 10-Sided",
-            "Cookies",
-            RoundedPolygon.star(
-                numVerticesPerRadius = 10,
-                innerRadius = 0.87f,
-                rounding = CornerRounding(0.26f, 0.8f)
-            )
-        )
-    }
-
     val Cookie12Sided: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder("Cookie 12-Sided", "Cookies", androidx.compose.material3.MaterialShapes.Cookie12Sided)
     }
 
-    // --- 4. Organic, Clovers & Playful (7 Shapes) ---
+    // --- 4. Organic, Clovers & Playful ---
     val Ghostish: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder("Ghostish", "Playful", androidx.compose.material3.MaterialShapes.Ghostish)
     }
@@ -233,7 +195,7 @@ object PetalMaterialShapes {
         ExpressiveShapeHolder("Heart", "Organic", androidx.compose.material3.MaterialShapes.Heart)
     }
 
-    // --- 5. High Energy, Explosive, Pixel & Treats (7 Shapes) ---
+    // --- 5. High Energy, Explosive, Pixel & Treats ---
     val Burst: ExpressiveShapeHolder by lazy {
         ExpressiveShapeHolder("Burst", "High Energy", androidx.compose.material3.MaterialShapes.Burst)
     }
@@ -276,13 +238,7 @@ object PetalMaterialShapes {
     val Star4Sided: ExpressiveShapeHolder get() = Cookie4Sided
     val Star8Sided: ExpressiveShapeHolder get() = Sunny
 
-    /**
-     * Curated list of 17 distinct Material 3 Expressive shapes for homescreen icon tiles
-     * ensuring every homescreen shortcut icon tile has a completely unique shape:
-     * 1. Arrow, 2. Fan, 3. Diamond, 4. Clamshell, 5. Pentagon, 6. Gem, 7. Very Sunny,
-     * 8. Sunny, 9. 4-Sided Cookie, 10. 6-Sided Cookie, 11. 7-Sided Cookie, 12. 9-Sided Cookie,
-     * 13. 10-Sided Cookie, 14. 4-Leaf Clover, 15. Flower, 16. Burst, 17. Sun.
-     */
+    /** Curated subset of official Material 3 Expressive shapes for homescreen icon tiles. */
     val homescreenShapes: List<ExpressiveShapeHolder> by lazy {
         listOf(
             Arrow,
@@ -297,28 +253,88 @@ object PetalMaterialShapes {
             Cookie6Sided,
             Cookie7Sided,
             Cookie9Sided,
-            Cookie10Sided,
+            Cookie12Sided,
             Clover4Leaf,
             Flower,
             Burst,
-            Sun
+            SoftBurst
         )
     }
 
-    /** Complete catalog list of ALL official Material 3 Expressive shapes. */
+    /** Complete official catalog of all 35 Material 3 Expressive shapes. */
     val allShapes: List<ExpressiveShapeHolder> by lazy {
         listOf(
-            // Basic & Geometric (8)
-            Circle, Square, Slanted, Arch, SemiCircle, Oval, Pill, Triangle,
-            // Dynamic & Architectural (6)
-            Arrow, Fan, Diamond, ClamShell, Pentagon, Gem,
-            // Sunny & Cookie Series (9)
-            Sunny, Sun, VerySunny, Cookie4Sided, Cookie6Sided, Cookie7Sided, Cookie9Sided, Cookie10Sided, Cookie12Sided,
-            // Organic, Clovers & Playful (7)
-            Ghostish, Clover4Leaf, Clover8Leaf, Flower, Puffy, PuffyDiamond, Heart,
-            // High Energy, Explosive, Pixel & Treats (7)
-            Burst, SoftBurst, Boom, SoftBoom, PixelCircle, PixelTriangle, Bun
+            // Basic (9)
+            Circle, Square, Slanted, Arch, SemiCircle, Oval, Pill, Triangle, Diamond,
+            // Cookie & Sunny (7)
+            Cookie4Sided, Cookie6Sided, Cookie7Sided, Cookie9Sided, Cookie12Sided, Sunny, VerySunny,
+            // Dynamic (6)
+            Arrow, Fan, ClamShell, Pentagon, Gem, PuffyDiamond,
+            // Organic (7)
+            Clover4Leaf, Clover8Leaf, Flower, Puffy, Heart, Bun, Ghostish,
+            // Energetic & Pixel (6)
+            Burst, SoftBurst, Boom, SoftBoom, PixelCircle, PixelTriangle
         )
+    }
+
+    private fun normalizeKey(raw: String): String {
+        return raw.trim()
+            .lowercase(Locale.ROOT)
+            .replace(" ", "")
+            .replace("-", "")
+            .replace("_", "")
+    }
+
+    private val lookupMap: Map<String, ExpressiveShapeHolder> by lazy {
+        val map = LinkedHashMap<String, ExpressiveShapeHolder>(64)
+        allShapes.forEach { holder ->
+            map[normalizeKey(holder.name)] = holder
+        }
+        // Property-style names & legacy/retired shape names mapped cleanly without crashing:
+        map["sun"] = Sunny
+        map["cookie10sided"] = Cookie9Sided
+        map["roundedsquare"] = Square
+        map["rectangle"] = Square
+        map["righttriangle"] = Triangle
+        map["hexagon"] = Gem
+        map["octagon"] = PixelCircle
+        map["decagon"] = Sunny
+        map["dodecagon"] = Cookie12Sided
+        map["scallop"] = Sunny
+        map["softscallop"] = VerySunny
+        map["teardrop"] = Bun
+        map["star4sided"] = Cookie4Sided
+        map["star8sided"] = Sunny
+        map
+    }
+
+    /**
+     * Resolves a saved or requested shape name case-insensitively, supporting both current names
+     * and legacy aliases (such as "Sun" -> [Sunny] or "Cookie10Sided" -> [Cookie9Sided]).
+     */
+    fun resolveByName(name: String?): ExpressiveShapeHolder? {
+        if (name.isNullOrBlank()) return null
+        return lookupMap[normalizeKey(name)]
+    }
+
+    /** Returns the picker filter tab for [holder]. */
+    fun groupFor(holder: ExpressiveShapeHolder): PetalShapeGroup {
+        return when (holder.name) {
+            "Circle", "Square", "Slanted", "Arch", "Semi Circle", "Oval", "Pill", "Triangle", "Diamond" ->
+                PetalShapeGroup.BASIC
+            "Cookie 4-Sided", "Cookie 6-Sided", "Cookie 7-Sided", "Cookie 9-Sided", "Cookie 12-Sided", "Sunny", "Very Sunny" ->
+                PetalShapeGroup.COOKIE
+            "Arrow", "Fan", "Clam Shell", "Pentagon", "Gem", "Puffy Diamond" ->
+                PetalShapeGroup.DYNAMIC
+            "Clover 4-Leaf", "Clover 8-Leaf", "Flower", "Puffy", "Heart", "Bun", "Ghostish" ->
+                PetalShapeGroup.ORGANIC
+            else -> PetalShapeGroup.ENERGETIC
+        }
+    }
+
+    /** Returns all shapes belonging to [group] in catalog order. */
+    fun shapesInGroup(group: PetalShapeGroup): List<ExpressiveShapeHolder> {
+        return allShapes.filter { groupFor(it) == group }
     }
 }
 
@@ -339,13 +355,11 @@ object MaterialShapes {
     val Pentagon = PetalMaterialShapes.Pentagon
     val Gem = PetalMaterialShapes.Gem
     val Sunny = PetalMaterialShapes.Sunny
-    val Sun = PetalMaterialShapes.Sun
     val VerySunny = PetalMaterialShapes.VerySunny
     val Cookie4Sided = PetalMaterialShapes.Cookie4Sided
     val Cookie6Sided = PetalMaterialShapes.Cookie6Sided
     val Cookie7Sided = PetalMaterialShapes.Cookie7Sided
     val Cookie9Sided = PetalMaterialShapes.Cookie9Sided
-    val Cookie10Sided = PetalMaterialShapes.Cookie10Sided
     val Cookie12Sided = PetalMaterialShapes.Cookie12Sided
     val Ghostish = PetalMaterialShapes.Ghostish
     val Clover4Leaf = PetalMaterialShapes.Clover4Leaf
@@ -420,4 +434,3 @@ fun rememberExpressiveShape(key: Any?, fallback: Shape = RoundedCornerShape(14.d
     val idx = (hash and 0x7FFFFFFF) % all.size
     return all[idx].toShape()
 }
-
