@@ -131,7 +131,8 @@ fun ComposeEngineViewport(
 
     // Hide the loader immediately when the page finishes loading, regardless of the 5s watchdog.
     LaunchedEffect(isLoading) {
-        if (!isLoading) {
+        // Only clear a committed refresh; never kill a pull that is still in progress.
+        if (!isLoading && (swipeLayout.isRefreshing || refreshBarState.isRefreshing)) {
             swipeLayout.forceStopRefresh()
             refreshBarState.isRefreshing = false
             refreshBarState.pullProgress = 0f

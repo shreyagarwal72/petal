@@ -408,7 +408,11 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
                 if (initialDownY == 0f) {
                     initialDownY = event.y
                 }
-                if (!activeFingerDown || com.petal.browser.ui.glass.GeckoGlassBackend.isFlinging || canChildScrollUp()) {
+                // Like Mozilla's layout, do NOT re-ask Gecko "can the page scroll up" here. Once this layout
+                // owns the gesture Gecko has received ACTION_CANCEL and its answer can flip mid-pull, which
+                // used to reset the pull and cancel the reload on release. The intercept gate already
+                // checked the page was at the top and not flinging before the pull began.
+                if (!activeFingerDown) {
                     pulledPastSlop = false
                     if (!isRefreshing) onPullProgress?.invoke(0f)
                 } else {
@@ -431,7 +435,7 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
         // A pull that crosses the threshold calls SwipeRefreshLayout's private setRefreshing(true, true),
         // which bypasses the override above: tell the indicator and arm the watchdog ourselves.
         if (!wasRefreshing && isRefreshing) {
-            if (!pulledPastSlop || com.petal.browser.ui.glass.GeckoGlassBackend.isFlinging) {
+            if (!pulledPastSlop) {
                 isRefreshing = false
             } else {
                 markRefreshCommitted()
@@ -537,6 +541,7 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
     )
 }
 
-private const val REFRESH_FINISH_GRACE_MS = 500L
+// Reload needs time to flip the tab's loading flag after release; a short grace dropped the spinner early.
+private const val REFRESH_FINISH_GRACE_MS = 1500L
 private const val REFRESH_POLL_MS = 500L
 private const val REFRESH_MAX_VISIBLE_MS = 20_000L
