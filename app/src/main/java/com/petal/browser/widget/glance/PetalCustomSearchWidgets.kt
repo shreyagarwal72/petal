@@ -43,7 +43,7 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import androidx.preference.PreferenceManager
 import com.petal.browser.R
-import com.petal.browser.activity.MainActivity
+import com.petal.browser.widget.PetalWidgetIntentRouter
 
 /*
  * Petal's three home-screen widgets, in Material 3 Expressive.
@@ -67,10 +67,7 @@ import com.petal.browser.activity.MainActivity
  */
 
 private fun widgetActionIntent(context: Context, action: String): Intent =
-    Intent(context, MainActivity::class.java).apply {
-        this.action = action
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-    }
+    PetalWidgetIntentRouter.intentForAction(context, action)
 
 private fun actionFor(context: Context, action: PetalWidgetAction): Action =
     actionStartActivity(widgetActionIntent(context, action.intentAction ?: PetalWidgetAction.SEARCH.intentAction!!))

@@ -93,6 +93,11 @@
         <item name="postSplashScreenTheme">@style/AppTheme</item>
     </style>
 
+    <!-- Lightweight instant window theme for Brave/Chrome-style Quick Search (no splash delay). -->
+    <style name="Theme.Petal.QuickSearch" parent="AppTheme">
+        <item name="android:windowSoftInputMode">adjustResize|stateVisible</item>
+    </style>
+
     <style name="PetalContextMenuDialogTheme" parent="Theme.Material3.DayNight.Dialog">
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:colorBackground">@android:color/transparent</item>

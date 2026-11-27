@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="quick_search"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_search"
+        android:shortcutShortLabel="@string/shortcut_search"
+        android:shortcutLongLabel="@string/shortcut_search">
+        <intent
+            android:action="com.petal.browser.action.OPEN_SEARCH"
+            android:targetPackage="com.petal.browser"
+            android:targetClass="com.petal.browser.activity.PetalQuickSearchActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="new_tab"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_new_tab"
+        android:shortcutShortLabel="@string/shortcut_new_tab"
+        android:shortcutLongLabel="@string/shortcut_new_tab">
+        <intent
+            android:action="com.petal.browser.action.OPEN_NEW_TAB"
+            android:targetPackage="com.petal.browser"
+            android:targetClass="com.petal.browser.activity.MainActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="new_private_tab"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_incognito"
+        android:shortcutShortLabel="@string/shortcut_new_private_tab"
+        android:shortcutLongLabel="@string/shortcut_new_private_tab">
+        <intent
+            android:action="com.petal.browser.action.OPEN_INCOGNITO"
+            android:targetPackage="com.petal.browser"
+            android:targetClass="com.petal.browser.activity.MainActivity" />
+    </shortcut>
+</shortcuts>

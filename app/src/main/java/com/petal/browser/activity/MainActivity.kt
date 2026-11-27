@@ -130,14 +130,8 @@ class MainActivity : FragmentActivity(), BrowserController {
     private var stoppedForAppLock: Boolean = false
     private var pendingIncomingIntent: Intent? = null
 
-    private fun isAppLockConfiguredAndEnabled(): Boolean {
-        if (!sp.getBoolean("sp_app_lock_enabled", false)) return false
-        val lockType = sp.getString("sp_app_lock_type", "FINGERPRINT") ?: "FINGERPRINT"
-        val passcode = sp.getString("sp_app_lock_passcode", "") ?: ""
-        val hasBiometric = lockType == "FINGERPRINT" &&
-            com.petal.browser.security.BiometricLockManager.canAuthenticate(this)
-        return passcode.isNotBlank() || hasBiometric
-    }
+    private fun isAppLockConfiguredAndEnabled(): Boolean =
+        com.petal.browser.compose.security.PetalAppLockBridge.isAppLockConfiguredAndEnabled(this)
 
     private fun flushPendingIncomingIntent() {
         if (com.petal.browser.compose.splash.PetalSplashState.splashActive.value) return
@@ -150,6 +144,12 @@ class MainActivity : FragmentActivity(), BrowserController {
         if (isFinishing || isDestroyed) return
         if (com.petal.browser.compose.splash.PetalSplashState.splashActive.value) return
         if (isSessionUnlockedForAppLock) {
+            flushPendingIncomingIntent()
+            return
+        }
+        if (com.petal.browser.compose.security.PetalAppLockBridge.consumeTransientHandoffUnlock()) {
+            isSessionUnlockedForAppLock = true
+            stoppedForAppLock = false
             flushPendingIncomingIntent()
             return
         }
@@ -1335,6 +1335,13 @@ class MainActivity : FragmentActivity(), BrowserController {
             com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_MENU -> {
                 viewModel.setMenuOpen(true)
             }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_TABS -> {
+                viewModel.dismissAllOverlays()
+                viewModel.setTabSwitcherOpen(true)
+            }
+            com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_HISTORY -> {
+                viewModel.openHistory()
+            }
             com.petal.browser.compose.incognito.PetalIncognitoSessionManager.ACTION_CLOSE_INCOGNITO -> {
                 viewModel.closeAllTabs(isIncognitoOnly = true)
             }
@@ -1350,16 +1357,27 @@ class MainActivity : FragmentActivity(), BrowserController {
                                 this@MainActivity,
                                 com.petal.browser.customtabs.PetalCustomTabActivity::class.java
                             )
+                            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         }
                         startActivity(customTabIntent)
-                        finish()
+                        if (!com.petal.browser.unit.PetalBrowserUtils.isLiveSessionActive()) {
+                            finish()
+                        } else {
+                            moveTaskToBack(true)
+                        }
                         return
                     }
                     viewModel.dismissAllOverlays()
                     val openPrivate = intent.getBooleanExtra("com.petal.browser.extra.OPEN_PRIVATE_TAB", false)
-                    if (openPrivate) {
-                        intent.removeExtra("com.petal.browser.extra.OPEN_PRIVATE_TAB")
-                        viewModel.openNewTab(url = data, selectTab = true, private = true)
+                    val openInNewTab = intent.getBooleanExtra(PetalQuickSearchActivity.EXTRA_OPEN_IN_NEW_TAB, false)
+                    intent.removeExtra("com.petal.browser.extra.OPEN_PRIVATE_TAB")
+                    intent.removeExtra(PetalQuickSearchActivity.EXTRA_OPEN_IN_NEW_TAB)
+                    val currentTabs = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this).state.tabs
+                    val onlyBlankHome = !openPrivate &&
+                        currentTabs.size == 1 &&
+                        com.petal.browser.unit.PetalBrowserUtils.isHomePage(currentTabs[0].content.url)
+                    if (openPrivate || (openInNewTab && !onlyBlankHome)) {
+                        viewModel.openNewTab(url = data, selectTab = true, private = openPrivate)
                     } else {
                         viewModel.loadUrl(data)
                     }

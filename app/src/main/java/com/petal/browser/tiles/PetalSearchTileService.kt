@@ -1,11 +1,10 @@
 package com.petal.browser.tiles
 
-import android.content.Intent
 import android.graphics.drawable.Icon
 import android.service.quicksettings.Tile
 import com.petal.browser.R
-import com.petal.browser.activity.MainActivity
 import com.petal.browser.widget.PetalSearchWidgetProvider
+import com.petal.browser.widget.PetalWidgetIntentRouter
 
 class PetalSearchTileService : PetalTileBase() {
 
@@ -20,10 +19,6 @@ class PetalSearchTileService : PetalTileBase() {
 
     override fun onClick() {
         super.onClick()
-        val intent = Intent(this, MainActivity::class.java).apply {
-            action = PetalSearchWidgetProvider.ACTION_OPEN_SEARCH
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        launchIntent(intent)
+        launchIntent(PetalWidgetIntentRouter.intentForAction(this, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH))
     }
 }

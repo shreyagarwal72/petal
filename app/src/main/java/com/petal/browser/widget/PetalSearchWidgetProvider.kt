@@ -20,6 +20,8 @@ object PetalSearchWidgetProvider {
     const val ACTION_OPEN_LENS = "com.petal.browser.action.OPEN_LENS"
     const val ACTION_OPEN_SNAP_CAMERA = "com.petal.browser.action.OPEN_SNAP_CAMERA"
     const val ACTION_OPEN_MENU = "com.petal.browser.action.OPEN_MENU"
+    const val ACTION_OPEN_TABS = "com.petal.browser.action.OPEN_TABS"
+    const val ACTION_OPEN_HISTORY = "com.petal.browser.action.OPEN_HISTORY"
 
     /** Refreshes every placed Glance and Liquid Glass widget, e.g. after theme, font, or night-mode changes. */
     @JvmStatic

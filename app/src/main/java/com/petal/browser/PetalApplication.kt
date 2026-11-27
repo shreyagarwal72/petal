@@ -36,6 +36,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
     private var lastNightModeBits: Int = 0
     private var startedActivityCount: Int = 0
+    private var liveMainActivityCount: Int = 0
     private var lastActivityRef: java.lang.ref.WeakReference<Activity>? = null
 
     private val wallpaperChangeReceiver = object : BroadcastReceiver() {
@@ -194,7 +195,11 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
         }
 
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
-            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+                if (activity is com.petal.browser.activity.MainActivity) {
+                    liveMainActivityCount++
+                }
+            }
             override fun onActivityStarted(activity: Activity) {
                 if (startedActivityCount == 0) {
                     PetalBrowserUtils.resetClearOnExitState()
@@ -212,7 +217,9 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             }
             override fun onActivityStopped(activity: Activity) {
                 startedActivityCount = maxOf(0, startedActivityCount - 1)
-                if (startedActivityCount == 0 && activity.isFinishing) {
+                if (startedActivityCount == 0 && activity.isFinishing && liveMainActivityCount <= 1 &&
+                    (activity is com.petal.browser.activity.MainActivity || liveMainActivityCount == 0)
+                ) {
                     com.petal.browser.logger.PetalAppLogger.markCleanExit(this@PetalApplication)
                     val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
                     if (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) {
@@ -222,7 +229,10 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             }
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityDestroyed(activity: Activity) {
-                if (startedActivityCount == 0 && activity.isFinishing) {
+                if (activity is com.petal.browser.activity.MainActivity) {
+                    liveMainActivityCount = maxOf(0, liveMainActivityCount - 1)
+                }
+                if (startedActivityCount == 0 && activity.isFinishing && liveMainActivityCount == 0) {
                     com.petal.browser.logger.PetalAppLogger.markCleanExit(this@PetalApplication)
                     val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
                     if (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) {

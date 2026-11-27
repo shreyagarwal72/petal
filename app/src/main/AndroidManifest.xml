@@ -245,10 +245,9 @@
             android:resizeableActivity="true"
             android:launchMode="singleTask">
 
-            <!-- Launcher-Eintrag & Systemweite Websuche -->
+            <!-- Launcher-Eintrag -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-                <action android:name="android.intent.action.WEB_SEARCH" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <!-- No LAUNCHER category here: the home-screen entry is provided by exactly one of the
                      com.petal.browser.appicon.* activity-aliases below (see PetalAppIcons). -->
@@ -339,6 +338,23 @@
             </intent-filter>
         </activity>
 
+        <!-- Standalone Quick Search Activity (Chrome/Brave SearchActivity parity) -->
+        <activity
+            android:name="com.petal.browser.activity.PetalQuickSearchActivity"
+            android:label="@string/shortcut_search"
+            android:theme="@style/Theme.Petal.QuickSearch"
+            android:taskAffinity="com.petal.browser.search"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
+            android:windowSoftInputMode="adjustResize|stateVisible"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.WEB_SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <!--
           Legacy component alias: preserves 100% backward compatibility for OS shortcuts,
           widgets, and external launcher targets previously mapped to BrowserActivity.
@@ -364,6 +380,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name="com.petal.browser.appicon.Swirl"
@@ -377,6 +396,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name="com.petal.browser.appicon.Tabs"
@@ -390,6 +412,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name="com.petal.browser.appicon.P"
@@ -403,6 +428,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name="com.petal.browser.appicon.Lens"
@@ -416,6 +444,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name="com.petal.browser.appicon.Shield"
@@ -429,6 +460,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name="com.petal.browser.appicon.Globe"
@@ -442,6 +476,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name="com.petal.browser.appicon.Pointer"
@@ -455,6 +492,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
         <activity-alias
             android:name="com.petal.browser.appicon.Window"
@@ -468,6 +508,9 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity-alias>
 
         <!--
@@ -656,6 +699,8 @@
             android:name="com.petal.browser.customtabs.PetalCustomTabActivity"
             android:label="@string/petal_custom_tab_name"
             android:theme="@style/AppTheme"
+            android:taskAffinity="com.petal.browser.customtab"
+            android:documentLaunchMode="intoExisting"
             android:configChanges="orientation|uiMode|screenSize|smallestScreenSize|screenLayout|keyboard|keyboardHidden|navigation"
             android:exported="true">
         </activity>

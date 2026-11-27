@@ -2277,5 +2277,8 @@
     <string name="ui_hide">Hide</string>
     <string name="ui_move_files">Move</string>
     <string name="ui_also_delete_files_switch">Also delete files from device</string>
+    <string name="shortcut_search">Search</string>
+    <string name="shortcut_new_tab">New tab</string>
+    <string name="shortcut_new_private_tab">New private tab</string>
 </resources>
 

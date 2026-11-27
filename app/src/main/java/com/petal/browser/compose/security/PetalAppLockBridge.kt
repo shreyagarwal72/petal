@@ -35,6 +35,32 @@ object PetalAppLockBridge {
     @JvmField
     var isLockOverlayShowing: Boolean = false
 
+    @Volatile
+    private var transientHandoffDeadlineMs: Long = 0L
+
+    @JvmStatic
+    fun isAppLockConfiguredAndEnabled(context: android.content.Context): Boolean {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        if (!sp.getBoolean("sp_app_lock_enabled", false)) return false
+        val lockType = sp.getString("sp_app_lock_type", "FINGERPRINT") ?: "FINGERPRINT"
+        val passcode = sp.getString("sp_app_lock_passcode", "") ?: ""
+        val hasBiometric = lockType == "FINGERPRINT" &&
+            com.petal.browser.security.BiometricLockManager.canAuthenticate(context)
+        return passcode.isNotBlank() || hasBiometric
+    }
+
+    @JvmStatic
+    fun grantTransientHandoffUnlock(durationMs: Long = 5_000L) {
+        transientHandoffDeadlineMs = android.os.SystemClock.elapsedRealtime() + durationMs
+    }
+
+    @JvmStatic
+    fun consumeTransientHandoffUnlock(): Boolean {
+        val deadline = transientHandoffDeadlineMs
+        transientHandoffDeadlineMs = 0L
+        return deadline > 0L && android.os.SystemClock.elapsedRealtime() <= deadline
+    }
+
     @JvmStatic
     fun showLockOverlay(activity: Activity, onUnlocked: Runnable, onCancel: Runnable) {
         if (isLockOverlayShowing) return

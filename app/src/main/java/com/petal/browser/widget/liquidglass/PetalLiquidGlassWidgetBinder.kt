@@ -8,8 +8,8 @@ import android.content.Intent
 import android.view.View
 import android.widget.RemoteViews
 import com.petal.browser.R
-import com.petal.browser.activity.MainActivity
 import com.petal.browser.widget.PetalSearchWidgetProvider
+import com.petal.browser.widget.PetalWidgetIntentRouter
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -140,11 +140,6 @@ object PetalLiquidGlassWidgetBinder {
         mgr.updateAppWidget(id, views)
     }
 
-    private fun actionIntent(context: Context, action: String): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java).apply {
-            this.action = action
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-        }
-        return PendingIntent.getActivity(context, action.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-    }
+    private fun actionIntent(context: Context, action: String): PendingIntent =
+        PetalWidgetIntentRouter.pendingIntentForAction(context, action)
 }
