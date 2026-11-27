@@ -61,13 +61,57 @@ object PetalCacheManager {
         try {
             val cacheDir = appContext.cacheDir
             if (cacheDir != null && cacheDir.isDirectory) {
-                val size = calculateDirSizeExcluding(cacheDir, "gecko", "profile", "cookies.sqlite", "databases")
+                val size = calculateDirSizeExcluding(cacheDir, "gecko", "mozilla", "profile", "cookies.sqlite", "databases")
                 map["app_cache"] = size
                 total += size
             }
         } catch (e: Throwable) {
             if (e is kotlinx.coroutines.CancellationException) throw e
             Log.w(TAG, "Failed calculating app cache size: ${e.message}")
+        }
+
+        // 1b. Gecko Web Cache (HTTP disk cache / startup cache inside cacheDir/mozilla or gecko profile)
+        try {
+            var geckoWebCacheBytes = 0L
+            for (parent in listOfNotNull(appContext.cacheDir, appContext.filesDir)) {
+                val mozillaDir = File(parent, "mozilla")
+                if (mozillaDir.isDirectory) {
+                    mozillaDir.listFiles()?.forEach { profileDir ->
+                        if (profileDir.isDirectory) {
+                            geckoWebCacheBytes += calculateDirSize(File(profileDir, "cache2"))
+                            geckoWebCacheBytes += calculateDirSize(File(profileDir, "startupCache"))
+                            geckoWebCacheBytes += calculateDirSize(File(profileDir, "OfflineCache"))
+                        }
+                    }
+                }
+            }
+            if (geckoWebCacheBytes > 0L) {
+                map["gecko_web_cache"] = geckoWebCacheBytes
+                total += geckoWebCacheBytes
+            }
+        } catch (e: Throwable) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.w(TAG, "Failed calculating Gecko web cache size: ${e.message}")
+        }
+
+        // 1c. Website DOM / IndexedDB / ServiceWorker storage inside Gecko profile
+        try {
+            var siteStorageBytes = 0L
+            val mozillaFilesDir = File(appContext.filesDir, "mozilla")
+            if (mozillaFilesDir.isDirectory) {
+                mozillaFilesDir.listFiles()?.forEach { profileDir ->
+                    if (profileDir.isDirectory) {
+                        siteStorageBytes += calculateDirSize(File(profileDir, "storage"))
+                    }
+                }
+            }
+            if (siteStorageBytes > 0L) {
+                map["site_storage"] = siteStorageBytes
+                total += siteStorageBytes
+            }
+        } catch (e: Throwable) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.w(TAG, "Failed calculating site storage size: ${e.message}")
         }
 
         // 2. External Cache Dir
@@ -96,7 +140,20 @@ object PetalCacheManager {
             Log.w(TAG, "Failed calculating thumbnail cache size: ${e.message}")
         }
 
-        // 4. Code Cache Dir
+        // 4. Favicon database
+        try {
+            val faviconDb = appContext.getDatabasePath("favicon.db")
+            if (faviconDb != null && faviconDb.isFile) {
+                val size = faviconDb.length()
+                map["favicon_db"] = size
+                total += size
+            }
+        } catch (e: Throwable) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
+            Log.w(TAG, "Failed calculating favicon db size: ${e.message}")
+        }
+
+        // 5. Code Cache Dir
         try {
             val codeCache = appContext.codeCacheDir
             if (codeCache != null && codeCache.isDirectory) {
@@ -149,6 +206,13 @@ object PetalCacheManager {
     ) {
         val appContext = context.applicationContext
 
+        val pendingTasks = java.util.concurrent.atomic.AtomicInteger(1)
+        val finishOne = {
+            if (pendingTasks.decrementAndGet() == 0 && onCompleted != null) {
+                mainHandler.post(onCompleted)
+            }
+        }
+
         // 1. Mozilla GeckoView StorageController pipeline (Firefox official engine)
         try {
             var geckoFlags = 0L
@@ -175,7 +239,10 @@ object PetalCacheManager {
                 geckoFlags = geckoFlags or StorageController.ClearFlags.SITE_SETTINGS
             }
             if (geckoFlags != 0L) {
-                PetalGeckoRuntime.clearData(appContext, geckoFlags)
+                pendingTasks.incrementAndGet()
+                PetalGeckoRuntime.clearDataAsync(appContext, geckoFlags) {
+                    finishOne()
+                }
             }
         } catch (e: Exception) {
             Log.w(TAG, "Error clearing GeckoView storage", e)
@@ -197,7 +264,6 @@ object PetalCacheManager {
         }
 
         // 4. Legacy HTTP response cache: only when the network cache was requested
-        // (a cookies-only clear used to throw it away as well).
         if ((flags and Flags.NETWORK_CACHE) != 0L) {
             try {
                 HttpResponseCache.getInstalled()?.delete()
@@ -207,12 +273,10 @@ object PetalCacheManager {
         // 5. File system temporary directories on background worker
         diskExecutor.execute {
             try {
-                // Only an explicit APP_TEMP_CACHE request may touch the app cache directory: it
-                // also holds share/export temp files and in-progress work unrelated to web caches.
                 if ((flags and Flags.APP_TEMP_CACHE) != 0L) {
                     val cacheDir = appContext.cacheDir
                     if (cacheDir != null && cacheDir.isDirectory) {
-                        deleteDirContentsExcluding(cacheDir, "gecko", "profile", "cookies.sqlite", "databases")
+                        deleteDirContentsExcluding(cacheDir, "gecko", "mozilla", "profile", "cookies.sqlite", "databases")
                     }
                     val extCache = appContext.externalCacheDir
                     if (extCache != null && extCache.isDirectory) {
@@ -229,9 +293,7 @@ object PetalCacheManager {
             } catch (e: Exception) {
                 Log.w(TAG, "Error deleting cache directory contents", e)
             } finally {
-                if (onCompleted != null) {
-                    mainHandler.post(onCompleted)
-                }
+                finishOne()
             }
         }
     }

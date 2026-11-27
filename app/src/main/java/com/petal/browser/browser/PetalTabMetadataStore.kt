@@ -245,6 +245,21 @@ object PetalTabMetadataStore {
         }
     }
 
+    /** Batch removal executing at most a single Room persistence transaction. */
+    @JvmStatic
+    @Synchronized
+    fun removeAll(context: Context, tabIds: Collection<String>) {
+        if (tabIds.isEmpty()) return
+        ensureLoaded(context)
+        var changed = false
+        for (tabId in tabIds) {
+            if (tabId.isBlank()) continue
+            mutedTabIds.remove(tabId)
+            if (cache.remove(tabId) != null) changed = true
+        }
+        if (changed) persist(context)
+    }
+
     /**
      * Prunes metadata for tabs that no longer exist in the store.
      */

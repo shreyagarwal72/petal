@@ -19,6 +19,10 @@ import java.util.concurrent.Executors
 open class FaviconHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
 
     companion object {
+        private val cleanupExecutor = Executors.newSingleThreadExecutor { r ->
+            Thread(r, "PetalFaviconCleanup").apply { isDaemon = true }
+        }
+
         private const val DATABASE_VERSION = 1
         private const val DATABASE_NAME = "favicon.db"
         private const val TABLE_FAVICON = "Favicon"
@@ -178,21 +182,18 @@ open class FaviconHelper(context: Context?) : SQLiteOpenHelper(context, DATABASE
     }
 
     fun cleanUpFaviconDB(context: Context) {
-        val executor = Executors.newSingleThreadExecutor()
-        executor.execute {
+        val appContext = context.applicationContext ?: return
+        cleanupExecutor.execute {
             try {
                 val faviconURLs = getAllFaviconDomains()
-                val action = HistoryBookmarkRepository(context)
-                val allEntries = if (context is Activity) action.listEntries(context) else emptyList()
+                if (faviconURLs.isEmpty()) return@execute
+                val action = HistoryBookmarkRepository(appContext)
+                val allEntries = action.listEntries(appContext)
+                // Safety guard: never wipe the entire favicon table if history+bookmarks returned empty unexpectedly.
+                if (allEntries.isEmpty()) return@execute
+                val knownDomains = allEntries.mapNotNullTo(HashSet()) { PetalAndroidUtils.domain(it.url) }
                 for (faviconURL in faviconURLs) {
-                    var found = false
-                    for (entry in allEntries) {
-                        if (PetalAndroidUtils.domain(entry.url) == faviconURL) {
-                            found = true
-                            break
-                        }
-                    }
-                    if (!found) {
+                    if (faviconURL !in knownDomains) {
                         deleteFavicon(faviconURL)
                         Log.d("Favicon delete", faviconURL)
                     }

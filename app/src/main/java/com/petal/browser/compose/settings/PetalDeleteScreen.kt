@@ -144,9 +144,22 @@ fun PetalDeleteScreen(
     var clearCache by remember { mutableStateOf(sp.getBoolean("sp_clear_cache", false)) }
     var clearIndexedDB by remember { mutableStateOf(sp.getBoolean("sp_clearIndexedDB", false)) }
     var clearCookie by remember { mutableStateOf(sp.getBoolean("sp_clear_cookie", false)) }
+    var clearPermissions by remember { mutableStateOf(sp.getBoolean("sp_clear_permissions", false)) }
+    var clearAutofill by remember { mutableStateOf(sp.getBoolean("sp_clear_autofill", false)) }
     var clearDatabase by remember { mutableStateOf(sp.getBoolean("sp_deleteDatabase", false)) }
     var clearSettings by remember { mutableStateOf(sp.getBoolean("sp_clear_settings", false)) }
+    var clearTabsOnExit by remember { mutableStateOf(sp.getBoolean(PetalBrowserUtils.PREF_CLEAR_TABS_ON_EXIT, false)) }
     var clearQuit by remember { mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) }
+
+    var cacheInfo by remember { mutableStateOf<com.petal.browser.unit.PetalCacheManager.CacheSizeInfo?>(null) }
+    var cacheRefreshTrigger by remember { mutableIntStateOf(0) }
+    LaunchedEffect(cacheRefreshTrigger) {
+        cacheInfo = try {
+            com.petal.browser.unit.PetalCacheManager.calculateCacheSize(context)
+        } catch (_: Throwable) {
+            null
+        }
+    }
 
     var showConfirmDialog by remember { mutableStateOf(false) }
 
@@ -169,8 +182,10 @@ fun PetalDeleteScreen(
                 Button(
                     onClick = {
                         showConfirmDialog = false
-                        PetalBrowserUtils.clearBrowserData(context)
-                        com.petal.browser.view.PetalToast.show(context, R.string.app_ok)
+                        PetalBrowserUtils.clearBrowserData(context) {
+                            cacheRefreshTrigger++
+                            com.petal.browser.view.PetalToast.show(context, R.string.app_ok)
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
@@ -229,23 +244,71 @@ fun PetalDeleteScreen(
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     PetalHeroCard {
-                        Row(
+                        Column(
                             modifier = Modifier.padding(20.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            PetalGroupIconBadge(Icons.Rounded.DeleteSweep)
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.ui_clear_browsing_data),
-                                    style = PetalText.cardTitle
-                                )
-                                Spacer(modifier = Modifier.height(2.dp))
-                                Text(
-                                    text = stringResource(R.string.ui_choose_items_to_erase_settings),
-                                    style = PetalText.cardBody,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                PetalGroupIconBadge(Icons.Rounded.DeleteSweep)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = stringResource(R.string.ui_clear_browsing_data),
+                                        style = PetalText.cardTitle
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = stringResource(R.string.ui_choose_items_to_erase_settings),
+                                        style = PetalText.cardBody,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+
+                            val info = cacheInfo
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Websites & App Cache: ${info?.formattedSize ?: "Calculating…"}",
+                                        style = PetalText.rowTitle
+                                    )
+                                    if (info != null) {
+                                        val webBytes = (info.details["gecko_web_cache"] ?: 0L) +
+                                            (info.details["app_cache"] ?: 0L) +
+                                            (info.details["external_cache"] ?: 0L) +
+                                            (info.details["code_cache"] ?: 0L)
+                                        val siteBytes = info.details["site_storage"] ?: 0L
+                                        val thumbBytes = info.details["thumbnails"] ?: 0L
+                                        Text(
+                                            text = "Web cache ${com.petal.browser.unit.PetalCacheManager.formatBytes(webBytes)} · Site data ${com.petal.browser.unit.PetalCacheManager.formatBytes(siteBytes)} · Thumbnails ${com.petal.browser.unit.PetalCacheManager.formatBytes(thumbBytes)}",
+                                            style = PetalText.caption,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                                com.petal.browser.ui.kit.FilledTonalButton(
+                                    onClick = {
+                                        com.petal.browser.unit.PetalCacheManager.clearCache(
+                                            context = context,
+                                            flags = com.petal.browser.unit.PetalCacheManager.Flags.ALL_CACHES
+                                        ) {
+                                            cacheRefreshTrigger++
+                                            com.petal.browser.view.PetalToast.show(context, "Cache cleared")
+                                        }
+                                    },
+                                    shape = RoundedCornerShape(14.dp),
+                                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+                                ) {
+                                    Text("Quick Clear Cache", style = PetalText.badge)
+                                }
                             }
                         }
                     }
@@ -324,6 +387,60 @@ fun PetalDeleteScreen(
                             leadingIcon = {
                                 Icon(
                                     Icons.Rounded.Cookie,
+                                    contentDescription = null,
+                                )
+                            }
+                        )
+
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                            title = stringResource(R.string.ui_site_permissions_location_etc),
+                            subtitle = "Reset camera, microphone, location & notification grants",
+                            checked = clearPermissions,
+                            onCheckedChange = {
+                                clearPermissions = it
+                                sp.edit().putBoolean("sp_clear_permissions", it).apply()
+                            },
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.TERTIARY,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Security,
+                                    contentDescription = null,
+                                )
+                            }
+                        )
+
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                            title = stringResource(R.string.ui_autofill_passwords_logins),
+                            subtitle = "Clear cached authentication sessions & HTTP auth credentials",
+                            checked = clearAutofill,
+                            onCheckedChange = {
+                                clearAutofill = it
+                                sp.edit().putBoolean("sp_clear_autofill", it).apply()
+                            },
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.PRIMARY,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Password,
+                                    contentDescription = null,
+                                )
+                            }
+                        )
+
+                        com.petal.browser.ui.containment.PetalGroupControlRow(
+                            title = "Open Tabs & Session State",
+                            subtitle = "Clear persisted open tabs, groups & recently closed undo list",
+                            checked = clearTabsOnExit,
+                            onCheckedChange = {
+                                clearTabsOnExit = it
+                                sp.edit().putBoolean(PetalBrowserUtils.PREF_CLEAR_TABS_ON_EXIT, it).apply()
+                            },
+                            position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
+                            variant = com.petal.browser.ui.containment.PetalBadgeVariant.SECONDARY,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Rounded.Tab,
                                     contentDescription = null,
                                 )
                             }

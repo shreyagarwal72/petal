@@ -47,6 +47,8 @@ object PetalBrowserUtils {
     const val MIME_TYPE_TEXT_PLAIN: String = "text/plain"
     const val URL_ENCODING: String = "UTF-8"
     const val PREF_PENDING_EXIT_CLEANUP: String = "sp_pending_exit_cleanup"
+    const val PREF_CLEAR_EXIT_DIRTY: String = "sp_clear_exit_dirty"
+    const val PREF_CLEAR_TABS_ON_EXIT: String = "sp_clear_tabs_on_exit"
 
     private val isLiveSessionActive = AtomicBoolean(false)
     private val isPerformingClear = AtomicBoolean(false)
@@ -366,6 +368,20 @@ object PetalBrowserUtils {
         }
     }
 
+    /** Pure rule mapping user data-category preferences to [PetalCacheManager.Flags]. */
+    @JvmStatic
+    fun clearCacheFlagsForPrefs(sp: SharedPreferences): Long {
+        var flags = 0L
+        if (sp.getBoolean("sp_clear_cache", false)) flags = flags or PetalCacheManager.Flags.ALL_CACHES
+        if (sp.getBoolean("sp_clear_cookie", false)) flags = flags or PetalCacheManager.Flags.COOKIES
+        if (sp.getBoolean("sp_clearIndexedDB", false)) {
+            flags = flags or PetalCacheManager.Flags.DOM_WEB_STORAGE or PetalCacheManager.Flags.SITE_SETTINGS
+        }
+        if (sp.getBoolean("sp_clear_permissions", false)) flags = flags or PetalCacheManager.Flags.PERMISSIONS
+        if (sp.getBoolean("sp_clear_autofill", false)) flags = flags or PetalCacheManager.Flags.AUTH_SESSIONS
+        return flags
+    }
+
     @JvmStatic
     fun performClearOnExitInternal(context: Context?) {
         if (context == null) return
@@ -373,113 +389,88 @@ object PetalBrowserUtils {
             return
         }
         try {
-            val sp = PreferenceManager.getDefaultSharedPreferences(context)
+            val appContext = context.applicationContext ?: context
+            val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
             val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
             if (!clearQuit) return
 
-            val clearHistory = sp.getBoolean("sp_clear_history", false)
-            val clearCache = sp.getBoolean("sp_clear_cache", false)
+            val clearHistoryPref = sp.getBoolean("sp_clear_history", false)
+            val clearTabsPref = sp.getBoolean(PREF_CLEAR_TABS_ON_EXIT, false)
 
-            if (clearHistory) {
-                clearHistory(context)
-                PetalSessionHistoryManager.clearSessionHistory(context)
-                PetalSessionRestoreManager.clearSession(context)
+            if (clearHistoryPref) {
+                clearHistory(appContext)
+                PetalSessionHistoryManager.clearSessionHistory(appContext)
             } else {
                 PetalSessionHistoryManager.resetSession()
             }
 
-            if (clearCache || clearQuit) {
+            if (clearTabsPref) {
+                PetalSessionRestoreManager.clearSession(appContext)
+            }
+
+            val flags = clearCacheFlagsForPrefs(sp)
+            if (flags != 0L) {
                 try {
-                    PetalCacheManager.clearAllCache(context, null)
+                    PetalCacheManager.clearCache(appContext, flags, null)
                 } catch (exception: Exception) {
-                    PetalAppLogger.w("browser", "Error clearing cache on exit", exception)
+                    PetalAppLogger.w("browser", "Error clearing data on exit", exception)
                 }
             }
 
             try {
-                PetalStorageManager.cleanEphemeralStorage(context)
-                PetalStorageManager.optimizeDatabases(context)
+                PetalStorageManager.cleanEphemeralStorage(appContext)
+                PetalStorageManager.optimizeDatabases(appContext)
             } catch (e: Exception) {
                 PetalAppLogger.w("PetalBrowserUtils", "Error optimizing databases or cleaning storage", e)
             }
+            sp.edit().putBoolean(PREF_CLEAR_EXIT_DIRTY, false).commit()
         } finally {
             isPerformingClear.set(false)
         }
     }
 
     @JvmStatic
-    fun clearBrowserData(context: Context) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val clearCache = sp.getBoolean("sp_clear_cache", false)
-        val clearCookie = sp.getBoolean("sp_clear_cookie", false)
-        val clearHistory = sp.getBoolean("sp_clear_history", false)
-        val clearIndexedDB = sp.getBoolean("sp_clearIndexedDB", false)
-        val clearDB = sp.getBoolean("sp_deleteDatabase", false)
-        val clearSettings = sp.getBoolean("sp_clear_settings", false)
+    @JvmOverloads
+    fun clearBrowserData(context: Context, onCompleted: Runnable? = null) {
+        val appContext = context.applicationContext ?: context
+        val mainHandler = android.os.Handler(android.os.Looper.getMainLooper())
+        EXIT_EXECUTOR.execute {
+            val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
+            val clearHistoryPref = sp.getBoolean("sp_clear_history", false)
+            val clearIndexedDB = sp.getBoolean("sp_clearIndexedDB", false)
+            val clearDB = sp.getBoolean("sp_deleteDatabase", false)
+            val clearSettings = sp.getBoolean("sp_clear_settings", false)
+            val clearTabsPref = sp.getBoolean(PREF_CLEAR_TABS_ON_EXIT, false)
 
-        if (clearHistory) clearHistory(context)
-        if (clearCache) {
-            try {
-                PetalCacheManager.clearAllCache(context, null)
-                PetalGeckoRuntime.clearData(
-                    context,
-                    StorageController.ClearFlags.ALL_CACHES or StorageController.ClearFlags.IMAGE_CACHE
-                )
-            } catch (exception: Exception) {
-                Log.w("browser", "Error clearing cache", exception)
+            if (clearHistoryPref) clearHistory(appContext)
+            if (clearTabsPref) PetalSessionRestoreManager.clearSession(appContext)
+
+            if (clearSettings) {
+                clearSettingsSafely(sp)
+                val listStandard = StandardDomainWhitelist(appContext)
+                listStandard.clearDomains()
             }
-        }
-        if (clearSettings) {
-            clearSettingsSafely(sp)
-            val listStandard = StandardDomainWhitelist(context)
-            listStandard.clearDomains()
-        }
-        if (clearCookie) {
-            try {
-                PetalGeckoRuntime.clearData(
-                    context,
-                    StorageController.ClearFlags.COOKIES or StorageController.ClearFlags.AUTH_SESSIONS
-                )
-            } catch (e: Exception) {
-                PetalAppLogger.w("PetalBrowserUtils", "Error clearing cookies in GeckoRuntime", e)
+            if (clearDB) {
+                appContext.deleteDatabase("Ninja4.db")
+                appContext.deleteDatabase("item_icon.db")
+                appContext.deleteDatabase("favicon.db")
+                sp.edit().putInt("restart_changed", 1).apply()
             }
-            PetalGeckoCookieBridge.clearAllCookies()
-        }
-        if (clearDB) {
-            context.deleteDatabase("Ninja4.db")
-            context.deleteDatabase("item_icon.db")
-            context.deleteDatabase("favicon.db")
-            sp.edit().putInt("restart_changed", 1).apply()
-        }
-        if (clearIndexedDB) {
-            try {
-                PetalGeckoRuntime.clearData(
-                    context,
-                    StorageController.ClearFlags.DOM_STORAGES or StorageController.ClearFlags.SITE_SETTINGS or StorageController.ClearFlags.SITE_DATA
-                )
-            } catch (e: Exception) {
-                PetalAppLogger.w("PetalBrowserUtils", "Error clearing DOM storages in GeckoRuntime", e)
+            if (clearIndexedDB) {
+                mainHandler.post {
+                    try {
+                        WebStorage.getInstance().deleteAllData()
+                    } catch (e: Exception) {
+                        PetalAppLogger.w("PetalBrowserUtils", "Error deleting WebStorage data", e)
+                    }
+                }
             }
-            try {
-                WebStorage.getInstance().deleteAllData()
-            } catch (e: Exception) {
-                PetalAppLogger.w("PetalBrowserUtils", "Error deleting WebStorage data", e)
-            }
-        }
-        val clearPermissions = sp.getBoolean("sp_clear_permissions", false)
-        if (clearPermissions) {
-            try {
-                PetalGeckoRuntime.clearData(context, StorageController.ClearFlags.PERMISSIONS)
-            } catch (e: Exception) {
-                PetalAppLogger.w("PetalBrowserUtils", "Error clearing permissions in GeckoRuntime", e)
-            }
-        }
-        val clearAutofill = sp.getBoolean("sp_clear_autofill", false)
-        if (clearAutofill) {
-            try {
-                PetalGeckoRuntime.clearData(context, StorageController.ClearFlags.AUTH_SESSIONS)
-            } catch (e: Exception) {
-                PetalAppLogger.w("PetalBrowserUtils", "Error clearing auth sessions in GeckoRuntime", e)
+
+            val flags = clearCacheFlagsForPrefs(sp)
+            if (flags != 0L) {
+                PetalCacheManager.clearCache(appContext, flags, onCompleted)
+            } else if (onCompleted != null) {
+                mainHandler.post(onCompleted)
             }
         }
     }

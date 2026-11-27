@@ -376,6 +376,12 @@ object PetalSessionRestoreManager {
 
         if (!restoreTabsPref && !reloadTabsPref && !restoreOnRestart) {
             Log.i(TAG, "Tab restoration disabled by user preference")
+            PetalEngineStore.deleteSessionFiles(activity)
+            try {
+                com.petal.browser.unit.TabThumbnailCache.retainOnly(
+                    preExistingTabs.filter { !it.content.private }.map { it.id }
+                )
+            } catch (_: Throwable) {}
             PetalEngineStore.markRestoreComplete(activity)
             return false
         }

@@ -874,6 +874,11 @@ object PetalEngineStore {
                         skipLoading = skipLoading
                     )
                 )
+                val reloadRestored = skipLoading && PreferenceManager.getDefaultSharedPreferences(context)
+                    .getBoolean(com.petal.browser.browser.PetalSessionRestoreManager.PREF_RELOAD_TABS, false)
+                if (reloadRestored) {
+                    try { newSession.reload() } catch (_: Throwable) {}
+                }
                 newSession
             }
             if (select) {
@@ -953,13 +958,15 @@ object PetalEngineStore {
     /** Removes the given tabs from [BrowserStore] (ids that are not in the store are ignored). */
     @JvmStatic
     fun removeTabs(context: Context, tabIds: Collection<String>) {
+        if (tabIds.isEmpty()) return
         val st = getStore(context)
+        val existingSet = st.state.tabs.map { it.id }.toHashSet()
         for (id in tabIds) {
-            if (st.state.tabs.any { it.id == id }) {
+            if (id in existingSet) {
                 st.dispatch(mozilla.components.browser.state.action.TabListAction.RemoveTabAction(id))
             }
-            com.petal.browser.browser.PetalTabMetadataStore.remove(context, id)
         }
+        com.petal.browser.browser.PetalTabMetadataStore.removeAll(context, tabIds)
     }
 
     /**

@@ -40,6 +40,54 @@ object ForgetfulBrowsingManager {
     }
 
     @JvmStatic
+    fun hostOf(url: String?): String? {
+        if (url.isNullOrBlank()) return null
+        val trimmed = url.trim()
+        if (trimmed.startsWith("about:", ignoreCase = true) || trimmed.startsWith("petal://", ignoreCase = true)) {
+            return null
+        }
+        val withoutScheme = when {
+            trimmed.startsWith("https://", ignoreCase = true) -> trimmed.substring(8)
+            trimmed.startsWith("http://", ignoreCase = true) -> trimmed.substring(7)
+            else -> return null
+        }
+        val rawHost = withoutScheme.substringBefore('/').substringBefore('?').substringBefore('#').substringBefore(':')
+        val clean = rawHost.lowercase().removePrefix("www.").trim()
+        return clean.takeIf { it.isNotBlank() }
+    }
+
+    /** Pure rule: returns unique normalized domains in [closedUrls] absent from [remainingUrls]. */
+    @JvmStatic
+    fun domainsNoLongerOpen(
+        closedUrls: Collection<String>,
+        remainingUrls: Collection<String>,
+        isForgetful: (String) -> Boolean
+    ): List<String> {
+        if (closedUrls.isEmpty()) return emptyList()
+        val remainingHosts = remainingUrls.mapNotNullTo(HashSet()) { hostOf(it) }
+        val result = ArrayList<String>()
+        val seen = HashSet<String>()
+        for (url in closedUrls) {
+            val host = hostOf(url) ?: continue
+            if (host !in remainingHosts && seen.add(host) && isForgetful(host)) {
+                result.add(host)
+            }
+        }
+        return result
+    }
+
+    @JvmStatic
+    fun purgeIfClosed(context: Context, closedUrls: Collection<String>, remainingUrls: Collection<String>) {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
+        val forgetfulSet = sp.getStringSet(PREF_FORGETFUL_DOMAINS, emptySet()) ?: emptySet()
+        if (forgetfulSet.isEmpty()) return
+        val toPurge = domainsNoLongerOpen(closedUrls, remainingUrls) { it in forgetfulSet }
+        for (domain in toPurge) {
+            onDomainTabsClosed(context, domain)
+        }
+    }
+
+    @JvmStatic
     fun onDomainTabsClosed(context: Context, domain: String?) {
         if (domain.isNullOrBlank()) return
         if (isDomainForgetful(context, domain)) {

@@ -106,8 +106,12 @@ fun PetalStorageInspectorSheet(
         // 2. Fetch localStorage
         onExecuteJavascript("JSON.stringify(Object.entries(localStorage));") { result ->
             try {
-                val unquoted = result?.trim('"', '\'')?.replace("\\\"", "\"") ?: "[]"
-                val jsonArr = org.json.JSONArray(unquoted)
+                val decoded = org.json.JSONTokener(result ?: "[]").nextValue()
+                val jsonArr = when (decoded) {
+                    is org.json.JSONArray -> decoded
+                    is String -> org.json.JSONArray(decoded)
+                    else -> org.json.JSONArray("[]")
+                }
                 for (i in 0 until jsonArr.length()) {
                     val entry = jsonArr.getJSONArray(i)
                     localStorageItems.add(StorageItem(key = entry.getString(0), value = entry.getString(1)))
@@ -118,8 +122,12 @@ fun PetalStorageInspectorSheet(
         // 3. Fetch sessionStorage
         onExecuteJavascript("JSON.stringify(Object.entries(sessionStorage));") { result ->
             try {
-                val unquoted = result?.trim('"', '\'')?.replace("\\\"", "\"") ?: "[]"
-                val jsonArr = org.json.JSONArray(unquoted)
+                val decoded = org.json.JSONTokener(result ?: "[]").nextValue()
+                val jsonArr = when (decoded) {
+                    is org.json.JSONArray -> decoded
+                    is String -> org.json.JSONArray(decoded)
+                    else -> org.json.JSONArray("[]")
+                }
                 for (i in 0 until jsonArr.length()) {
                     val entry = jsonArr.getJSONArray(i)
                     sessionStorageItems.add(StorageItem(key = entry.getString(0), value = entry.getString(1)))
@@ -274,20 +282,21 @@ fun PetalStorageInspectorSheet(
                             trailing = {
                                 IconButton(
                                     onClick = {
-                                        // Purge item
+                                        // Purge item using proper JS string quoting
+                                        val quotedKey = org.json.JSONObject.quote(item.key)
                                         when (selectedType) {
                                             StorageType.COOKIES -> {
-                                                onExecuteJavascript("document.cookie = '${item.key}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';") {
+                                                onExecuteJavascript("document.cookie = $quotedKey + '=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';") {
                                                     refreshData()
                                                 }
                                             }
                                             StorageType.LOCAL_STORAGE -> {
-                                                onExecuteJavascript("localStorage.removeItem('${item.key}');") {
+                                                onExecuteJavascript("localStorage.removeItem($quotedKey);") {
                                                     refreshData()
                                                 }
                                             }
                                             StorageType.SESSION_STORAGE -> {
-                                                onExecuteJavascript("sessionStorage.removeItem('${item.key}');") {
+                                                onExecuteJavascript("sessionStorage.removeItem($quotedKey);") {
                                                     refreshData()
                                                 }
                                             }
@@ -304,18 +313,24 @@ fun PetalStorageInspectorSheet(
 
             Spacer(Modifier.height(14.dp))
 
-            // Purge All For Site Button
+            // Purge All For Site Button (DOM storage + Gecko HTTP cache/IndexedDB/HttpOnly cookies)
             Button(
                 onClick = {
+                    com.petal.browser.unit.PetalCacheManager.clearSiteData(
+                        context = context,
+                        host = domain,
+                        includeCookies = true,
+                        includePermissions = false
+                    )
                     onExecuteJavascript("""
                         (function() {
-                            localStorage.clear();
-                            sessionStorage.clear();
+                            try { localStorage.clear(); } catch (e) {}
+                            try { sessionStorage.clear(); } catch (e) {}
                             var cookies = document.cookie.split(";");
                             for (var i = 0; i < cookies.length; i++) {
                                 var cookie = cookies[i];
                                 var eqPos = cookie.indexOf("=");
-                                var name = eqPos > -1 ? cookie.substr(0, eqPos) : cookie;
+                                var name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
                                 document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
                             }
                         })();

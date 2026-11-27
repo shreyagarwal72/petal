@@ -83,22 +83,14 @@ object BrowsingDataManager {
             onCompleted?.run()
             return
         }
-        Executors.newSingleThreadExecutor().execute {
-            var flags = 0L
-            if (cache) flags = flags or PetalCacheManager.Flags.ALL_CACHES
-            if (cookies) flags = flags or PetalCacheManager.Flags.COOKIES
-            if (webStorage) flags = flags or PetalCacheManager.Flags.DOM_WEB_STORAGE or PetalCacheManager.Flags.SITE_SETTINGS
-            if (autofill) {
-                flags = flags or PetalCacheManager.Flags.AUTH_SESSIONS
-                clearAutofillData(context)
-            }
-            if (permissions) {
-                flags = flags or PetalCacheManager.Flags.PERMISSIONS
-                clearPermissions(context)
-            }
+        var flags = 0L
+        if (cache) flags = flags or PetalCacheManager.Flags.ALL_CACHES
+        if (cookies) flags = flags or PetalCacheManager.Flags.COOKIES
+        if (webStorage) flags = flags or PetalCacheManager.Flags.DOM_WEB_STORAGE or PetalCacheManager.Flags.SITE_SETTINGS
+        if (autofill) flags = flags or PetalCacheManager.Flags.AUTH_SESSIONS
+        if (permissions) flags = flags or PetalCacheManager.Flags.PERMISSIONS
 
-            PetalCacheManager.clearCache(context, flags, onCompleted)
-        }
+        PetalCacheManager.clearCache(context, flags, onCompleted)
     }
 
     @Deprecated("Legacy WebView overload")

@@ -244,7 +244,7 @@ object PetalBackupManager {
             val valuesObj = JSONObject()
             val typesObj = JSONObject()
             for ((key, value) in sp.all) {
-                if (key == null || value == null) continue
+                if (key == null || value == null || key == PetalBrowserUtils.PREF_CLEAR_EXIT_DIRTY) continue
                 when (value) {
                     is Boolean -> {
                         valuesObj.put(key, value)

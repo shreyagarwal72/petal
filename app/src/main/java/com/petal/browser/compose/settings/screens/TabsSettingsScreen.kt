@@ -42,6 +42,9 @@ fun TabsSettingsScreen(
     var restoreTabsOnStart by remember {
         mutableStateOf(sp.getBoolean(PetalSessionRestoreManager.PREF_RESTORE_TABS, true))
     }
+    var reloadRestoredTabs by remember {
+        mutableStateOf(sp.getBoolean(PetalSessionRestoreManager.PREF_RELOAD_TABS, false))
+    }
     var confirmTabClose by remember {
         mutableStateOf(sp.getBoolean("sp_close_tab_confirm", false))
     }
@@ -85,7 +88,7 @@ fun TabsSettingsScreen(
                     cardId = "tabs_management",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
                         when (index) {
                             0 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -102,6 +105,19 @@ fun TabsSettingsScreen(
                             }
                             1 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                    title = "Reload restored tabs on switch",
+                                    subtitle = "Refresh stale sleeping tabs automatically when first opened after restart",
+                                    icon = Icons.Rounded.Refresh,
+                                    checked = reloadRestoredTabs,
+                                    position = position,
+                                    onCheckedChange = {
+                                        reloadRestoredTabs = it
+                                        sp.edit().putBoolean(PetalSessionRestoreManager.PREF_RELOAD_TABS, it).apply()
+                                    }
+                                )
+                            }
+                            2 -> {
+                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = stringResource(R.string.ui_confirm_before_closing_tab),
                                     subtitle = stringResource(R.string.ui_prompt_for_confirmation_before_closing),
                                     icon = Icons.Rounded.Close,
@@ -113,7 +129,7 @@ fun TabsSettingsScreen(
                                     }
                                 )
                             }
-                            2 -> {
+                            3 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = stringResource(R.string.ui_show_workspace_chips),
                                     subtitle = stringResource(R.string.ui_show_workspace_chips_desc),
@@ -156,16 +172,23 @@ fun TabsSettingsScreen(
                     com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
                         when (index) {
                             0 -> {
-                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                    title = "Memory Saver Mode",
-                                    subtitle = if (memorySaverMode != "off") "Frees RAM and halts CPU cycles for background tabs" else "Disabled (all tabs kept loaded)",
+                                com.petal.browser.ui.containment.PetalGroupRow(
                                     icon = Icons.Rounded.Memory,
-                                    checked = memorySaverMode != "off",
+                                    title = "Memory Saver Mode",
+                                    subtitle = when (memorySaverMode) {
+                                        "aggressive" -> "Aggressive · Keep at most 1 background tab awake"
+                                        "off" -> "Off · All background tabs stay loaded"
+                                        else -> "Balanced · Keep 3 recent background tabs awake"
+                                    },
                                     position = position,
-                                    onCheckedChange = { isEnabled ->
-                                        val newMode = if (isEnabled) "balanced" else "off"
-                                        memorySaverMode = newMode
-                                        sp.edit().putString(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_MEMORY_SAVER_MODE, newMode).apply()
+                                    onClick = {
+                                        val next = when (memorySaverMode) {
+                                            "balanced" -> "aggressive"
+                                            "aggressive" -> "off"
+                                            else -> "balanced"
+                                        }
+                                        memorySaverMode = next
+                                        sp.edit().putString(com.petal.browser.engine.gecko.PetalTabSuspender.PREF_MEMORY_SAVER_MODE, next).apply()
                                     }
                                 )
                             }

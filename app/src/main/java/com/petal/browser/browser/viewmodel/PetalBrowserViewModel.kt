@@ -366,12 +366,17 @@ class PetalBrowserViewModel @Inject constructor(
         }
         val targetTab = activeTab.value
         if (targetTab != null) {
+            if (targetTab.id == placeholderHomeTabId && !PetalBrowserUtils.isHomePage(formattedUrl)) {
+                placeholderHomeTabId = null
+            }
+            val prevUrl = targetTab.content.url
+            val isPrivate = targetTab.content.private
             val session = targetTab.engineState.engineSession ?: run {
                 val pair = PetalEngineStore.materializeTabSession(
                     context = context,
                     tabId = targetTab.id,
                     fallbackUrl = formattedUrl,
-                    isIncognito = targetTab.content.private,
+                    isIncognito = isPrivate,
                     select = true
                 )
                 pair.second
@@ -379,6 +384,12 @@ class PetalBrowserViewModel @Inject constructor(
             val engineTargetUrl = if (PetalBrowserUtils.isHomePage(formattedUrl)) "about:blank" else formattedUrl
             browserStore.dispatch(ContentAction.UpdateUrlAction(targetTab.id, formattedUrl))
             session.loadUrl(engineTargetUrl)
+            if (!isPrivate && prevUrl.isNotBlank() && prevUrl != formattedUrl) {
+                val remainingUrls = browserStore.state.tabs
+                    .filter { it.id != targetTab.id && !it.content.private && !PetalEngineStore.isEphemeralTabId(it.id) }
+                    .map { it.content.url } + formattedUrl
+                com.petal.browser.privacy.ForgetfulBrowsingManager.purgeIfClosed(context, listOf(prevUrl), remainingUrls)
+            }
         } else {
             openNewTab(formattedUrl, selectTab = true)
         }
@@ -513,12 +524,13 @@ class PetalBrowserViewModel @Inject constructor(
 
     private val closedSnapshots = com.petal.browser.browser.ClosedTabBuffer<ClosedTabSnapshot>(UNDO_SNAPSHOT_MAX, UNDO_SNAPSHOT_TTL_MS)
 
-    private fun snapshotBeforeClose(tab: TabSessionState, originalIndex: Int) {
+    private fun snapshotBeforeClose(tab: TabSessionState, originalIndex: Int, allowDiskRead: Boolean = true) {
         if (tab.content.private) return
         try {
             // Live history state is continuously synchronized to tab.engineState.engineSessionState by Mozilla engine delegates.
             val saved = tab.engineState.engineSessionState
-            val thumb = TabThumbnailCache.getMemoryOrDisk(tab.id)?.let { b ->
+            val cachedThumb = if (allowDiskRead) TabThumbnailCache.getMemoryOrDisk(tab.id) else TabThumbnailCache.getMemoryOnly(tab.id, false)
+            val thumb = cachedThumb?.let { b ->
                 if (b.isRecycled) null else try { b.copy(b.config ?: android.graphics.Bitmap.Config.ARGB_8888, false) } catch (_: Throwable) { null }
             }
             val snap = ClosedTabSnapshot(
@@ -608,6 +620,13 @@ class PetalBrowserViewModel @Inject constructor(
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
         val remaining = browserStore.state.tabs.filter { it.id != tabId && !PetalEngineStore.isEphemeralTabId(it.id) }
+        if (tabToClose != null && !isPrivate) {
+            com.petal.browser.privacy.ForgetfulBrowsingManager.purgeIfClosed(
+                context = context,
+                closedUrls = listOf(tabToClose.content.url),
+                remainingUrls = remaining.filter { !it.content.private }.map { it.content.url }
+            )
+        }
         val hasNormal = remaining.any { !it.content.private }
         if (remaining.isEmpty() || (!isPrivate && !hasNormal)) {
             openPlaceholderHomeTab()
@@ -646,13 +665,15 @@ class PetalBrowserViewModel @Inject constructor(
         var hadPrivate = false
         var hadNormal = false
         PetalRecentlyClosedManager.init(context)
+        val closedNormalUrls = ArrayList<String>()
         for (id in tabIds) {
             val originalIndex = state.tabs.indexOfFirst { it.id == id }
             val tabToClose = if (originalIndex >= 0) state.tabs[originalIndex] else null
             if (tabToClose != null) {
-                snapshotBeforeClose(tabToClose, originalIndex)
+                snapshotBeforeClose(tabToClose, originalIndex, allowDiskRead = false)
                 if (!tabToClose.content.private) {
                     hadNormal = true
+                    closedNormalUrls.add(tabToClose.content.url)
                     val meta = PetalTabMetadataStore.get(context, id)
                     val groupForTab = if (meta?.tabGroupId == null) {
                         com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(context, id)
@@ -676,16 +697,23 @@ class PetalBrowserViewModel @Inject constructor(
                     hadPrivate = true
                 }
             }
-            PetalTabMetadataStore.remove(context, id)
             com.petal.browser.engine.gecko.PetalTranslationsManager.remove(id)
             aiConversationManager.dropConversation(id)
         }
+        PetalTabMetadataStore.removeAll(context, tabIds)
         browserStore.dispatch(TabListAction.RemoveTabsAction(tabIds.toList()))
         if (hadPrivate) {
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
         val closedSet = tabIds.toSet()
         val remaining = browserStore.state.tabs.filter { it.id !in closedSet && !PetalEngineStore.isEphemeralTabId(it.id) }
+        if (closedNormalUrls.isNotEmpty()) {
+            com.petal.browser.privacy.ForgetfulBrowsingManager.purgeIfClosed(
+                context = context,
+                closedUrls = closedNormalUrls,
+                remainingUrls = remaining.filter { !it.content.private }.map { it.content.url }
+            )
+        }
         val hasNormal = remaining.any { !it.content.private }
         if (remaining.isEmpty() || (hadNormal && !hasNormal)) {
             openPlaceholderHomeTab()

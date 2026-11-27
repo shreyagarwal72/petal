@@ -217,6 +217,15 @@ class MainActivity : FragmentActivity(), BrowserController {
         // overwrite the stored session). restoreSession() is a cheap no-op when the process is
         // alive and the store already holds tabs (rotation, theme change, etc.).
         run {
+            val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
+            if (clearQuit && !com.petal.browser.unit.PetalBrowserUtils.isLiveSessionActive() &&
+                sp.getBoolean(com.petal.browser.unit.PetalBrowserUtils.PREF_CLEAR_EXIT_DIRTY, false)
+            ) {
+                // Process was swiped from Recents/killed before clean exit cleanup ran; purge before restore.
+                com.petal.browser.unit.PetalBrowserUtils.performClearOnExitInternal(applicationContext)
+            }
+            sp.edit().putBoolean(com.petal.browser.unit.PetalBrowserUtils.PREF_CLEAR_EXIT_DIRTY, true).apply()
+
             val restored = com.petal.browser.browser.PetalSessionRestoreManager.restoreSession(this)
             val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this)
             if (!restored && store.state.tabs.isEmpty()) {
@@ -295,7 +304,16 @@ class MainActivity : FragmentActivity(), BrowserController {
         super.onStop()
         com.petal.browser.appicon.PetalAppIcons.applyPendingIfNeeded(applicationContext, activity = this)
         window.decorView.removeCallbacks(suspendSweep)
-        try { com.petal.browser.engine.gecko.PetalTabSuspender.sweepIdleTabs(applicationContext) } catch (_: Throwable) {}
+        com.petal.browser.account.sync.PetalFolderSync.onAppBackground(this)
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
+        val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
+        if (isFinishing && clearQuit) {
+            com.petal.browser.unit.PetalBrowserUtils.clearOnExit(this, waitForCompletion = true)
+        } else {
+            // Snapshot session BEFORE triggering async tab suspension so live engine states aren't mid-teardown.
+            com.petal.browser.browser.PetalSessionRestoreManager.saveSession(this, isStopping = true)
+            try { com.petal.browser.engine.gecko.PetalTabSuspender.sweepIdleTabs(applicationContext) } catch (_: Throwable) {}
+        }
         try {
             // Drop sidecar metadata of tabs that are gone (keeping recently-closed ids for undo).
             val st = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this).state
@@ -307,14 +325,6 @@ class MainActivity : FragmentActivity(), BrowserController {
                 )
             }
         } catch (_: Throwable) {}
-        com.petal.browser.account.sync.PetalFolderSync.onAppBackground(this)
-        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
-        val clearQuit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
-        if (isFinishing && clearQuit) {
-            com.petal.browser.unit.PetalBrowserUtils.clearOnExit(this, waitForCompletion = true)
-        } else {
-            com.petal.browser.browser.PetalSessionRestoreManager.saveSession(this, isStopping = true)
-        }
     }
 
     override fun onDestroy() {
