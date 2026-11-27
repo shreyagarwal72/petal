@@ -151,7 +151,7 @@ object PetalQuickToolsBridge {
                     }
 
                     val predictiveBackProgress = remember { androidx.compose.animation.core.Animatable(0f) }
-                    val predictiveBackEnabled by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
+                    val predictiveBackEnabled by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsState()
                     val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
                     val coroutineScope = rememberCoroutineScope()
 

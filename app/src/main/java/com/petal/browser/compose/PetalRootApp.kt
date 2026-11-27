@@ -625,14 +625,10 @@ fun PetalRootApp(
                                 PetalSpring.quick()
                             )
                         } else {
-                            val settleAnim = Animatable(0f)
-                            settleAnim.animateTo(
+                            overlayBackProgress.animateTo(
                                 1f,
-                                tween(currentStyle.commitDurationMs, easing = androidx.compose.animation.core.LinearEasing)
-                            ) {
-                                val eased = currentStyle.commitEasing.transform(value)
-                                overlayBackProgress.snapTo(overlayRelease + (1f - overlayRelease) * eased)
-                            }
+                                tween(currentStyle.commitDurationMs, easing = currentStyle.commitEasing)
+                            )
                         }
                     }
                 }
@@ -683,14 +679,14 @@ fun PetalRootApp(
                             settleTime = ((value - release) / (1f - release).coerceAtLeast(0.01f)).coerceIn(0f, 1f)
                         }
                     } else {
-                        val settleAnim = Animatable(0f)
-                        settleAnim.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(currentStyle.commitDurationMs, easing = androidx.compose.animation.core.LinearEasing)
-                        ) {
-                            settleTime = value
-                            val eased = currentStyle.commitEasing.transform(value)
+                        val startNs = androidx.compose.runtime.withFrameNanos { it }
+                        val durNs = (currentStyle.commitDurationMs.coerceAtLeast(1) * 1_000_000L).toFloat()
+                        while (true) {
+                            val f = androidx.compose.runtime.withFrameNanos { ns -> ((ns - startNs) / durNs).coerceIn(0f, 1f) }
+                            settleTime = f
+                            val eased = currentStyle.commitEasing.transform(f)
                             progressAnim.snapTo(release + (1f - release) * eased)
+                            if (f >= 1f) break
                         }
                     }
                     // Stay parked in the final pose: resetting here made the page flash back to full
