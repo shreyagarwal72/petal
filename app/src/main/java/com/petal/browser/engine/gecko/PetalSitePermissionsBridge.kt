@@ -340,7 +340,7 @@ object PetalSitePermissionsBridge {
                 )
             }
             } catch (t: Throwable) {
-                Log.w(TAG, "Media permission lookup failed: ${t.message}")
+                android.util.Log.w("PetalSitePermissions", "Media permission lookup failed: ${t.message}")
                 act.runOnUiThread { callback.reject() }
             }
         }
@@ -465,7 +465,7 @@ object PetalSitePermissionsBridge {
                 )
             }
             } catch (t: Throwable) {
-                Log.w(TAG, "Content permission lookup failed: ${t.message}")
+                android.util.Log.w("PetalSitePermissions", "Content permission lookup failed: ${t.message}")
                 act.runOnUiThread { result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY) }
             }
         }

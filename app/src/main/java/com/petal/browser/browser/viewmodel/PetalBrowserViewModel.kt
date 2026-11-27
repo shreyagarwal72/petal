@@ -855,6 +855,7 @@ class PetalBrowserViewModel @Inject constructor(
                 closeTab(tab.id)
                 true
             }
+            com.petal.browser.browser.rules.PetalBackTarget.MODAL_OVERLAY -> dismissTopOverlay()
             com.petal.browser.browser.rules.PetalBackTarget.CONFIRM_EXIT_DIALOG,
             com.petal.browser.browser.rules.PetalBackTarget.DELEGATE_TO_SYSTEM -> false
         }

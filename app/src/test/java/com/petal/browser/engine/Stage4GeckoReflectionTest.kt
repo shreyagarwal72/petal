@@ -117,8 +117,8 @@ class Stage4GeckoReflectionTest {
 
     @Test
     fun crashHandlerService_constantsMatchGeckoViewSpec() {
-        assertEquals(GeckoRuntime.EXTRA_CRASH_MINIDUMP_PATH, PetalCrashHandlerService.EXTRA_MINIDUMP_PATH)
-        assertEquals(GeckoRuntime.EXTRA_CRASH_EXTRAS_PATH, PetalCrashHandlerService.EXTRA_EXTRAS_PATH)
+        assertEquals(GeckoRuntime.EXTRA_MINIDUMP_PATH, PetalCrashHandlerService.EXTRA_MINIDUMP_PATH)
+        assertEquals(GeckoRuntime.EXTRA_EXTRAS_PATH, PetalCrashHandlerService.EXTRA_EXTRAS_PATH)
         assertEquals(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE, PetalCrashHandlerService.EXTRA_CRASH_PROCESS)
         assertEquals(GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY, PetalCrashHandlerService.EXTRA_CRASH_PROCESS_VISIBILITY)
         assertEquals(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE, PetalCrashHandlerService.EXTRA_CRASH_REMOTE_TYPE)

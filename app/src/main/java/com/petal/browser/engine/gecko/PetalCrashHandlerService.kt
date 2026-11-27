@@ -54,8 +54,8 @@ class PetalCrashHandlerService : Service() {
         private const val TAG = "PetalCrashHandler"
 
         // GeckoView 161 crash intent extras
-        const val EXTRA_MINIDUMP_PATH = GeckoRuntime.EXTRA_CRASH_MINIDUMP_PATH
-        const val EXTRA_EXTRAS_PATH = GeckoRuntime.EXTRA_CRASH_EXTRAS_PATH
+        const val EXTRA_MINIDUMP_PATH = GeckoRuntime.EXTRA_MINIDUMP_PATH
+        const val EXTRA_EXTRAS_PATH = GeckoRuntime.EXTRA_EXTRAS_PATH
         const val EXTRA_CRASH_PROCESS = GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE
         const val EXTRA_CRASH_PROCESS_VISIBILITY = GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY
         const val EXTRA_CRASH_REMOTE_TYPE = GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE
