@@ -354,6 +354,14 @@ fun ComposeEngineViewport(
             if (v.translationY != 0f) v.translationY = 0f
             if (lastDynamicMaxHeight[0] != dynamicToolbarMaxPx) {
                 lastDynamicMaxHeight[0] = dynamicToolbarMaxPx
+                // Diagnostic: capture these numbers (logcat tag PetalViewport) next to a screenshot of
+                // the bottom-navbar gap, so the exact bar/viewport mismatch can be pinned down.
+                android.util.Log.i(
+                    "PetalViewport",
+                    "fullTop=$fullTopPx minTop=$minTopPx fullBottom=$fullBottomPx minBottom=$minBottomPx " +
+                        "dynTop=$dynamicTopPx dynBottom=$dynamicBottomPx dynMax=$dynamicToolbarMaxPx " +
+                        "viewH=${v.height} viewW=${v.width}"
+                )
                 try { engineView.setDynamicToolbarMaxHeight(dynamicToolbarMaxPx) } catch (_: Throwable) {}
             }
             snapshotFlow {

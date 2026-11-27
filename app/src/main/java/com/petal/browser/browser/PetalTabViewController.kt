@@ -375,16 +375,12 @@ class PetalTabViewController private constructor(
         ) {
             val activity = context as? com.petal.browser.activity.MainActivity
             if (activity != null) {
-                activity.runOnUiThread {
-                    if (windowRequest.type == mozilla.components.concept.engine.window.WindowRequest.Type.OPEN) {
-                        activity.adoptPreparedWindow(this@PetalTabViewController, windowRequest)
-                    } else {
-                        activity.closeContentWindow(this@PetalTabViewController)
-                    }
-                    boundTabId?.let {
-                        PetalEngineStore.consumeWindowRequest(appContext, it)
-                    }
-                }
+                // PetalBrowserViewModel owns window.open / window.close handling: it calls
+                // windowRequest.prepare() so the popup keeps its link to the opener page
+                // (window.opener / postMessage), which OAuth popups ("Sign in with Google /
+                // Facebook / Apple") need to hand the login back. The old path here opened a
+                // brand-new unrelated tab and consumed the request before the ViewModel saw it.
+                return
             } else {
                 try {
                     val tabId = boundTabId ?: return
