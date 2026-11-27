@@ -387,16 +387,18 @@ fun PetalSettingsScreen(
                             visible = parentCategory != null,
                             onBack = { popToParent() },
                             parent = {
-                                RenderCategoryContent(
-                                    category = baseCategory,
-                                    targetHighlightItemId = if (parentCategory == null) currentHighlightId else null,
-                                    onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
-                                    onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
-                                    onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
-                                    onNavigateToAppIcon = { openCategory(SettingsCategory.APP_ICON, null) },
-                                    onNavigateToAppLock = { openCategory(SettingsCategory.APP_LOCK, null) },
-                                    onNavigateBack = { closeCategory() }
-                                )
+                                CompositionLocalProvider(com.petal.browser.predictive.LocalBlockSubPageBack provides (parentCategory != null)) {
+                                    RenderCategoryContent(
+                                        category = baseCategory,
+                                        targetHighlightItemId = if (parentCategory == null) currentHighlightId else null,
+                                        onNavigateToAddressBar = { openCategory(SettingsCategory.ADDRESS_BAR, null) },
+                                        onNavigateToDownloads = { openCategory(SettingsCategory.DOWNLOADS, null) },
+                                        onNavigateToUpdater = { openCategory(SettingsCategory.UPDATER, null) },
+                                        onNavigateToAppIcon = { openCategory(SettingsCategory.APP_ICON, null) },
+                                        onNavigateToAppLock = { openCategory(SettingsCategory.APP_LOCK, null) },
+                                        onNavigateBack = { closeCategory() }
+                                    )
+                                }
                             },
                             subPage = {
                                 if (parentCategory != null) {

@@ -92,6 +92,12 @@ class PetalBrowserViewModel @Inject constructor(
             .coerceAtLeast(1)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
+    /** Total open non-ephemeral tabs across both standard and private containers. */
+    val totalTabCount: StateFlow<Int> = browserState.map { state ->
+        state.tabs.count { !PetalEngineStore.isEphemeralTabId(it.id) }
+            .coerceAtLeast(1)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+
     val activeUrl: StateFlow<String> = activeTab.map { it?.content?.url.orEmpty() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
@@ -1159,17 +1165,28 @@ class PetalBrowserViewModel @Inject constructor(
         _isMenuOpen.value = open
     }
 
-    fun openSettings(category: SettingsCategory = SettingsCategory.OVERVIEW) {
-        // Settings is composed at zIndex 8f. The tab switcher and AI sheet (9f), the omnibox (10f)
-        // and the dev console (11f) sit above it, so any of them left open would hide Settings
-        // behind itself. Close them through the normal state path (the switcher keeps its own
-        // fade-out hold), then open Settings. Back from Settings therefore lands on the page.
-        if (_isTabSwitcherOpen.value) setTabSwitcherOpen(false)
-        if (_isOmniboxOpen.value) setOmniboxOpen(false)
-        if (_isAiSheetOpen.value) _isAiSheetOpen.value = false
-        if (_isDevConsoleOpen.value) _isDevConsoleOpen.value = false
-        _settingsCategory.value = category
+    /** Closes all open UI overlays so incoming navigation or a new fullscreen overlay never stacks invisibly. */
+    fun dismissAllOverlays() {
         _isMenuOpen.value = false
+        _isOmniboxOpen.value = false
+        _omniboxInitialQuery.value = null
+        _isAiSheetOpen.value = false
+        _isDevConsoleOpen.value = false
+        if (_isFindInPageOpen.value) clearFindMatches()
+        _isSettingsOpen.value = false
+        _isBookmarksOpen.value = false
+        _isHistoryOpen.value = false
+        _isDownloadsOpen.value = false
+        _isExtensionsOpen.value = false
+        _isAccountSyncOpen.value = false
+        _isDeleteOpen.value = false
+        _isSafeLockerOpen.value = false
+        if (_isTabSwitcherOpen.value) setTabSwitcherOpen(false)
+    }
+
+    fun openSettings(category: SettingsCategory = SettingsCategory.OVERVIEW) {
+        dismissAllOverlays()
+        _settingsCategory.value = category
         _isSettingsOpen.value = true
     }
 
@@ -1178,7 +1195,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openBookmarks() {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _isBookmarksOpen.value = true
     }
 
@@ -1187,7 +1204,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openHistory() {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _isHistoryOpen.value = true
     }
 
@@ -1196,7 +1213,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openDownloads() {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _isDownloadsOpen.value = true
     }
 
@@ -1205,7 +1222,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openAiSheet(query: String = "", selectedQuote: String = "") {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _aiSheetQuery.value = query
         _aiSelectedQuote.value = selectedQuote
         _isAiSheetOpen.value = true
@@ -1352,7 +1369,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openExtensions() {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _isExtensionsOpen.value = true
     }
 
@@ -1361,7 +1378,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openAccountSync() {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _isAccountSyncOpen.value = true
     }
 
@@ -1370,7 +1387,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openDelete() {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _isDeleteOpen.value = true
     }
 
@@ -1379,7 +1396,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openSafeLocker() {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _isSafeLockerOpen.value = true
     }
 
@@ -1388,7 +1405,7 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun openDevConsole() {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _isDevConsoleOpen.value = true
     }
 
@@ -1499,7 +1516,7 @@ class PetalBrowserViewModel @Inject constructor(
     val omniboxInitialQuery: StateFlow<String?> = _omniboxInitialQuery.asStateFlow()
 
     fun openOmnibox(initialQuery: String? = null) {
-        _isMenuOpen.value = false
+        dismissAllOverlays()
         _omniboxInitialQuery.value = initialQuery
         _isOmniboxOpen.value = true
     }

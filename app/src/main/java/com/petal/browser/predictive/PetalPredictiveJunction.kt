@@ -213,6 +213,8 @@ val LocalPetalDepthBlurJunctionState = compositionLocalOf { true }
 val LocalIsUnderlayPreview = compositionLocalOf { false }
 val LocalZenithHeaderActive = compositionLocalOf { false }
 val LocalZenithHeaderHoisted = compositionLocalOf { false }
+/** Set to true by an outer nested sub-page host so deeper hosts defer Back to the topmost nested layer. */
+val LocalBlockSubPageBack = compositionLocalOf { false }
 
 /**
  * Live state of an in-flight predictive back gesture.
@@ -610,7 +612,8 @@ fun PetalScreenWrapper(
         } else if (transitionBlurRadiusDp > 0.dp) {
             transitionBlurRadiusDp
         } else if (behindFraction != null) {
-            // Item 4: Don't blur behind state during push/pop transition; prefer scrim/dim.
+            // Compute resting depth blur smoothly from behindFraction in the draw phase (RenderEffect)
+            // so frame 0 of a swipe does not pop abruptly from 0dp to 24dp.
             0.dp
         } else {
             24.dp
@@ -640,9 +643,10 @@ fun PetalScreenWrapper(
                 !(isActive && predictiveBackState.liveUnderlay) &&
                 snapshotDismissAlpha.value > 0.001f
             ) {
-                // At rest (not mid-gesture) the snapshot keeps the original Petal pose.
+                // At rest (not mid-gesture) the snapshot uses the active style's resting behind pose
+                // so the first frame of a back swipe continues smoothly without style-geometry jumps.
                 val snapshotFrame = frame ?: PetalBackMotion.frame(
-                    PetalBackStyle.Petal,
+                    style,
                     PetalBackInput(
                         progress = if (predictiveBackState.dismissed) 1f else 0f,
                         swipeEdge = predictiveBackState.swipeEdge,
@@ -654,6 +658,7 @@ fun PetalScreenWrapper(
                         blurEnabled = blurEnabled,
                         committing = predictiveBackState.dismissed,
                         settleTime = if (predictiveBackState.dismissed) 1f else 0f,
+                        exitDirection = exitDirection,
                     ),
                 )
                 val snapshotBlurRadius = snapshotFrame.behindBlurDp.dp
@@ -759,8 +764,7 @@ fun PetalScreenWrapper(
                                 translationY = pose.translationY * fr
                                 alpha = 1f + (pose.alpha - 1f) * fr
                                 restCorner = pose.cornerDp * fr
-                                // Item 4: Scrim/dim only for behind state during transition, no blur over glass panels
-                                blurDp = 0f
+                                blurDp = if (blurEnabled) rest.behindBlurDp * fr else 0f
                                 fractionActive = fr > 0.001f
                             } else {
                                 alpha = 1f
@@ -860,6 +864,7 @@ fun PetalSubPageHost(
     subPage: @Composable () -> Unit,
 ) {
     val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
+    val blockedByOuterSubPage = LocalBlockSubPageBack.current
     val outerState = LocalPredictiveBackState.current
     val fraction by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (visible) 1f else 0f,
@@ -867,7 +872,7 @@ fun PetalSubPageHost(
         label = "subPageBehindFraction",
     )
     PetalPredictiveBackSurface(
-        enabled = visible,
+        enabled = visible && !blockedByOuterSubPage,
         onBack = onBack,
         holdDismissedPose = false,
         useLiveUnderlay = false,

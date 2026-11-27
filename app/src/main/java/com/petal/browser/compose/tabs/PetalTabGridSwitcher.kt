@@ -713,10 +713,6 @@ fun PetalTabGridSwitcher(
         }
     }
 
-    BackHandler(enabled = tabs.isEmpty() && !hasSubOverlay) {
-        effectiveOnBack()
-    }
-
     // ── Chrome-style hero transition (page <-> tile) ─────────────────────────────
     // Hero and tile always share the tab's cached thumbnail bitmap (falling back to
     // backgroundSnapshot only when no cached thumbnail exists).
@@ -797,13 +793,17 @@ fun PetalTabGridSwitcher(
 
     // Predictive back: the tile grows with the gesture; commit expands fully while the page prepares underneath.
     val predictiveBackOn by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
+    val useHeroPredictiveBack = predictiveBackOn && !reduceMotion
+    BackHandler(enabled = tabs.isNotEmpty() && !hasSubOverlay && !useHeroPredictiveBack) {
+        effectiveOnBack()
+    }
     androidx.activity.compose.PredictiveBackHandler(
-        enabled = tabs.isNotEmpty() && !hasSubOverlay
+        enabled = tabs.isNotEmpty() && !hasSubOverlay && useHeroPredictiveBack
     ) { progressFlow ->
         currentHeroJob?.cancel()
         val target = tabs.firstOrNull { it.isSelected } ?: tabs.first()
         val image = heroImageFor(target)
-        if (!predictiveBackOn || image == null || tabCardBounds[target.id] == null) {
+        if (image == null || tabCardBounds[target.id] == null) {
             // No hero available: plain back.
             progressFlow.collect { }
             effectiveOnBack()

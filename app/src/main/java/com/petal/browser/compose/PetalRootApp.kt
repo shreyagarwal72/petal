@@ -171,6 +171,7 @@ fun PetalRootApp(
     val canGoForward by viewModel.canGoForward.collectAsStateWithLifecycle()
     val isIncognito by viewModel.isIncognito.collectAsStateWithLifecycle()
     val tabCount by viewModel.tabCount.collectAsStateWithLifecycle()
+    val totalTabCount by viewModel.totalTabCount.collectAsStateWithLifecycle()
     val tabItems by viewModel.tabItems.collectAsStateWithLifecycle()
 
     // Overlay visibility states
@@ -415,6 +416,8 @@ fun PetalRootApp(
             isDeleteOpen ||
             isSafeLockerOpen ||
             isAiSheetOpen ||
+            isDevConsoleOpen ||
+            isFindInPageOpen ||
             pendingExtensionPopup != null
 
     val isImeVisible = WindowInsets.ime.getBottom(density) > WindowInsets.navigationBars.getBottom(density)
@@ -429,31 +432,34 @@ fun PetalRootApp(
         // above the same live page, so they qualify too instead of falling back to a snapshot.
         (isOverlayShowing || (activity as? MainActivity)?.hasPresentedScreens == true) &&
             !isOmniboxOpen && !isTabSwitcherOpen && !isAiSheetOpen &&
+            !isDevConsoleOpen && !isFindInPageOpen &&
             pendingExtensionPopup == null
     )
 
-    // A GeckoView SurfaceView is composited by the system outside of Compose, so a RenderEffect cannot
-    // blur it. Over a web page the overlay therefore needs a real snapshot of the page (taken before the
-    // overlay covers it), even when depth blur is off (SurfaceView cannot be dimmed/transformed reliably).
+    // Capture page underlay snapshot off the composition/main wait path so overlays open smoothly without 180ms stalls.
     val overlayHold = remember { OverlaySnapshotHold() }
     val wantsPageSnapshot = isOverlayShowing && !isHome && !isOmniboxOpen && !isTabSwitcherOpen &&
-        !isAiSheetOpen && pendingExtensionPopup == null && junctionPredictiveEnabled
+        !isAiSheetOpen && !isDevConsoleOpen && !isFindInPageOpen &&
+        pendingExtensionPopup == null && junctionPredictiveEnabled
     val menuWasOpen = overlayHold.menuOpen
     overlayHold.menuOpen = isMenuOpen
-    if (wantsPageSnapshot != overlayHold.active) {
-        overlayHold.active = wantsPageSnapshot
-        overlayHold.snapshot = if (wantsPageSnapshot && rootView != null) {
-            // Composition runs before the overlay's first frame, so the window still shows the page.
-            // If the overflow menu was just open, the last frame contains it, so copy the page surface only.
-            try {
-                if (menuWasOpen) {
-                    PetalContentSnapshot.capturePageSurface(activeWebEngineView)?.asImageBitmap()
-                } else {
-                    PetalContentSnapshot.capturePreview(rootView)
-                    PetalContentSnapshot.current?.asImageBitmap()
+    LaunchedEffect(wantsPageSnapshot, activeWebEngineView, rootView) {
+        if (wantsPageSnapshot && rootView != null) {
+            overlayHold.active = true
+            val onBitmap: (android.graphics.Bitmap?) -> Unit = { bmp ->
+                if (bmp != null && !bmp.isRecycled && overlayHold.active) {
+                    overlayHold.snapshot = bmp.asImageBitmap()
                 }
-            } catch (_: Throwable) { null }
-        } else null
+            }
+            if (menuWasOpen && activeWebEngineView != null) {
+                PetalContentSnapshot.capturePageSurfaceAsync(activeWebEngineView, onBitmap)
+            } else {
+                PetalContentSnapshot.capturePreviewAsync(rootView, onBitmap)
+            }
+        } else {
+            overlayHold.active = false
+            overlayHold.snapshot = null
+        }
     }
     val overlayPageSnapshot = overlayHold.snapshot
     val overlayPageSnapshotState by androidx.compose.runtime.rememberUpdatedState(overlayPageSnapshot)
@@ -476,10 +482,9 @@ fun PetalRootApp(
 
     DisposableEffect(Unit) {
         val host = object : com.petal.browser.predictive.PetalLiveUnderlay.Host {
-            // Live path only when the underlying page can truly transform/blur in Compose (`isHome` or TextureView),
-            // or when no snapshot exists. Over a SurfaceView-backed Gecko page with a snapshot, use the frozen snapshot.
-            override fun hasLiveUnderlay() = liveEligible &&
-                (isHomeState || liveBlurCapable() || overlayPageSnapshotState == null)
+            // Only use live underlay when the behind surface can actually render depth blur & transform cleanly.
+            // SurfaceView-backed Gecko pages always use the captured PixelCopy snapshot instead of unblurred scaling.
+            override fun hasLiveUnderlay() = liveEligible && (isHomeState || liveBlurCapable())
             override fun onGestureStart(swipeEdge: Int) {
                 liveBehind = com.petal.browser.predictive.PetalLiveUnderlay.behindValues().copyOf()
             }
@@ -509,8 +514,9 @@ fun PetalRootApp(
     var exitArmed by remember { mutableStateOf(false) }
     val doubleBackExit = remember(sp, exitArmed) { sp.getBoolean("sp_double_back_exit", true) }
     val presentedCount = (activity as? MainActivity)?.presentedScreenCount ?: 0
-    val atExitRoot = isHome && !isLoading && !canGoBack && !isOverlayShowing && !isFindInPageOpen && !isDevConsoleOpen &&
-        pendingExtensionPopup == null && presentedCount == 0 && tabCount <= 1
+    val hasReaderOverlay = (activity as? MainActivity)?.isReaderOverlayShowing == true
+    val atExitRoot = isHome && !isLoading && !canGoBack && !isOverlayShowing && !hasReaderOverlay &&
+        pendingExtensionPopup == null && presentedCount == 0 && totalTabCount <= 1
     val systemHandlesExit = atExitRoot && PetalPredictiveJunction.isDeviceSupported &&
         junctionPredictiveEnabled && poseEnabledState.value && (!doubleBackExit || exitArmed)
     LaunchedEffect(exitArmed, atExitRoot) {
@@ -535,9 +541,12 @@ fun PetalRootApp(
                 val now = System.nanoTime()
                 if (!gestureStarted) {
                     gestureStarted = true
-                    overlayMode = (activity as? MainActivity)?.hasPresentedScreens == true ||
+                    val hasActiveSheetOrOverlay = (activity as? MainActivity)?.isReaderOverlayShowing == true ||
+                        (activity as? MainActivity)?.hasPresentedScreens == true ||
                         pendingExtensionPopup != null || isOmniboxOpen || isAiSheetOpen ||
-                        viewModel.hasOpenOverlay
+                        isDevConsoleOpen || isFindInPageOpen ||
+                        (viewModel.hasOpenOverlay && !isMenuOpen)
+                    overlayMode = hasActiveSheetOrOverlay
                     initialTouchY = backEvent.touchY
                     lastProgress = backEvent.progress
                     lastNanos = now
@@ -593,13 +602,17 @@ fun PetalRootApp(
             // Finger lifted and gesture committed
             val release = progressAnim.value
             releaseProgress = release
-            val hasOpenOverlay = (activity as? MainActivity)?.hasPresentedScreens == true ||
+            val hasOpenOverlay = (activity as? MainActivity)?.isReaderOverlayShowing == true ||
+                    (activity as? MainActivity)?.hasPresentedScreens == true ||
                     pendingExtensionPopup != null ||
                     isOmniboxOpen ||
                     isAiSheetOpen ||
-                    viewModel.hasOpenOverlay
+                    isDevConsoleOpen ||
+                    isFindInPageOpen ||
+                    (viewModel.hasOpenOverlay && !isMenuOpen)
 
             if (hasOpenOverlay) {
+                val wasAnimatedSheet = isOmniboxOpen || isAiSheetOpen
                 if (overlayMode) {
                     // Finish the sheet's own dismiss pose before the state flips so there is no jump.
                     // Settle with the selected style's own commit curve (spring for Petal).
@@ -612,23 +625,30 @@ fun PetalRootApp(
                                 PetalSpring.quick()
                             )
                         } else {
-                            overlayBackProgress.animateTo(
+                            val settleAnim = Animatable(0f)
+                            settleAnim.animateTo(
                                 1f,
-                                tween(currentStyle.commitDurationMs, easing = currentStyle.commitEasing)
-                            )
+                                tween(currentStyle.commitDurationMs, easing = androidx.compose.animation.core.LinearEasing)
+                            ) {
+                                val eased = currentStyle.commitEasing.transform(value)
+                                overlayBackProgress.snapTo(overlayRelease + (1f - overlayRelease) * eased)
+                            }
                         }
                     }
                 }
                 when {
-                    (activity as? MainActivity)?.hasPresentedScreens == true -> (activity as? MainActivity)?.dismissTopPresentedScreen()
+                    (activity as? MainActivity)?.isReaderOverlayShowing == true -> (activity as? MainActivity)?.dismissReaderOverlay()
+                    (activity as? MainActivity)?.hasPresentedScreens == true -> (activity as? MainActivity)?.dismissTopPresentedScreen(animate = !overlayMode)
                     pendingExtensionPopup != null -> PetalExtensionManager.dismissPopup()
                     isOmniboxOpen -> viewModel.setOmniboxOpen(false)
                     isAiSheetOpen -> viewModel.setAiSheetOpen(false)
+                    isDevConsoleOpen -> viewModel.setDevConsoleOpen(false)
+                    isFindInPageOpen -> viewModel.setFindInPageOpen(false)
                     viewModel.hasOpenOverlay -> viewModel.dismissTopOverlay()
                 }
                 if (overlayMode) {
-                    // Park the pose until the sheet's own exit animation has finished.
-                    if (junctionPredictiveEnabled && poseEnabledState.value) kotlinx.coroutines.delay(400)
+                    // Park the pose briefly only when an AnimatedVisibility overlay is finishing its exit transition.
+                    if (wasAnimatedSheet && junctionPredictiveEnabled && poseEnabledState.value) kotlinx.coroutines.delay(220)
                     overlayCommitting = false
                     overlayBackProgress.snapTo(0f)
                 } else {
@@ -652,19 +672,25 @@ fun PetalRootApp(
                     progressAnim.animateTo(0f, PetalSpring.calm())
                 } else {
                     isCommitting = true
+                    settleTime = 0f
                     if (!junctionPredictiveEnabled || !poseEnabledState.value) {
                         // Plain instant back: no settle animation before finishing.
                     } else if (currentStyle.usesSpringCommit) {
                         progressAnim.animateTo(
                             targetValue = 1f,
                             animationSpec = PetalSpring.quick()
-                        )
-                    } else {
-                        progressAnim.animateTo(
-                            targetValue = 1f,
-                            animationSpec = tween(currentStyle.commitDurationMs, easing = currentStyle.commitEasing)
                         ) {
                             settleTime = ((value - release) / (1f - release).coerceAtLeast(0.01f)).coerceIn(0f, 1f)
+                        }
+                    } else {
+                        val settleAnim = Animatable(0f)
+                        settleAnim.animateTo(
+                            targetValue = 1f,
+                            animationSpec = tween(currentStyle.commitDurationMs, easing = androidx.compose.animation.core.LinearEasing)
+                        ) {
+                            settleTime = value
+                            val eased = currentStyle.commitEasing.transform(value)
+                            progressAnim.snapTo(release + (1f - release) * eased)
                         }
                     }
                     // Stay parked in the final pose: resetting here made the page flash back to full
@@ -1260,7 +1286,7 @@ fun PetalRootApp(
             }
 
             // Omnibox Query Page with Seamless Enter/Exit Transition
-            if (isOmniboxOpen && activity != null) {
+            if (activity != null) {
                 androidx.compose.animation.AnimatedVisibility(
                     visible = isOmniboxOpen,
                     enter = androidx.compose.animation.fadeIn(animationSpec = PetalSpring.calm()) +
@@ -1431,10 +1457,7 @@ fun PetalRootApp(
                     fallbackDim = 0f,
                     visible = true
                 )
-                Box(
-                    Modifier.fillMaxSize()
-                        .overlayBackPose(overlayPose, 0.9f, 0.12f)
-                ) {
+                Box(Modifier.fillMaxSize()) {
                 // Stable stays the default. The Beta setting is read once per open, so a change applies
                 // the next time the menu opens (no restart). A failed/unrenderable beta falls back to stable.
                 var betaMenuFailed by remember { mutableStateOf(false) }
@@ -1747,11 +1770,18 @@ fun PetalRootApp(
                 }
             }
 
-            val overlayExit = if (PetalPredictiveJunction.gestureDismissed) {
+            val gestureDismissedNow = PetalPredictiveJunction.gestureDismissed
+            val overlayExit = if (gestureDismissedNow) {
                 androidx.compose.animation.ExitTransition.None
             } else {
                 androidx.compose.animation.fadeOut(animationSpec = PetalSpring.calm()) +
                     androidx.compose.animation.slideOutVertically(animationSpec = PetalSpring.calm()) { it / 10 }
+            }
+            LaunchedEffect(gestureDismissedNow) {
+                if (gestureDismissedNow) {
+                    kotlinx.coroutines.delay(90L)
+                    PetalPredictiveJunction.clearGestureDismissed()
+                }
             }
             LaunchedEffect(
                 isBookmarksOpen,

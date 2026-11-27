@@ -321,11 +321,16 @@ fun DisplaySettingsScreenContent(
                             2 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = stringResource(R.string.ui_depth_blur_effects),
-                                    subtitle = stringResource(R.string.ui_show_24_dp_depth_blur),
+                                    subtitle = if (predictiveBack) {
+                                        stringResource(R.string.ui_show_24_dp_depth_blur)
+                                    } else {
+                                        "Requires Predictive Back Animations above."
+                                    },
                                     icon = Icons.Rounded.BlurOn,
                                     checked = depthBlur,
                                     position = position,
-                                    onCheckedChange = onDepthBlurChange
+                                    onCheckedChange = onDepthBlurChange,
+                                    modifier = Modifier.graphicsLayer { alpha = if (predictiveBack) 1f else 0.55f }
                                 )
                             }
                             3 -> {

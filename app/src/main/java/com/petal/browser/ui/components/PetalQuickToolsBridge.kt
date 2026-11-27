@@ -151,21 +151,29 @@ object PetalQuickToolsBridge {
                     }
 
                     val predictiveBackProgress = remember { androidx.compose.animation.core.Animatable(0f) }
+                    val predictiveBackEnabled by com.petal.browser.predictive.PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
+                    val reduceMotion = com.petal.browser.ui.components.rememberReduceMotion()
                     val coroutineScope = rememberCoroutineScope()
 
-                    PredictiveBackHandler(enabled = true) { progressFlow ->
-                        try {
-                            progressFlow.collect { backEvent ->
-                                predictiveBackProgress.snapTo(backEvent.progress)
+                    if (predictiveBackEnabled && !reduceMotion) {
+                        PredictiveBackHandler(enabled = true) { progressFlow ->
+                            try {
+                                progressFlow.collect { backEvent ->
+                                    predictiveBackProgress.snapTo(backEvent.progress)
+                                }
+                                cleanup()
+                            } catch (_: kotlinx.coroutines.CancellationException) {
+                                coroutineScope.launch {
+                                    predictiveBackProgress.animateTo(
+                                        0f,
+                                        PetalSpring.calm()
+                                    )
+                                }
                             }
+                        }
+                    } else {
+                        androidx.activity.compose.BackHandler(enabled = true) {
                             cleanup()
-                        } catch (_: kotlinx.coroutines.CancellationException) {
-                            coroutineScope.launch {
-                                predictiveBackProgress.animateTo(
-                                    0f,
-                                    PetalSpring.calm()
-                                )
-                            }
                         }
                     }
 

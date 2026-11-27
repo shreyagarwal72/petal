@@ -220,6 +220,49 @@ object PetalContentSnapshot {
         }
     }
 
+    @JvmStatic
+    fun capturePageSurfaceAsync(pageHost: View?, onCaptured: (Bitmap?) -> Unit) {
+        val surface = findSurface(pageHost)
+        if (surface == null || surface.width <= 0 || surface.height <= 0) {
+            onCaptured(null)
+            return
+        }
+        val width = (surface.width * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
+        val height = (surface.height * SNAPSHOT_SCALE).toInt().coerceAtLeast(1)
+        try {
+            when (surface) {
+                is android.view.TextureView -> {
+                    val bmp = surface.getBitmap(width, height)
+                    if (bmp != null) {
+                        _current = bmp
+                        currentAt = SystemClock.uptimeMillis()
+                    }
+                    onCaptured(bmp)
+                }
+                is android.view.SurfaceView -> {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N || !surface.holder.surface.isValid) {
+                        onCaptured(null)
+                    } else {
+                        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                        PixelCopy.request(surface, bitmap, { code ->
+                            if (code == PixelCopy.SUCCESS) {
+                                _current = bitmap
+                                currentAt = SystemClock.uptimeMillis()
+                                onCaptured(bitmap)
+                            } else {
+                                if (!bitmap.isRecycled) bitmap.recycle()
+                                onCaptured(null)
+                            }
+                        }, copyHandler)
+                    }
+                }
+                else -> onCaptured(null)
+            }
+        } catch (_: Throwable) {
+            onCaptured(null)
+        }
+    }
+
     private fun findSurface(root: View?): View? {
         if (root == null) return null
         if (root is android.view.SurfaceView || root is android.view.TextureView) return root

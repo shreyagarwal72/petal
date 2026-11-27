@@ -360,10 +360,10 @@ object PetalSettingsSearchIndex {
         ),
         SettingsSearchItem(
             id = "display_depth_blur",
-            title = "Depth Blur & Frosted Glass",
-            subtitle = "Render real-time blur and frosted glass layers behind dialogs, bottom sheets, and toolbars",
+            title = "Depth Blur",
+            subtitle = "Apply 24dp depth blur behind dismissing and pushed screens during predictive back navigation",
             category = SettingsCategory.DISPLAY_ZOOM,
-            keywords = listOf("blur", "depth blur", "frosted glass", "translucency", "glassmorphism", "visual effects")
+            keywords = listOf("blur", "depth blur", "predictive blur", "back blur", "visual effects")
         ),
         SettingsSearchItem(
             id = "display_font_scale",

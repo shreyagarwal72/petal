@@ -504,12 +504,23 @@ class MainActivity : FragmentActivity(), BrowserController {
         com.petal.browser.ui.components.PetalQuickToolsBridge.showQuickTools(this)
     }
     private var readerOverlayView: androidx.compose.ui.platform.ComposeView? = null
+    var isReaderOverlayShowing by androidx.compose.runtime.mutableStateOf(false)
+        private set
 
-    private fun dismissReaderOverlay(): Boolean {
+    private fun consumePendingOverlayBackAction() {
+        val action = pendingOverlayBackAction
+        pendingOverlayBackAction = null
+        action?.let {
+            try { it.run() } catch (_: Throwable) {}
+        }
+    }
+
+    fun dismissReaderOverlay(): Boolean {
         val overlay = readerOverlayView ?: return false
         readerOverlayView = null
+        isReaderOverlayShowing = false
         (overlay.parent as? android.view.ViewGroup)?.removeView(overlay)
-        pendingOverlayBackAction = null
+        consumePendingOverlayBackAction()
         com.petal.browser.live.PetalLiveActionBus.postSimple(
             com.petal.browser.live.LiveEventKind.READER_MODE,
             "reader",
@@ -542,7 +553,8 @@ class MainActivity : FragmentActivity(), BrowserController {
                     dismissReaderOverlay()
                 }
                 readerOverlayView = view
-                pendingOverlayBackAction = Runnable { dismissReaderOverlay() }
+                isReaderOverlayShowing = true
+                pendingOverlayBackAction = null
                 host.addView(
                     view,
                     android.view.ViewGroup.LayoutParams(
@@ -891,23 +903,36 @@ class MainActivity : FragmentActivity(), BrowserController {
         private set
     private fun syncPresentedCount() { presentedScreenCount = presentedScreens.size }
 
-    fun dismissTopPresentedScreen(): Boolean {
+    @JvmOverloads
+    fun dismissTopPresentedScreen(animate: Boolean = true): Boolean {
         if (presentedScreens.isNotEmpty()) {
             val screen = presentedScreens.pop()
             syncPresentedCount()
             val content = findViewById<android.view.ViewGroup>(android.R.id.content)
-            screen.animate()
-                .alpha(0f)
-                .translationY(80f)
-                .setDuration(180L)
-                .withEndAction { content?.removeView(screen) }
-                .start()
+            if (animate) {
+                screen.animate()
+                    .alpha(0f)
+                    .translationY(80f)
+                    .setDuration(180L)
+                    .withEndAction {
+                        content?.removeView(screen)
+                        consumePendingOverlayBackAction()
+                    }
+                    .start()
+            } else {
+                screen.animate().cancel()
+                content?.removeView(screen)
+                consumePendingOverlayBackAction()
+            }
             return true
         }
         return false
     }
 
     fun performBackNavigation() {
+        if (dismissReaderOverlay()) {
+            return
+        }
         if (dismissTopPresentedScreen()) {
             return
         }
@@ -1224,6 +1249,7 @@ class MainActivity : FragmentActivity(), BrowserController {
                         finish()
                         return
                     }
+                    viewModel.dismissAllOverlays()
                     val openPrivate = intent.getBooleanExtra("com.petal.browser.extra.OPEN_PRIVATE_TAB", false)
                     if (openPrivate) {
                         intent.removeExtra("com.petal.browser.extra.OPEN_PRIVATE_TAB")
@@ -1237,6 +1263,7 @@ class MainActivity : FragmentActivity(), BrowserController {
                 if (intent.type == "text/plain") {
                     val text = intent.getStringExtra(Intent.EXTRA_TEXT)
                     if (!text.isNullOrBlank()) {
+                        viewModel.dismissAllOverlays()
                         com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.SHARED_TO_PETAL, "shared", "Shared to Petal", text.take(60))
                         viewModel.loadUrl(text)
                     }

@@ -594,30 +594,20 @@ fun PetalDownloadManagerScreen(
     }
 
     com.petal.browser.predictive.PetalPredictiveBackSurface(
-        enabled = !hasSubOverlay,
-        holdDismissedPose = !isSettingsOpen,
-        useLiveUnderlay = !isSettingsOpen,
-        onBack = {
-            if (isSettingsOpen) {
-                isSettingsOpen = false
-            } else {
-                onBackPress()
-            }
-        },
+        enabled = !hasSubOverlay && !isSettingsOpen,
+        holdDismissedPose = true,
+        useLiveUnderlay = true,
+        onBack = onBackPress,
     ) {
-    // Two-layer transition, same pattern PetalSettingsScreen.kt uses for category drilling:
-    // the Downloads list stays mounted underneath as its own background layer (isBehind = true)
-    // so PetalScreenWrapper's depth-blur/dim/scale has a real second surface to animate against,
-    // and Download Settings renders as its own foreground layer (isBehind = false) with a fade
-    // transition. The old code ran both screens through one shared PetalScreenWrapper toggled by
-    // a plain boolean, which gave the wrapper nothing correct to interpolate between and produced
-    // the flicker/wrong-animation glitch that only showed up on this entry point.
-    Box(modifier = Modifier.fillMaxSize()) {
-    com.petal.browser.predictive.PetalScreenWrapper(
-        isBehind = isSettingsOpen,
-        backgroundSnapshot = backgroundSnapshot
-    ) {
-    Scaffold(
+    com.petal.browser.predictive.PetalSubPageHost(
+        visible = isSettingsOpen,
+        onBack = { isSettingsOpen = false },
+        parent = {
+            com.petal.browser.predictive.PetalScreenWrapper(
+                isBehind = false,
+                backgroundSnapshot = backgroundSnapshot
+            ) {
+                Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0, 0, 0, 0),
             snackbarHost = {
@@ -1076,35 +1066,22 @@ fun PetalDownloadManagerScreen(
             )
         }
     } // closes Box (inner)
-    } // closes innerPadding lambda
     } // closes Scaffold
     } // closes PetalScreenWrapper (Downloads list background layer)
-
-    if (isSettingsOpen) {
-        com.petal.browser.predictive.PetalScreenWrapper(isBehind = false) {
-            AnimatedContent(
-                targetState = isSettingsOpen,
-                transitionSpec = {
-                    (fadeIn(animationSpec = PetalSpring.calm()) + scaleIn(initialScale = 0.94f, animationSpec = PetalSpring.calm())) togetherWith
-                        (fadeOut(animationSpec = PetalSpring.calm()) + scaleOut(targetScale = 0.94f, animationSpec = PetalSpring.calm()))
-                },
-                label = "downloadSettingsTransition"
-            ) { settingsOpen ->
-                if (settingsOpen) {
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background
-                    ) {
-                        com.petal.browser.compose.settings.screens.DownloadSettingsScreen(
-                            onNavigateBack = { isSettingsOpen = false }
-                        )
-                    }
-                }
+        },
+        subPage = {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background
+            ) {
+                com.petal.browser.compose.settings.screens.DownloadSettingsScreen(
+                    onNavigateBack = { isSettingsOpen = false }
+                )
             }
         }
-    }
-    } // closes Box (outer)
+    )
 } // closes PetalPredictiveBackSurface
+} // closes PetalDownloadManagerScreen
 
 
 @OptIn(ExperimentalFoundationApi::class)
