@@ -3,7 +3,6 @@ package com.petal.browser.ui.components
 import com.petal.browser.ui.theme.ExpressiveButtonShape
 import android.graphics.Bitmap
 import android.net.Uri
-import android.net.http.SslCertificate
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -71,8 +70,7 @@ fun PetalSiteInfoBottomSheet(
     val isHttps = urlScheme == "https" || isSecureConnection
     val isHttp = urlScheme == "http"
     val isInternalPage = currentUrl.startsWith("petal:") || currentUrl.startsWith("about:")
-    val sslCertificate: SslCertificate? = null
-    val isSecure = isHttps || (isInternalPage && currentUrl.isNotEmpty())
+    val isPrivate = (currentTab?.content?.private == true) || (tabViewController?.isIncognito == true)
 
     // Cookie Count for domain
     var cookieCount by remember(currentUrl) {
@@ -83,14 +81,29 @@ fun PetalSiteInfoBottomSheet(
         )
     }
 
-    // SharedPreferences for site permission states
+    // Real Gecko site permission states backed by PetalSitePermissionsBridge
     val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    val profile = remember { com.petal.browser.engine.gecko.PetalEngineBridge.getProfile(context) }
 
-    var isCameraAllowed by remember { mutableStateOf(sp.getBoolean(profile + "_camera", false)) }
-    var isMicAllowed by remember { mutableStateOf(sp.getBoolean(profile + "_microphone", false)) }
-    var isLocationAllowed by remember { mutableStateOf(sp.getBoolean(profile + "_location", false)) }
-    var isNotificationsAllowed by remember { mutableStateOf(sp.getBoolean("sp_notifications_$domain", true)) }
+    var isCameraAllowed by remember(currentUrl, isPrivate) { mutableStateOf(false) }
+    var isMicAllowed by remember(currentUrl, isPrivate) { mutableStateOf(false) }
+    var isLocationAllowed by remember(currentUrl, isPrivate) { mutableStateOf(false) }
+    var isNotificationsAllowed by remember(currentUrl, isPrivate) { mutableStateOf(false) }
+
+    LaunchedEffect(currentUrl, isPrivate) {
+        val statuses = com.petal.browser.engine.gecko.PetalSitePermissionsBridge.getOriginPermissionStatuses(
+            context = context,
+            url = currentUrl,
+            isPrivate = isPrivate
+        )
+        isCameraAllowed = statuses[mozilla.components.concept.engine.permission.SitePermissionsStorage.Permission.CAMERA] ==
+            mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+        isMicAllowed = statuses[mozilla.components.concept.engine.permission.SitePermissionsStorage.Permission.MICROPHONE] ==
+            mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+        isLocationAllowed = statuses[mozilla.components.concept.engine.permission.SitePermissionsStorage.Permission.LOCATION] ==
+            mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+        isNotificationsAllowed = statuses[mozilla.components.concept.engine.permission.SitePermissionsStorage.Permission.NOTIFICATION] ==
+            mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+    }
 
     // Site display preferences
     var isDesktopSite by remember(domain) {
@@ -108,7 +121,6 @@ fun PetalSiteInfoBottomSheet(
     var trackingProtectionEnabled by remember(domain, isDomainWhitelisted) { mutableStateOf(!isDomainWhitelisted) }
     val blockedCount = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.getBlockedCountForDomain(domain) }
     val categoryCounts = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.getCategoryCountsForDomain(domain) }
-    val initialDomainMode = remember(domain) { com.petal.browser.browser.PetalAdBlockEngine.getEffectiveMode(context, domain) }
 
     val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
 
@@ -160,8 +172,6 @@ fun PetalSiteInfoBottomSheet(
             Spacer(modifier = Modifier.height(14.dp))
 
             val certDetails = when {
-                sslCertificate != null && isHttps ->
-                    "Issued to: ${sslCertificate.issuedTo.cName}\nIssued by: ${sslCertificate.issuedBy.oName}"
                 securityHost != null && isHttps ->
                     "Host: $securityHost\nYour connection is encrypted and verified."
                 isHttps -> "Your information is encrypted when sent to this site."
@@ -171,7 +181,6 @@ fun PetalSiteInfoBottomSheet(
             }
             com.petal.browser.ui.containment.PetalSheetListRow(
                 title = when {
-                    isHttps && sslCertificate != null -> "Valid Security Certificate"
                     isHttps -> "Encrypted Connection"
                     isInternalPage -> "Secure Local Origin"
                     isHttp -> "Unencrypted Connection"
@@ -544,16 +553,17 @@ fun PetalSiteInfoBottomSheet(
                                     siteResetExpanded = false
                                     try {
                                         com.petal.browser.unit.PetalCacheManager.clearSiteData(context, domain, includeCookies = false, includePermissions = true)
-                                        sp.edit()
-                                            .remove(profile + "_camera")
-                                            .remove(profile + "_microphone")
-                                            .remove(profile + "_location")
-                                            .remove("sp_notifications_$domain")
-                                            .apply()
+                                        com.petal.browser.engine.gecko.PetalSitePermissionsBridge.clearOriginPermissions(
+                                            context = context,
+                                            url = currentUrl,
+                                            isPrivate = isPrivate
+                                        )
                                         isCameraAllowed = false
                                         isMicAllowed = false
                                         isLocationAllowed = false
-                                        isNotificationsAllowed = true
+                                        isNotificationsAllowed = false
+                                        isDesktopSite = sp.getBoolean("sp_desktop_site", false)
+                                        tabViewController?.reload()
                                     } catch (_: Exception) {}
                                 }
                             )
@@ -593,7 +603,14 @@ fun PetalSiteInfoBottomSheet(
                     position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
                     onCheckedChange = { allowed ->
                         isCameraAllowed = allowed
-                        sp.edit().putBoolean(profile + "_camera", allowed).apply()
+                        com.petal.browser.engine.gecko.PetalSitePermissionsBridge.setOriginPermission(
+                            context = context,
+                            url = currentUrl,
+                            isPrivate = isPrivate,
+                            permission = mozilla.components.concept.engine.permission.SitePermissionsStorage.Permission.CAMERA,
+                            status = if (allowed) mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+                            else mozilla.components.concept.engine.permission.SitePermissions.Status.BLOCKED
+                        )
                         if (allowed && context is android.app.Activity) {
                             PetalAndroidUtils.grantPermissionsCamera(context)
                         }
@@ -620,7 +637,14 @@ fun PetalSiteInfoBottomSheet(
                     position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                     onCheckedChange = { allowed ->
                         isMicAllowed = allowed
-                        sp.edit().putBoolean(profile + "_microphone", allowed).apply()
+                        com.petal.browser.engine.gecko.PetalSitePermissionsBridge.setOriginPermission(
+                            context = context,
+                            url = currentUrl,
+                            isPrivate = isPrivate,
+                            permission = mozilla.components.concept.engine.permission.SitePermissionsStorage.Permission.MICROPHONE,
+                            status = if (allowed) mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+                            else mozilla.components.concept.engine.permission.SitePermissions.Status.BLOCKED
+                        )
                         if (allowed && context is android.app.Activity) {
                             PetalAndroidUtils.grantPermissionsMic(context)
                         }
@@ -647,7 +671,14 @@ fun PetalSiteInfoBottomSheet(
                     position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                     onCheckedChange = { allowed ->
                         isLocationAllowed = allowed
-                        sp.edit().putBoolean(profile + "_location", allowed).apply()
+                        com.petal.browser.engine.gecko.PetalSitePermissionsBridge.setOriginPermission(
+                            context = context,
+                            url = currentUrl,
+                            isPrivate = isPrivate,
+                            permission = mozilla.components.concept.engine.permission.SitePermissionsStorage.Permission.LOCATION,
+                            status = if (allowed) mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+                            else mozilla.components.concept.engine.permission.SitePermissions.Status.BLOCKED
+                        )
                         if (allowed && context is android.app.Activity) {
                             PetalAndroidUtils.grantPermissionsLoc(context)
                         } else if (!allowed) {
@@ -678,12 +709,20 @@ fun PetalSiteInfoBottomSheet(
                     position = com.petal.browser.ui.containment.PetalGroupPosition.MIDDLE,
                     onCheckedChange = { allowed ->
                         isNotificationsAllowed = allowed
-                        sp.edit().putBoolean("sp_notifications_$domain", allowed).apply()
+                        com.petal.browser.engine.gecko.PetalSitePermissionsBridge.setOriginPermission(
+                            context = context,
+                            url = currentUrl,
+                            isPrivate = isPrivate,
+                            permission = mozilla.components.concept.engine.permission.SitePermissionsStorage.Permission.NOTIFICATION,
+                            status = if (allowed) mozilla.components.concept.engine.permission.SitePermissions.Status.ALLOWED
+                            else mozilla.components.concept.engine.permission.SitePermissions.Status.BLOCKED
+                        )
                         if (allowed && android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU && context is android.app.Activity) {
                             if (androidx.core.content.ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
                                 androidx.core.app.ActivityCompat.requestPermissions(context, arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
                             }
                         }
+                        tabViewController?.reload()
                     },
                     leadingIcon = {
                         com.petal.browser.ui.containment.PetalGroupIconBadge(

@@ -33,7 +33,7 @@ object PetalGeckoRuntime {
         "sp_block_third_party_cookies", "profileStandard_cookiesThirdParty",
         "sp_total_cookie_protection", "sp_cookies_isolate", "sp_session_partitioning",
         "sp_login_autofill_enabled", "sp_private_dns_mode", "sp_custom_doh_url",
-        "sp_private_dns_custom_url", "sp_nextdns_profile_id", "sp_privacy_profile", "sp_security_slider",
+        "sp_private_dns_custom_url", "sp_nextdns_profile_id", "sp_privacy_profile",
         "sp_https_only", "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode",
         "petal_builtin_dark_webpages",
         "sp_trim_referrers", "sp_webauthn_enabled",
@@ -116,7 +116,6 @@ object PetalGeckoRuntime {
         } catch (_: Throwable) { false }
 
         val privacyProfile = com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp)
-        val securityLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
         val isStrictOrHardened = privacyProfile != com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STANDARD
 
         val blockThirdPartyCookies = sp.getBoolean("sp_block_third_party_cookies", false)
@@ -187,8 +186,7 @@ object PetalGeckoRuntime {
                     .build()
             )
             .javaScriptEnabled(
-                if (securityLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) false
-                else sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
+                sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
             )
             .consoleOutput(isDebug || com.petal.browser.logger.PetalLiveLogEngine.isEnabled)
             .remoteDebuggingEnabled(isDebug || com.petal.browser.logger.PetalLiveLogEngine.isEnabled)
@@ -231,6 +229,14 @@ object PetalGeckoRuntime {
             newRuntime.setActivityDelegate(object : GeckoRuntime.ActivityDelegate {
                 override fun onStartActivityForResult(intent: PendingIntent): GeckoResult<Intent> {
                     val result = GeckoResult<Intent>()
+                    val spNow = PreferenceManager.getDefaultSharedPreferences(appContext)
+                    if (!spNow.getBoolean("sp_webauthn_enabled", true)) {
+                        Log.i(TAG, "Blocked WebAuthn ActivityDelegate intent because sp_webauthn_enabled=false")
+                        result.completeExceptionally(
+                            SecurityException("WebAuthn passkeys disabled in Privacy settings")
+                        )
+                        return result
+                    }
                     val activity = foregroundActivity?.get()
                     if (activity == null || activity.isFinishing || activity.isDestroyed) {
                         Log.w(TAG, "Cannot launch WebAuthn activity: no active foreground activity")
@@ -368,7 +374,6 @@ object PetalGeckoRuntime {
         val sb = StringBuilder()
         for (k in SYNC_FINGERPRINT_KEYS) sb.append(k).append('=').append(sp.all[k]).append(';')
         sb.append("profile=").append(com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp))
-        sb.append(";sec=").append(com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp))
         sb.append(";doh=").append(com.petal.browser.unit.PetalPrivateDnsHelper.getDnsEndpointUrl(sp))
         return sb.toString()
     }
@@ -381,15 +386,10 @@ object PetalGeckoRuntime {
                 if (fingerprint == lastSyncFingerprint) return
                 lastSyncFingerprint = fingerprint
                 val privacyProfile = com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp)
-                val securityLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
                 val isStrictOrHardened = privacyProfile != com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STANDARD
 
                 // 1. JavaScript
-                val jsAllowed = if (securityLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) {
-                    false
-                } else {
-                    sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
-                }
+                val jsAllowed = sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
                 rt.settings.javaScriptEnabled = jsAllowed
 
                 // Text zoom / font scale factor
@@ -574,6 +574,35 @@ object PetalGeckoRuntime {
         setGeckoPref("cookiebanners.service.mode", if (banner) 2 else 0)
         setGeckoPref("cookiebanners.service.mode.privateBrowsing", if (banner) 2 else 0)
         setGeckoPref("cookiebanners.bannerClicking.enabled", banner)
+
+        // Sync Privacy Profile & WebGL flags live in both directions so switching back from STRICT doesn't leave stale locks.
+        val profile = com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp)
+        val isStrict = profile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT
+        val isHardenedOrStrict = profile != com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STANDARD
+        setGeckoPref("privacy.resistFingerprinting", isStrict)
+        setGeckoPref("privacy.resistFingerprinting.block_mozAddonManager", isStrict)
+        setGeckoPref("device.sensors.enabled", !isStrict)
+        setGeckoPref("dom.gamepad.enabled", !isStrict)
+        setGeckoPref("dom.vibrator.enabled", !isStrict)
+        setGeckoPref("dom.battery.v2.enabled", !isHardenedOrStrict)
+        setGeckoPref("dom.vr.enabled", !isHardenedOrStrict)
+        setGeckoPref(
+            "network.http.referer.XOriginPolicy",
+            when (profile) {
+                com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT -> 2
+                com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.HARDENED -> 1
+                com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STANDARD -> 0
+            }
+        )
+        setGeckoPref("network.prefetch-next", !isHardenedOrStrict)
+        setGeckoPref("network.dns.disablePrefetch", isHardenedOrStrict)
+        setGeckoPref("network.http.speculative-parallel-limit", if (isHardenedOrStrict) 0 else 6)
+
+        val webglEnabled = sp.getBoolean(
+            com.petal.browser.privacy.PetalPrivacyHardening.PREF_WEBGL_ENABLED,
+            !sp.getBoolean(com.petal.browser.privacy.PetalPrivacyHardening.PREF_WEBGL_DISABLED, false)
+        )
+        setGeckoPref("webgl.disabled", !webglEnabled)
 
         // Keep the on-disk user.js in step so the same values survive the next cold start.
         try {

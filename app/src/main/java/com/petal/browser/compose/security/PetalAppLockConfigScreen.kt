@@ -97,7 +97,8 @@ fun PetalAppLockConfigScreen(
     var savedPasscode by remember { mutableStateOf(sp.getString("sp_app_lock_passcode", "") ?: "") }
 
     var showPasscodeConfigDialog by remember { mutableStateOf(false) }
-    var tempPasscode by remember { mutableStateOf(savedPasscode) }
+    var pendingEnablePassword by remember { mutableStateOf(false) }
+    var tempPasscode by remember { mutableStateOf("") }
 
     fun updateLockConfig(enabled: Boolean, type: String) {
         isLockEnabled = enabled
@@ -112,6 +113,15 @@ fun PetalAppLockConfigScreen(
     fun handleLockToggle(checked: Boolean) {
         if (checked) {
             if (selectedLockType == "FINGERPRINT") {
+                if (!BiometricLockManager.canAuthenticate(context)) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar("No biometric or device lock enrolled. Set a custom passcode instead.")
+                    }
+                    pendingEnablePassword = true
+                    tempPasscode = ""
+                    showPasscodeConfigDialog = true
+                    return
+                }
                 val activity = context as? androidx.fragment.app.FragmentActivity
                 if (activity != null) {
                     BiometricLockManager.authenticate(
@@ -135,6 +145,8 @@ fun PetalAppLockConfigScreen(
                 }
             } else {
                 if (savedPasscode.isBlank()) {
+                    pendingEnablePassword = true
+                    tempPasscode = ""
                     showPasscodeConfigDialog = true
                 } else {
                     updateLockConfig(true, "PASSWORD")
@@ -149,6 +161,10 @@ fun PetalAppLockConfigScreen(
     }
 
     fun selectBiometricMethod() {
+        if (!BiometricLockManager.canAuthenticate(context)) {
+            coroutineScope.launch { snackbarHostState.showSnackbar("Biometric or device credential not enrolled on this device") }
+            return
+        }
         val activity = context as? androidx.fragment.app.FragmentActivity
         if (isLockEnabled && activity != null) {
             BiometricLockManager.authenticate(
@@ -167,8 +183,14 @@ fun PetalAppLockConfigScreen(
     }
 
     fun selectPasscodeMethod() {
-        updateLockConfig(isLockEnabled, "PASSWORD")
-        if (savedPasscode.isBlank()) showPasscodeConfigDialog = true
+        if (savedPasscode.isBlank()) {
+            // Defer switching to PASSWORD until the user confirms a non-blank passcode.
+            pendingEnablePassword = isLockEnabled
+            tempPasscode = ""
+            showPasscodeConfigDialog = true
+        } else {
+            updateLockConfig(isLockEnabled, "PASSWORD")
+        }
     }
 
     val handleBack: () -> Unit = {
@@ -314,7 +336,7 @@ fun PetalAppLockConfigScreen(
                                         title = if (savedPasscode.isNotBlank()) "Change passcode" else "Set passcode",
                                         subtitle = if (savedPasscode.isNotBlank()) "Passcode configured • Tap to change" else "Choose the passcode that unlocks Petal",
                                         position = PetalGroupPosition.SINGLE,
-                                        onClick = { showPasscodeConfigDialog = true },
+                                        onClick = { tempPasscode = ""; showPasscodeConfigDialog = true },
                                         leadingIcon = {
                                             PetalGroupIconBadge(
                                                 keyIcon,
@@ -353,7 +375,11 @@ fun PetalAppLockConfigScreen(
 
                 // Passcode configuration dialog
                 if (showPasscodeConfigDialog) {
-                    PetalDialog(onDismissRequest = { showPasscodeConfigDialog = false }) {
+                    PetalDialog(onDismissRequest = {
+                        showPasscodeConfigDialog = false
+                        pendingEnablePassword = false
+                        tempPasscode = ""
+                    }) {
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -397,16 +423,24 @@ fun PetalAppLockConfigScreen(
                                 horizontalArrangement = Arrangement.End,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                TextButton(onClick = { showPasscodeConfigDialog = false }) {
+                                TextButton(onClick = {
+                                    showPasscodeConfigDialog = false
+                                    pendingEnablePassword = false
+                                    tempPasscode = ""
+                                }) {
                                     Text(stringResource(R.string.ui_cancel))
                                 }
                                 Spacer(Modifier.width(8.dp))
                                 Button(
                                     onClick = {
-                                        if (tempPasscode.trim().isNotBlank()) {
-                                            savedPasscode = tempPasscode.trim()
-                                            sp.edit().putString("sp_app_lock_passcode", savedPasscode).apply()
-                                            if (isLockEnabled) updateLockConfig(true, "PASSWORD")
+                                        val raw = tempPasscode.trim()
+                                        if (raw.isNotBlank()) {
+                                            val hashed = BiometricLockManager.hashPasscode(raw)
+                                            savedPasscode = hashed
+                                            sp.edit().putString("sp_app_lock_passcode", hashed).apply()
+                                            updateLockConfig(pendingEnablePassword || isLockEnabled, "PASSWORD")
+                                            pendingEnablePassword = false
+                                            tempPasscode = ""
                                             showPasscodeConfigDialog = false
                                             coroutineScope.launch { snackbarHostState.showSnackbar("App password saved successfully") }
                                         }

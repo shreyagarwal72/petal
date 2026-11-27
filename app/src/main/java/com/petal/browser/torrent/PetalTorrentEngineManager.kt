@@ -69,7 +69,8 @@ object PetalTorrentEngineManager {
 
         if (!isMagnet && !isTorrentFile) return false
 
-        if (Util1DM.is1DMInstalled(activity)) {
+        val selectedMode = getSelectedEngineMode(activity)
+        if (selectedMode == TorrentEngineMode.ENGINE_1DM && Util1DM.is1DMInstalled(activity)) {
             return try {
                 if (isMagnet) {
                     Util1DM.downloadMagnet(activity, url, true)

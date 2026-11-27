@@ -46,13 +46,43 @@ object PetalSitePermissionsBridge {
         val status: SitePermissions.Status
     )
 
-    suspend fun getSitePermissionsSummary(
+    private val trackedPermissionChecks = listOf(
+        "camera" to Permission.CAMERA,
+        "microphone" to Permission.MICROPHONE,
+        "location" to Permission.LOCATION,
+        "notification" to Permission.NOTIFICATION,
+        "persistent_storage" to Permission.LOCAL_STORAGE,
+        "storage_access" to Permission.STORAGE_ACCESS,
+        "local_device" to Permission.LOCAL_DEVICE_ACCESS,
+        "local_network" to Permission.LOCAL_NETWORK_ACCESS
+    )
+
+    private fun permKeyFor(permission: Permission): String? =
+        trackedPermissionChecks.firstOrNull { it.second == permission }?.first
+
+    private fun applyPermissionUpdate(
+        existing: SitePermissions,
+        permission: Permission,
+        status: SitePermissions.Status
+    ): SitePermissions = when (permission) {
+        Permission.CAMERA -> existing.copy(camera = status)
+        Permission.MICROPHONE -> existing.copy(microphone = status)
+        Permission.LOCATION -> existing.copy(location = status)
+        Permission.NOTIFICATION -> existing.copy(notification = status)
+        Permission.LOCAL_STORAGE -> existing.copy(localStorage = status)
+        Permission.STORAGE_ACCESS -> existing.copy(crossOriginStorageAccess = status)
+        Permission.LOCAL_DEVICE_ACCESS -> existing.copy(localDeviceAccess = status)
+        Permission.LOCAL_NETWORK_ACCESS -> existing.copy(localNetworkAccess = status)
+        else -> existing
+    }
+
+    suspend fun getOriginPermissionStatuses(
         context: Context,
         url: String,
         isPrivate: Boolean
-    ): List<SitePermissionSummary> {
+    ): Map<Permission, SitePermissions.Status> {
         if (url.isBlank() || (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true))) {
-            return emptyList()
+            return emptyMap()
         }
         val origin = extractOrigin(url)
         val stored = if (isPrivate) null else {
@@ -63,26 +93,93 @@ object PetalSitePermissionsBridge {
             }
         }
         val prefix = "$isPrivate#$origin#"
-        val checks = listOf(
-            "camera" to Permission.CAMERA,
-            "microphone" to Permission.MICROPHONE,
-            "location" to Permission.LOCATION,
-            "notification" to Permission.NOTIFICATION,
-            "persistent_storage" to Permission.LOCAL_STORAGE,
-            "storage_access" to Permission.STORAGE_ACCESS,
-            "local_device" to Permission.LOCAL_DEVICE_ACCESS,
-            "local_network" to Permission.LOCAL_NETWORK_ACCESS
-        )
-        val out = ArrayList<SitePermissionSummary>()
-        for ((key, perm) in checks) {
+        val result = LinkedHashMap<Permission, SitePermissions.Status>(trackedPermissionChecks.size)
+        for ((key, perm) in trackedPermissionChecks) {
             val status = sessionGrants["$prefix$key"]
                 ?: stored?.get(perm)
                 ?: SitePermissions.Status.NO_DECISION
-            if (status != SitePermissions.Status.NO_DECISION) {
-                out.add(SitePermissionSummary(perm, status))
+            result[perm] = status
+        }
+        return result
+    }
+
+    suspend fun getSitePermissionsSummary(
+        context: Context,
+        url: String,
+        isPrivate: Boolean
+    ): List<SitePermissionSummary> {
+        val statuses = getOriginPermissionStatuses(context, url, isPrivate)
+        return statuses.entries
+            .filter { it.value != SitePermissions.Status.NO_DECISION }
+            .map { (perm, status) -> SitePermissionSummary(perm, status) }
+    }
+
+    fun setOriginPermission(
+        context: Context,
+        url: String,
+        isPrivate: Boolean,
+        permission: Permission,
+        status: SitePermissions.Status
+    ) {
+        if (url.isBlank() || (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true))) {
+            return
+        }
+        val origin = extractOrigin(url)
+        val permKey = permKeyFor(permission)
+        if (permKey != null) {
+            if (isPrivate) {
+                if (status == SitePermissions.Status.NO_DECISION) {
+                    sessionGrants.remove("true#$origin#$permKey")
+                } else {
+                    sessionGrants["true#$origin#$permKey"] = status
+                }
+                return
+            }
+            // Clear any transient in-memory decision so persistent override applies cleanly.
+            sessionGrants.remove("false#$origin#$permKey")
+        }
+        if (isPrivate) return
+        val storage = getStorage(context)
+        scope.launch {
+            try {
+                val current = storage.findSitePermissionsBy(origin = origin, includeTemporary = false, private = false)
+                    ?: SitePermissions(origin)
+                storage.update(applyPermissionUpdate(current, permission, status), false)
+            } catch (t: Throwable) {
+                android.util.Log.w("PetalSitePermissions", "Failed updating permission $permission for $origin: ${t.message}")
             }
         }
-        return out
+    }
+
+    fun clearOriginPermissions(context: Context, url: String, isPrivate: Boolean) {
+        if (url.isBlank() || (!url.startsWith("http://", ignoreCase = true) && !url.startsWith("https://", ignoreCase = true))) {
+            return
+        }
+        val origin = extractOrigin(url)
+        clearSessionGrants(isPrivate = isPrivate, origin = origin)
+        val sp = PreferenceManager.getDefaultSharedPreferences(context)
+        val host = try { Uri.parse(url).host.orEmpty() } catch (_: Throwable) { "" }
+        sp.edit()
+            .remove("perm_autoplay_audible_$origin")
+            .apply {
+                if (host.isNotBlank()) remove("sp_desktop_site_$host")
+            }
+            .apply()
+        if (isPrivate) return
+        val storage = getStorage(context)
+        scope.launch {
+            try {
+                val current = storage.findSitePermissionsBy(origin = origin, includeTemporary = false, private = false)
+                    ?: return@launch
+                var reset = current
+                for ((_, perm) in trackedPermissionChecks) {
+                    reset = applyPermissionUpdate(reset, perm, SitePermissions.Status.NO_DECISION)
+                }
+                storage.update(reset, false)
+            } catch (t: Throwable) {
+                android.util.Log.w("PetalSitePermissions", "Failed clearing permissions for $origin: ${t.message}")
+            }
+        }
     }
 
     fun clearSessionGrants(isPrivate: Boolean? = null, origin: String? = null) {

@@ -117,7 +117,46 @@ class MainActivity : FragmentActivity(), BrowserController {
             com.petal.browser.unit.PetalHighRefreshRateManager.PREF_HIGH_REFRESH_RATE -> {
                 runOnUiThread { com.petal.browser.unit.PetalHighRefreshRateManager.applyHighRefreshRate(this) }
             }
+            "sp_app_lock_enabled" -> {
+                // Keep the current active session unlocked while configuring App Lock; lock applies next background/cold start.
+                if (sp.getBoolean("sp_app_lock_enabled", false)) {
+                    isSessionUnlockedForAppLock = true
+                }
+            }
         }
+    }
+
+    private var isSessionUnlockedForAppLock: Boolean = false
+    private var stoppedForAppLock: Boolean = false
+
+    private fun isAppLockConfiguredAndEnabled(): Boolean {
+        if (!sp.getBoolean("sp_app_lock_enabled", false)) return false
+        val lockType = sp.getString("sp_app_lock_type", "FINGERPRINT") ?: "FINGERPRINT"
+        val passcode = sp.getString("sp_app_lock_passcode", "") ?: ""
+        val hasBiometric = lockType == "FINGERPRINT" &&
+            com.petal.browser.security.BiometricLockManager.canAuthenticate(this)
+        return passcode.isNotBlank() || hasBiometric
+    }
+
+    private fun maybeShowAppLockOnForeground() {
+        if (isFinishing || isDestroyed) return
+        if (com.petal.browser.compose.splash.PetalSplashState.splashActive.value) return
+        if (isSessionUnlockedForAppLock) return
+        if (!isAppLockConfiguredAndEnabled()) {
+            isSessionUnlockedForAppLock = true
+            return
+        }
+        if (com.petal.browser.compose.security.PetalAppLockBridge.isLockOverlayShowing) return
+        com.petal.browser.compose.security.PetalAppLockBridge.showLockOverlay(
+            activity = this,
+            onUnlocked = {
+                isSessionUnlockedForAppLock = true
+                stoppedForAppLock = false
+            },
+            onCancel = {
+                moveTaskToBack(true)
+            }
+        )
     }
 
     fun applyImmersiveFullscreen() {
@@ -256,15 +295,19 @@ class MainActivity : FragmentActivity(), BrowserController {
         if (com.petal.browser.compose.splash.PetalSplashState.shouldPlayLaunchSplash(sp)) {
             com.petal.browser.compose.splash.PetalSplashOverlay.show(this) {
                 triggerLaunchRippleOnce()
+                maybeShowAppLockOnForeground()
             }
-        } else if (!com.petal.browser.compose.splash.PetalSplashState.hasTriggeredLaunchRippleThisSession) {
-            androidx.core.view.OneShotPreDrawListener.add(window.decorView) {
-                window.decorView.postDelayed({
-                    if (!splashExitHandled) {
-                        com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
-                        triggerLaunchRippleOnce()
-                    }
-                }, 450L)
+        } else {
+            window.decorView.post { maybeShowAppLockOnForeground() }
+            if (!com.petal.browser.compose.splash.PetalSplashState.hasTriggeredLaunchRippleThisSession) {
+                androidx.core.view.OneShotPreDrawListener.add(window.decorView) {
+                    window.decorView.postDelayed({
+                        if (!splashExitHandled) {
+                            com.petal.browser.compose.splash.PetalSplashState.hasShownThisSession = true
+                            triggerLaunchRippleOnce()
+                        }
+                    }, 450L)
+                }
             }
         }
 
@@ -300,8 +343,26 @@ class MainActivity : FragmentActivity(), BrowserController {
         }, 2600L)
     }
 
+    override fun onStart() {
+        super.onStart()
+        if (stoppedForAppLock) {
+            stoppedForAppLock = false
+            maybeShowAppLockOnForeground()
+        }
+    }
+
     override fun onStop() {
         super.onStop()
+        if (!isChangingConfigurations &&
+            !isFinishing &&
+            !com.petal.browser.security.BiometricLockManager.isPromptActive &&
+            mFilePathCallback == null &&
+            filePathCallback == null &&
+            isAppLockConfiguredAndEnabled()
+        ) {
+            isSessionUnlockedForAppLock = false
+            stoppedForAppLock = true
+        }
         com.petal.browser.appicon.PetalAppIcons.applyPendingIfNeeded(applicationContext, activity = this)
         window.decorView.removeCallbacks(suspendSweep)
         com.petal.browser.account.sync.PetalFolderSync.onAppBackground(this)

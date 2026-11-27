@@ -72,12 +72,9 @@ fun PetalAdBlockSettingsScreen(
     var cookieDismissEnabled by remember {
         mutableStateOf(sp.getBoolean("sp_cookie_banner_auto_reject", sp.getBoolean("petal_builtin_consent_manager", true)))
     }
-    // Filter List & Advanced State
+    // Filter List & Advanced State (brave_social subscription is the single source of truth)
     var subscriptions by remember { mutableStateOf(PetalFilterSubscriptionManager.getSubscriptions(context)) }
-    var blockAnnoyances by remember {
-        val socialEnabled = subscriptions.firstOrNull { it.id == "brave_social" }?.isEnabled
-        mutableStateOf(socialEnabled ?: sp.getBoolean("sp_block_annoyances", false))
-    }
+    val blockAnnoyances = subscriptions.firstOrNull { it.id == "brave_social" }?.isEnabled ?: false
     var stripTrackingParams by remember {
         mutableStateOf(sp.getBoolean("sp_strip_tracking_parameters", true))
     }
@@ -497,8 +494,6 @@ fun PetalAdBlockSettingsScreen(
                         icon = Icons.Rounded.NotificationsOff,
                         checked = blockAnnoyances,
                         onCheckedChange = { on ->
-                            blockAnnoyances = on
-                            sp.edit().putBoolean("sp_block_annoyances", on).apply()
                             PetalFilterSubscriptionManager.toggleSubscription(context, "brave_social", on)
                             subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
                             PetalFilterSubscriptionManager.reloadActiveRules(context)
@@ -631,8 +626,6 @@ fun PetalAdBlockSettingsScreen(
                                 PetalFilterSubscriptionManager.toggleSubscription(context, sub.id, enabled)
                                 subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
                                 if (sub.id == "brave_social") {
-                                    blockAnnoyances = enabled
-                                    sp.edit().putBoolean("sp_block_annoyances", enabled).apply()
                                     PetalFilterSubscriptionManager.reloadActiveRules(context)
                                 }
                             }

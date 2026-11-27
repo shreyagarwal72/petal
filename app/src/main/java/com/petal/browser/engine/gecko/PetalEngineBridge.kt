@@ -75,11 +75,8 @@ object PetalEngineBridge {
     ): org.mozilla.geckoview.GeckoSessionSettings {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         migrateDesktopKeys(sp)
-        val secLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
         val jsAllowed = if (isExtensionPopup) {
             true
-        } else if (secLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) {
-            false
         } else {
             sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
         }

@@ -7,7 +7,7 @@ import org.mozilla.geckoview.GeckoSession
 /**
  * PetalPermissionDelegateWrapper
  * ──────────────────────────────────────────────────────────────────────────────
- * Thin re-bindable wrapper around [com.petal.browser.ui.components.PetalGeckoPermissionDelegate].
+ * Thin re-bindable wrapper around [com.petal.browser.engine.gecko.PetalSitePermissionsBridge].
  *
  * Like [PetalPromptDelegateWrapper], GeckoEngineSession (android-components) does NOT install
  * a permissionDelegate — the slot is null until the app fills it. Petal takes sole ownership.

@@ -31,12 +31,21 @@ import com.petal.browser.ui.theme.PetalExpressiveTheme
 
 object PetalAppLockBridge {
 
+    @Volatile
+    @JvmField
+    var isLockOverlayShowing: Boolean = false
+
     @JvmStatic
     fun showLockOverlay(activity: Activity, onUnlocked: Runnable, onCancel: Runnable) {
+        if (isLockOverlayShowing) return
         val decor = activity.window.decorView as? ViewGroup ?: return
         val browserActivity = activity as? MainActivity
         val rootView = activity.findViewById<android.view.View>(android.R.id.content) ?: activity.window.decorView
         PetalContentSnapshot.capture(rootView)
+        isLockOverlayShowing = true
+        try {
+            activity.window?.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        } catch (_: Throwable) {}
         var composeView: ComposeView? = null
         composeView = ComposeView(activity).apply {
             if (activity is ComponentActivity) {
@@ -90,25 +99,32 @@ object PetalAppLockBridge {
                     PetalAppLockScreen(
                         backgroundSnapshot = snapshotBitmap,
                         onUnlocked = {
+                            val finishUnlock = {
+                                isLockOverlayShowing = false
+                                browserActivity?.isDecorOverlayShowing = false
+                                try {
+                                    val keepSecure = com.petal.browser.compose.incognito.PetalIncognitoSessionManager
+                                        .getIncognitoCount(activity) > 0
+                                    if (!keepSecure) {
+                                        activity.window?.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+                                    }
+                                } catch (_: Throwable) {}
+                                onUnlocked.run()
+                            }
                             composeView?.let { cv ->
                                 cv.animate()
                                     .alpha(0f)
                                     .setDuration(180)
                                     .withEndAction {
                                         decor.removeView(cv)
-                                        browserActivity?.isDecorOverlayShowing = false
-                                        onUnlocked.run()
+                                        finishUnlock()
                                     }
                                     .start()
                             } ?: run {
-                                decor.removeView(composeView)
-                                browserActivity?.isDecorOverlayShowing = false
-                                onUnlocked.run()
+                                finishUnlock()
                             }
                         },
                         onBackPress = {
-                            decor.removeView(composeView)
-                            browserActivity?.isDecorOverlayShowing = false
                             onCancel.run()
                         }
                     )
@@ -118,6 +134,7 @@ object PetalAppLockBridge {
                 override fun onViewAttachedToWindow(v: android.view.View) {}
                 override fun onViewDetachedFromWindow(v: android.view.View) {
                     removeOnAttachStateChangeListener(this)
+                    isLockOverlayShowing = false
                     PetalContentSnapshot.clear()
                 }
             })

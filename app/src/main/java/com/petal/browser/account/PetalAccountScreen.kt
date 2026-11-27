@@ -156,8 +156,8 @@ fun PetalAccountScreen(
     LaunchedEffect(cacheRefresh) {
         cacheSize = withContext(Dispatchers.IO) {
             try {
-                val bytes = context.cacheDir.walkTopDown().filter { it.isFile }.map { it.length() }.sum()
-                String.format("%.1f MB", bytes / (1024f * 1024f))
+                val info = com.petal.browser.unit.PetalCacheManager.calculateCacheSize(context)
+                String.format("%.1f MB", info.totalBytes / (1024f * 1024f))
             } catch (_: Exception) { "0.0 MB" }
         }
     }

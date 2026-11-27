@@ -301,10 +301,6 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_session_partitioning", true)
     }
 
-    override val torPrivateWindow: Flow<Boolean> = preferenceFlow("sp_tor_private_window") {
-        sp.getBoolean("sp_tor_private_window", false)
-    }
-
     override val fingerprintProtection: Flow<Boolean> = preferenceFlow(setOf("sp_fingerprint_protection", "profileStandard_fingerPrintProtection")) {
         sp.getBoolean("sp_fingerprint_protection", sp.getBoolean("profileStandard_fingerPrintProtection", false))
     }
@@ -928,10 +924,6 @@ class SettingsRepositoryImpl @Inject constructor(
         com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
-    override suspend fun setTorPrivateWindow(enabled: Boolean) {
-        sp.edit().putBoolean("sp_tor_private_window", enabled).apply()
-    }
-
     override suspend fun setFingerprintProtection(enabled: Boolean) {
         sp.edit().putBoolean("sp_fingerprint_protection", enabled)
             .putBoolean("profileStandard_fingerPrintProtection", enabled).apply()
@@ -1237,7 +1229,8 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override suspend fun setAppLockPasscode(passcode: String) {
-        sp.edit().putString("sp_app_lock_passcode", passcode).apply()
+        val stored = if (passcode.isBlank()) "" else com.petal.browser.security.BiometricLockManager.hashPasscode(passcode)
+        sp.edit().putString("sp_app_lock_passcode", stored).apply()
     }
 
     override suspend fun setDoubleBackExit(enabled: Boolean) {

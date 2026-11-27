@@ -77,6 +77,8 @@ fun PrivacySettingsScreen(
     val webrtcProtection by viewModel.webrtcProtection.collectAsStateWithLifecycle()
     val dntGpc by viewModel.dntGpc.collectAsStateWithLifecycle()
     val trimReferrers by viewModel.trimReferrers.collectAsStateWithLifecycle()
+    val webauthnEnabled by viewModel.webauthnEnabled.collectAsStateWithLifecycle()
+    val webglEnabled by viewModel.webglEnabled.collectAsStateWithLifecycle()
     val httpsOnly by viewModel.httpsOnly.collectAsStateWithLifecycle()
     val javaScriptEnabled by viewModel.javaScriptEnabled.collectAsStateWithLifecycle()
     val blockPopups by viewModel.blockPopups.collectAsStateWithLifecycle()
@@ -103,6 +105,8 @@ fun PrivacySettingsScreen(
         webrtcProtection = webrtcProtection,
         dntGpc = dntGpc,
         trimReferrers = trimReferrers,
+        webauthnEnabled = webauthnEnabled,
+        webglEnabled = webglEnabled,
         httpsOnly = httpsOnly,
         javaScriptEnabled = javaScriptEnabled,
         blockPopups = blockPopups,
@@ -128,6 +132,8 @@ fun PrivacySettingsScreen(
         onWebrtcProtectionChange = viewModel::setWebrtcProtection,
         onDntGpcChange = viewModel::setDntGpc,
         onTrimReferrersChange = viewModel::setTrimReferrers,
+        onWebauthnEnabledChange = viewModel::setWebauthnEnabled,
+        onWebglEnabledChange = viewModel::setWebglEnabled,
         onHttpsOnlyChange = viewModel::setHttpsOnly,
         onJavaScriptEnabledChange = viewModel::setJavaScriptEnabled,
         onBlockPopupsChange = viewModel::setBlockPopups,
@@ -163,6 +169,8 @@ fun PrivacySettingsScreenContent(
     webrtcProtection: Boolean,
     dntGpc: Boolean,
     trimReferrers: Boolean,
+    webauthnEnabled: Boolean = true,
+    webglEnabled: Boolean = true,
     httpsOnly: Boolean,
     javaScriptEnabled: Boolean,
     blockPopups: Boolean,
@@ -188,6 +196,8 @@ fun PrivacySettingsScreenContent(
     onWebrtcProtectionChange: (Boolean) -> Unit,
     onDntGpcChange: (Boolean) -> Unit,
     onTrimReferrersChange: (Boolean) -> Unit,
+    onWebauthnEnabledChange: (Boolean) -> Unit = {},
+    onWebglEnabledChange: (Boolean) -> Unit = {},
     onHttpsOnlyChange: (Boolean) -> Unit,
     onJavaScriptEnabledChange: (Boolean) -> Unit,
     onBlockPopupsChange: (Boolean) -> Unit,
@@ -233,6 +243,8 @@ fun PrivacySettingsScreenContent(
             "privacy_webrtc",
             "privacy_dnt_gpc",
             "privacy_trim_referrers",
+            "privacy_webgl",
+            "privacy_webauthn",
             "privacy_drm",
             "privacy_autofill",
             "privacy_shortcut_favicons",
@@ -461,30 +473,11 @@ fun PrivacySettingsScreenContent(
                                     )
                                 },
                                 content = {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Text(
-                                            text = title,
-                                            style = PetalText.rowTitle,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                        if (isSelected && !key.equals("STANDARD", ignoreCase = true)) {
-                                            Surface(
-                                                shape = RoundedCornerShape(50),
-                                                color = MaterialTheme.colorScheme.secondaryContainer,
-                                                contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                                            ) {
-                                                Text(
-                                                    text = "Restart Petal to apply",
-                                                    style = PetalText.badge,
-                                                    maxLines = 1,
-                                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                                                )
-                                            }
-                                        }
-                                    }
+                                    Text(
+                                        text = title,
+                                        style = PetalText.rowTitle,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
                                     Text(
                                         text = subtitle,
                                         style = PetalText.rowSubtitle,
@@ -831,6 +824,26 @@ fun PrivacySettingsScreenContent(
                             icon = Icons.Rounded.WifiProtectedSetup,
                             checked = webrtcProtection,
                             onCheckedChange = onWebrtcProtectionChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[2],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "WebGL 3D Graphics",
+                            subtitle = "Allow WebGL canvas rendering (disabling reduces GPU fingerprinting)",
+                            icon = Icons.Rounded.Widgets,
+                            checked = webglEnabled,
+                            onCheckedChange = onWebglEnabledChange
+                        )
+
+                        PetalSettingsToggleRow(
+                            variant = privacyRowVariants[0],
+                            position = PetalGroupPosition.MIDDLE,
+                            title = "Passkeys & Security Keys (WebAuthn)",
+                            subtitle = "Allow websites to use hardware security keys and FIDO2 passkeys",
+                            icon = Icons.Rounded.Key,
+                            checked = webauthnEnabled,
+                            onCheckedChange = onWebauthnEnabledChange
                         )
 
                         PetalSettingsToggleRow(

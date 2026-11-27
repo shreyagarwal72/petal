@@ -21,23 +21,15 @@ object PetalPrivacyHardening {
     private const val TAG = "PetalPrivacyHardening"
 
     const val PREF_PRIVACY_PROFILE = "sp_privacy_profile"
-    const val PREF_SECURITY_SLIDER = "sp_security_slider"
     const val PREF_WEBRTC_LEAK_PROTECT = "sp_webrtc_protection"
     const val PREF_CANVAS_LETTERBOXING = "sp_canvas_letterboxing"
     const val PREF_WEBGL_ENABLED = "sp_webgl_enabled"
     const val PREF_WEBGL_DISABLED = "sp_webgl_disabled"
-    const val PREF_GECKO_NATIVE_CLASSIFIER_SPIKE = "sp_gecko_native_classifier_spike"
 
     enum class PrivacyProfile {
         STANDARD,   // High compatibility + ETP Strict
         HARDENED,   // Mull/LibreWolf Arkenfox: WebRTC leak defuse, referrer trim, hardware API disable
         STRICT      // Tor/Mullvad style: RFP, aggressive canvas isolation, strict origin
-    }
-
-    enum class SecurityLevel(val level: Int) {
-        STANDARD(0), // All web features allowed
-        SAFER(1),    // JS restricted on non-HTTPS, WebGL disabled, autoplay blocked
-        SAFEST(2)    // JS disabled globally, remote fonts disabled, media blocked
     }
 
     @JvmStatic
@@ -48,12 +40,6 @@ object PetalPrivacyHardening {
         } catch (_: Exception) {
             PrivacyProfile.STANDARD
         }
-    }
-
-    @JvmStatic
-    fun getSecurityLevel(sp: SharedPreferences): SecurityLevel {
-        val lvl = sp.getInt(PREF_SECURITY_SLIDER, SecurityLevel.STANDARD.level)
-        return SecurityLevel.values().firstOrNull { it.level == lvl } ?: SecurityLevel.STANDARD
     }
 
     @JvmStatic
@@ -82,26 +68,13 @@ object PetalPrivacyHardening {
         return profile == PrivacyProfile.STRICT || (profile == PrivacyProfile.HARDENED && explicitWebrtc)
     }
 
-    @JvmStatic
-    fun isNativeClassifierSpikeEnabled(sp: SharedPreferences): Boolean {
-        return sp.getBoolean(PREF_GECKO_NATIVE_CLASSIFIER_SPIKE, true)
-    }
-
-    @JvmStatic
-    fun probeContentClassifierService(context: Context) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context)
-        val active = isNativeClassifierSpikeEnabled(sp)
-        Log.i(TAG, "ContentClassifierService probe (GeckoView 159): spike active=$active, engines=[adblock-rust, content-classifier], test_list_urls=[EasyList, EasyPrivacy]")
-    }
-
     /**
-     * Generates Arkenfox-derived user.js hardening rules according to active profile & security level.
+     * Generates Arkenfox-derived user.js hardening rules according to active profile.
      */
     @JvmStatic
     fun buildArkenfoxUserJs(context: Context): String {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val profile = getPrivacyProfile(sp)
-        val secLevel = getSecurityLevel(sp)
         val webrtcProtect = isWebRtcLeakProtectionEnabled(sp)
 
         val sb = StringBuilder()
@@ -181,35 +154,11 @@ object PetalPrivacyHardening {
             """.trimIndent())
         }
 
-        // 6. WebGL 3D Graphics Toggle (separate setting; off only when disabled or SAFEST)
+        // 6. WebGL 3D Graphics Toggle
         val webglEnabled = sp.getBoolean(PREF_WEBGL_ENABLED, !sp.getBoolean(PREF_WEBGL_DISABLED, false))
-        if (!webglEnabled || secLevel == SecurityLevel.SAFEST) {
-            sb.appendLine("""user_pref("webgl.disabled", true);""")
-        }
+        sb.appendLine("""user_pref("webgl.disabled", ${!webglEnabled});""")
 
-        // 7. Security Slider dynamic constraints
-        when (secLevel) {
-            SecurityLevel.SAFER -> {
-                sb.appendLine("""
-                    // Security Level: SAFER (WebGL allowed; autoplay blocked)
-                    user_pref("media.autoplay.default", 5);
-                """.trimIndent())
-            }
-            SecurityLevel.SAFEST -> {
-                sb.appendLine("""
-                    // Security Level: SAFEST (JS globally blocked, WebGL disabled, fonts disabled)
-                    user_pref("javascript.enabled", false);
-                    user_pref("gfx.downloadable_fonts.enabled", false);
-                    user_pref("mathml.disabled", true);
-                    user_pref("media.autoplay.default", 5);
-                """.trimIndent())
-            }
-            SecurityLevel.STANDARD -> {
-                // Baseline options
-            }
-        }
-
-        // 8. Cookie Banner Handling (Gecko engine preferences: 2 = reject or accept, 0 = disabled)
+        // 7. Cookie Banner Handling (Gecko engine preferences: 2 = reject or accept, 0 = disabled)
         val cookieBannerAutoReject = sp.getBoolean("sp_cookie_banner_auto_reject", sp.getBoolean("petal_builtin_consent_manager", true))
         val cookieBannerMode = if (cookieBannerAutoReject) 2 else 0
         sb.appendLine("""
@@ -242,31 +191,18 @@ object PetalPrivacyHardening {
             user_pref("privacy.bounceTrackingProtection.mode", ${if (bounceTracking) 1 else 0});
         """.trimIndent())
 
-        // 10. Native Gecko ContentClassifierService Spike (GeckoView 159 on Android)
-        val spikeClassifier = isNativeClassifierSpikeEnabled(sp)
-        if (spikeClassifier) {
-            sb.appendLine("""
-                // Native Gecko ContentClassifierService Spike (GeckoView 159 on Android)
-                user_pref("privacy.trackingprotection.content.protection.enabled", true);
-                user_pref("privacy.trackingprotection.content.protection.engines", "adblock-rust,content-classifier");
-                user_pref("privacy.trackingprotection.content.protection.test_list_urls", "https://easylist.to/easylist/easylist.txt,https://easylist.to/easylist/easyprivacy.txt");
-            """.trimIndent())
-            Log.d(TAG, "ContentClassifierService spike configured in user.js: native protection engines [adblock-rust, content-classifier]")
-        }
-
         return sb.toString()
     }
 
     /**
      * One-tap "New Identity / Panic Wipe" (Mullvad / Tor Browser).
-     * Clears all session storage, cookies, DOM cache, network sockets,
-     * and returns to a fresh clean-slate incognito state.
+     * Clears all session storage, cookies, DOM cache, and network sockets.
      */
     @JvmStatic
     fun resetIdentity(context: Context, onComplete: (() -> Unit)? = null) {
         val appContext = context.applicationContext
         try {
-            Log.i(TAG, "Executing Tor-style New Identity flush...")
+            Log.i(TAG, "Executing New Identity flush...")
             // 1. Flush in-memory incognito/cookie/media bridges immediately
             try { com.petal.browser.compose.incognito.PetalIncognitoSessionManager.flushSessionData(appContext) } catch (_: Throwable) {}
             try { com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies() } catch (_: Throwable) {}
@@ -279,12 +215,7 @@ object PetalPrivacyHardening {
                 }
             } catch (_: Throwable) {}
 
-            // 3. Reset Tor circuit if active
-            if (PetalTorManager.isTorActive) {
-                PetalTorManager.startTorSession(appContext)
-            }
-
-            // 4. Wipe all Gecko storage and invoke onComplete once StorageController finishes
+            // 3. Wipe all Gecko storage and invoke onComplete once StorageController finishes
             PetalGeckoRuntime.clearDataAsync(
                 appContext,
                 StorageController.ClearFlags.ALL

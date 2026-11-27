@@ -120,7 +120,17 @@ class SafeLockerManager(private val context: Context) {
 
     suspend fun importFile(uri: Uri, displayName: String): Boolean = withContext(Dispatchers.IO) {
         try {
-            val targetFile = File(lockerDir, displayName)
+            val safeName = File(displayName).name
+                .replace(Regex("[/\\\\\\u0000]"), "_")
+                .trim()
+                .let { if (it.isBlank() || it == "." || it == "..") "file_${System.currentTimeMillis()}" else it }
+            val targetFile = File(lockerDir, safeName)
+            val baseCanonical = lockerDir.canonicalPath
+            val targetCanonical = targetFile.canonicalPath
+            if (!targetCanonical.startsWith(baseCanonical + File.separator)) {
+                Log.w(TAG, "Rejected invalid Safe Locker path: $displayName")
+                return@withContext false
+            }
             context.contentResolver.openInputStream(uri)?.use { input ->
                 FileOutputStream(targetFile).use { output ->
                     input.copyTo(output)

@@ -83,8 +83,13 @@ fun PetalAppLockScreen(
     var isUnlockedSuccess by remember { mutableStateOf(false) }
     var showForgotPasswordDialog by remember { mutableStateOf(false) }
 
+    val hasConfiguredPasscode = savedPasscode.isNotBlank()
+
     fun verifyPasscode() {
-        if (savedPasscode.isNotBlank() && enteredPasscode.trim() == savedPasscode.trim()) {
+        if (hasConfiguredPasscode &&
+            com.petal.browser.security.BiometricLockManager.matchesPasscode(enteredPasscode, savedPasscode)
+        ) {
+            com.petal.browser.security.BiometricLockManager.upgradeLegacyPasscodeIfNeeded(sp, enteredPasscode)
             errorMessage = null
             isUnlockedSuccess = true
             val activity = context as? android.app.Activity
@@ -137,11 +142,12 @@ fun PetalAppLockScreen(
             message = stringResource(R.string.ui_select_how_you_would_like),
             icon = Icons.Rounded.Security,
             confirmText = stringResource(R.string.ui_use_fingerprint),
-            dismissText = stringResource(R.string.ui_use_password),
+            dismissText = if (hasConfiguredPasscode) stringResource(R.string.ui_use_password) else stringResource(R.string.ui_cancel),
             onConfirm = {
                 showChoiceDialog = false
                 triggerBiometricUnlock()
             },
+            onDismiss = { showChoiceDialog = false }
         )
     }
 
@@ -263,23 +269,25 @@ fun PetalAppLockScreen(
                         modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
                     )
 
-                    PetalShapedPasswordInput(
-                        value = enteredPasscode,
-                        onValueChange = { newValue ->
-                            enteredPasscode = newValue
-                            if (errorMessage != null) errorMessage = null
-                            if (savedPasscode.isNotBlank() && newValue.trim() == savedPasscode.trim()) {
-                                verifyPasscode()
-                            }
-                        },
-                        hintText = "Enter App Password",
-                        isError = errorMessage != null,
-                        accentColor = MaterialTheme.colorScheme.primary,
-                        onUnlock = { verifyPasscode() },
-                        unlockButtonText = "Unlock",
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword,
-                        disableAutofill = true
-                    )
+                    if (hasConfiguredPasscode) {
+                        PetalShapedPasswordInput(
+                            value = enteredPasscode,
+                            onValueChange = { newValue ->
+                                enteredPasscode = newValue
+                                if (errorMessage != null) errorMessage = null
+                                if (com.petal.browser.security.BiometricLockManager.matchesPasscode(newValue, savedPasscode)) {
+                                    verifyPasscode()
+                                }
+                            },
+                            hintText = "Enter App Password",
+                            isError = errorMessage != null,
+                            accentColor = MaterialTheme.colorScheme.primary,
+                            onUnlock = { verifyPasscode() },
+                            unlockButtonText = "Unlock",
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.NumberPassword,
+                            disableAutofill = true
+                        )
+                    }
 
                     AnimatedVisibility(
                         visible = errorMessage != null,
@@ -332,13 +340,15 @@ fun PetalAppLockScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        TextButton(
-                            onClick = {
-                                enteredPasscode = ""
-                                errorMessage = null
+                        if (hasConfiguredPasscode) {
+                            TextButton(
+                                onClick = {
+                                    enteredPasscode = ""
+                                    errorMessage = null
+                                }
+                            ) {
+                                Text(stringResource(R.string.ui_clear_input))
                             }
-                        ) {
-                            Text(stringResource(R.string.ui_clear_input))
                         }
 
                         TextButton(

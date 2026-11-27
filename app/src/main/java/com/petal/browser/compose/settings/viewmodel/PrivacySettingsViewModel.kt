@@ -36,9 +36,6 @@ class PrivacySettingsViewModel @Inject constructor(
     val sessionPartitioning: StateFlow<Boolean> = settingsRepository.sessionPartitioning
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
-    val torPrivateWindow: StateFlow<Boolean> = settingsRepository.torPrivateWindow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
-
     val fingerprintProtection: StateFlow<Boolean> = settingsRepository.fingerprintProtection
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
@@ -62,9 +59,6 @@ class PrivacySettingsViewModel @Inject constructor(
 
     val blockPopups: StateFlow<Boolean> = settingsRepository.blockPopups
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
-
-    val openRedirectsInBackground: StateFlow<Boolean> = settingsRepository.openRedirectsInBackground
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val privateDnsMode: StateFlow<String> = settingsRepository.privateDnsMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "OFF")
@@ -127,10 +121,6 @@ class PrivacySettingsViewModel @Inject constructor(
         settingsRepository.setSessionPartitioning(enabled)
     }
 
-    fun setTorPrivateWindow(enabled: Boolean) = viewModelScope.launch {
-        settingsRepository.setTorPrivateWindow(enabled)
-    }
-
     fun setFingerprintProtection(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setFingerprintProtection(enabled)
     }
@@ -161,10 +151,6 @@ class PrivacySettingsViewModel @Inject constructor(
 
     fun setBlockPopups(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setBlockPopups(enabled)
-    }
-
-    fun setOpenRedirectsInBackground(enabled: Boolean) = viewModelScope.launch {
-        settingsRepository.setOpenRedirectsInBackground(enabled)
     }
 
     fun setPrivateDnsMode(mode: String) = viewModelScope.launch {
