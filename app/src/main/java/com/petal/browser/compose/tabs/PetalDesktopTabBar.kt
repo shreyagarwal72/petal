@@ -78,7 +78,7 @@ interface PetalDesktopTabBarHandler {
 
 /** Lightweight snapshot of one tab for the strip. Equality drives recomposition. */
 private data class PetalDesktopTabEntry(
-    val key: Int,
+    val key: String,
     val title: String,
     val favicon: Bitmap?,
     val incognito: Boolean,
@@ -90,7 +90,7 @@ private data class PetalDesktopTabEntry(
         other is PetalDesktopTabEntry && key == other.key && title == other.title &&
             favicon === other.favicon && incognito == other.incognito && selected == other.selected
 
-    override fun hashCode(): Int = key * 31 + title.hashCode() + (if (selected) 1 else 0)
+    override fun hashCode(): Int = key.hashCode() * 31 + title.hashCode() + (if (selected) 1 else 0)
 }
 
 object PetalDesktopTabBarBridge {
@@ -180,10 +180,14 @@ object PetalDesktopTabBarBridge {
     }
 }
 
-private fun resolveEntries(context: android.content.Context): List<PetalDesktopTabEntry> {
+private fun resolveEntries(context: android.content.Context): Pair<Boolean, List<PetalDesktopTabEntry>> {
     // BrowserStore is the single source of truth for the tab list.
-    val state = try { com.petal.browser.engine.gecko.PetalEngineStore.getStore(context).state } catch (_: Exception) { return emptyList() }
-    return state.tabs.filterNot { com.petal.browser.engine.gecko.PetalEngineStore.isEphemeralTabId(it.id) }.map { tab ->
+    val state = try { com.petal.browser.engine.gecko.PetalEngineStore.getStore(context).state } catch (_: Exception) { return false to emptyList() }
+    val nonEphemeral = state.tabs.filterNot { com.petal.browser.engine.gecko.PetalEngineStore.isEphemeralTabId(it.id) }
+    val activeTab = state.selectedTabId?.let { id -> nonEphemeral.firstOrNull { it.id == id } } ?: nonEphemeral.firstOrNull()
+    val activeIncognito = activeTab?.content?.private == true
+    val filtered = nonEphemeral.filter { it.content.private == activeIncognito }
+    val entries = filtered.map { tab ->
         val rawTitle = tab.content.title
         val rawUrl = tab.content.url
         val title = when {
@@ -194,7 +198,7 @@ private fun resolveEntries(context: android.content.Context): List<PetalDesktopT
             else -> "Petal Home"
         }
         PetalDesktopTabEntry(
-            key = tab.id.hashCode(),
+            key = tab.id,
             title = title,
             favicon = tab.content.icon,
             incognito = tab.content.private,
@@ -202,21 +206,24 @@ private fun resolveEntries(context: android.content.Context): List<PetalDesktopT
             tabId = tab.id
         )
     }
+    return activeIncognito to entries
 }
 
 @Composable
 fun PetalDesktopTabBar(handler: PetalDesktopTabBarHandler, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    var entries by remember { mutableStateOf(resolveEntries(context)) }
+    var snapshot by remember { mutableStateOf(resolveEntries(context)) }
+    val activeIncognito = snapshot.first
+    val entries = snapshot.second
 
-    // Poll the tab registry: titles, favicons and selection change from many places in the app.
-    // Only a changed snapshot triggers recomposition (see PetalDesktopTabEntry.equals).
-    LaunchedEffect(Unit) {
-        while (true) {
+    // Observe BrowserStore reactively instead of polling.
+    DisposableEffect(context) {
+        val store = try { com.petal.browser.engine.gecko.PetalEngineStore.getStore(context) } catch (_: Exception) { null }
+        val sub = store?.observeManually {
             val fresh = resolveEntries(context)
-            if (fresh != entries) entries = fresh
-            delay(350)
-        }
+            if (fresh != snapshot) snapshot = fresh
+        }?.also { it.resume() }
+        onDispose { sub?.unsubscribe() }
     }
 
     val listState: LazyListState = rememberLazyListState()
@@ -260,7 +267,7 @@ fun PetalDesktopTabBar(handler: PetalDesktopTabBarHandler, modifier: Modifier = 
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = androidx.compose.material3.ripple()
-                ) { handler.onNewTab(false) }
+                ) { handler.onNewTab(activeIncognito) }
                 .semantics { contentDescription = "New tab" },
             contentAlignment = Alignment.Center
         ) {

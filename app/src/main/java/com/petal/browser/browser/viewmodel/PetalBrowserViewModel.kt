@@ -84,8 +84,13 @@ class PetalBrowserViewModel @Inject constructor(
             ?: state.tabs.firstOrNull()
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    val tabCount: StateFlow<Int> = browserState.map { it.tabs.size.coerceAtLeast(1) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
+    val tabCount: StateFlow<Int> = browserState.map { state ->
+        val active = state.selectedTabId?.let { id -> state.tabs.firstOrNull { it.id == id } }
+            ?: state.tabs.firstOrNull()
+        val activePrivate = active?.content?.private == true
+        state.tabs.count { !PetalEngineStore.isEphemeralTabId(it.id) && it.content.private == activePrivate }
+            .coerceAtLeast(1)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1)
 
     val activeUrl: StateFlow<String> = activeTab.map { it?.content?.url.orEmpty() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
@@ -126,7 +131,11 @@ class PetalBrowserViewModel @Inject constructor(
     ) { state, _, _ ->
         state.tabs.filterNot { com.petal.browser.engine.gecko.PetalEngineStore.isEphemeralTabId(it.id) }.map { tab ->
             val meta = PetalTabMetadataStore.get(context, tab.id)
+            val fallbackGroup = if (meta?.tabGroupId == null && !tab.content.private) {
+                com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(context, tab.id)
+            } else null
             val preview = TabThumbnailCache.getMemoryOnly(tab.id, tab.content.private)
+            val muted = (tab.mediaSessionState?.muted == true) || PetalTabMetadataStore.isMuted(tab.id)
             PetalTabItem(
                 id = tab.id,
                 thumbnailKey = tab.id,
@@ -139,10 +148,10 @@ class PetalBrowserViewModel @Inject constructor(
                 isPinned = meta?.isPinned ?: false,
                 isPinnedGlobal = meta?.isPinnedGlobal ?: true,
                 workspaceId = meta?.workspaceId ?: PetalWorkspaceManager.DEFAULT_WORKSPACE_ID,
-                isMuted = false,
-                groupId = meta?.tabGroupId,
-                groupTitle = meta?.tabGroupTitle,
-                groupColorHex = meta?.tabGroupColorHex,
+                isMuted = muted,
+                groupId = meta?.tabGroupId ?: fallbackGroup?.id,
+                groupTitle = meta?.tabGroupTitle ?: fallbackGroup?.title,
+                groupColorHex = meta?.tabGroupColorHex ?: fallbackGroup?.colorHex,
                 isSleeping = com.petal.browser.engine.gecko.PetalTabSuspender.isSleeping(tab)
             )
         }
@@ -492,12 +501,13 @@ class PetalBrowserViewModel @Inject constructor(
         val tab: TabSessionState,
         val thumbnail: android.graphics.Bitmap?,
         val metadata: PetalTabMetadata?,
+        val originalIndex: Int,
         val closedAtMs: Long
     )
 
     private val closedSnapshots = com.petal.browser.browser.ClosedTabBuffer<ClosedTabSnapshot>(UNDO_SNAPSHOT_MAX, UNDO_SNAPSHOT_TTL_MS)
 
-    private fun snapshotBeforeClose(tab: TabSessionState) {
+    private fun snapshotBeforeClose(tab: TabSessionState, originalIndex: Int) {
         if (tab.content.private) return
         try {
             // Live history state is continuously synchronized to tab.engineState.engineSessionState by Mozilla engine delegates.
@@ -509,6 +519,7 @@ class PetalBrowserViewModel @Inject constructor(
                 tab = tab.copy(engineState = EngineState(engineSessionState = saved)),
                 thumbnail = thumb,
                 metadata = PetalTabMetadataStore.get(context, tab.id),
+                originalIndex = originalIndex,
                 closedAtMs = android.os.SystemClock.elapsedRealtime()
             )
             closedSnapshots.put(tab.id, snap, snap.closedAtMs)
@@ -517,39 +528,70 @@ class PetalBrowserViewModel @Inject constructor(
         }
     }
 
-    /** Re-adds a just-closed tab exactly as it was. Returns false if no snapshot is available. */
-    private fun restoreFromSnapshot(tabId: String): Boolean {
+    /** Re-adds a just-closed tab exactly as it was (including group, workspace, and thumbnail). */
+    private fun restoreFromSnapshot(tabId: String, selectTab: Boolean = false): Boolean {
         val snap = closedSnapshots.take(tabId) ?: return false
-        if (browserStore.state.tabs.any { it.id == tabId }) return true
-        browserStore.dispatch(TabListAction.AddTabAction(snap.tab, select = false))
-        snap.metadata?.let { PetalTabMetadataStore.put(context, it) }
+        if (browserStore.state.tabs.any { it.id == tabId }) {
+            PetalRecentlyClosedManager.removeClosedTab(tabId)
+            return true
+        }
+        browserStore.dispatch(TabListAction.AddTabAction(snap.tab, select = selectTab))
+        snap.metadata?.let { meta ->
+            PetalTabMetadataStore.put(context, meta)
+            if (!meta.tabGroupId.isNullOrBlank()) {
+                com.petal.browser.compose.tabs.PetalTabGroupManager.ensureGroupWithTab(
+                    context = context,
+                    groupId = meta.tabGroupId,
+                    groupTitle = meta.tabGroupTitle,
+                    groupColorHex = meta.tabGroupColorHex,
+                    tabId = tabId
+                )
+            }
+        }
         snap.thumbnail?.let { TabThumbnailCache.put(tabId, it, false, true) }
         // Undo consumes the vault entry so the tab is not listed as both open and closed.
         PetalRecentlyClosedManager.removeClosedTab(tabId)
+        notifyMetadataChanged()
         return true
     }
 
     fun closeTab(tabId: String) {
         val state = browserStore.state
-        val tabToClose = state.tabs.firstOrNull { it.id == tabId }
-        tabToClose?.let { snapshotBeforeClose(it) }
+        val originalIndex = state.tabs.indexOfFirst { it.id == tabId }
+        val tabToClose = if (originalIndex >= 0) state.tabs[originalIndex] else null
+        tabToClose?.let { snapshotBeforeClose(it, originalIndex) }
         val isPrivate = tabToClose?.content?.private == true
         val meta = PetalTabMetadataStore.get(context, tabId)
+        val groupForTab = if (meta?.tabGroupId == null && !isPrivate) {
+            com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(context, tabId)
+        } else null
+        val groupId = meta?.tabGroupId ?: groupForTab?.id
+        val groupTitle = meta?.tabGroupTitle ?: groupForTab?.title
+        val groupColorHex = meta?.tabGroupColorHex ?: groupForTab?.colorHex
         if (tabToClose != null && !isPrivate) {
+            PetalRecentlyClosedManager.init(context)
             PetalRecentlyClosedManager.pushClosedTab(
                 id = tabToClose.id,
                 title = meta?.customTitle ?: tabToClose.content.title,
                 url = tabToClose.content.url,
+                originalIndex = originalIndex,
                 isIncognito = false,
-                groupId = meta?.tabGroupId,
-                groupTitle = meta?.tabGroupTitle,
-                groupColorHex = meta?.tabGroupColorHex
+                groupId = groupId,
+                groupTitle = groupTitle,
+                groupColorHex = groupColorHex,
+                engineStateJson = PetalSessionRestoreManager.serializeEngineState(tabToClose.engineState.engineSessionState),
+                workspaceId = meta?.workspaceId,
+                isPinned = meta?.isPinned == true,
+                isPinnedGlobal = meta?.isPinnedGlobal ?: true,
+                parentId = meta?.parentId
             )
         }
         val isSelected = state.selectedTabId == tabId
         val parentId = meta?.parentId
-        val parentStillOpen = parentId != null && state.tabs.any { it.id == parentId && it.id != tabId }
-        if (isSelected && parentStillOpen && parentId != null) {
+        val parentSameMode = parentId != null && state.tabs.any {
+            it.id == parentId && it.id != tabId && it.content.private == isPrivate
+        }
+        if (isSelected && parentSameMode && parentId != null) {
             tabsUseCases.selectTab(parentId)
         }
         tabsUseCases.removeTab(tabId)
@@ -559,9 +601,17 @@ class PetalBrowserViewModel @Inject constructor(
         if (isPrivate) {
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
-        if (browserStore.state.tabs.none { it.id != tabId && !PetalEngineStore.isEphemeralTabId(it.id) }) {
+        val remaining = browserStore.state.tabs.filter { it.id != tabId && !PetalEngineStore.isEphemeralTabId(it.id) }
+        val hasNormal = remaining.any { !it.content.private }
+        if (remaining.isEmpty() || (!isPrivate && !hasNormal)) {
             openPlaceholderHomeTab()
+        } else if (isPrivate && remaining.none { it.content.private }) {
+            // Last Incognito tab closed while Normal tabs remain open: return selection to Normal browsing
+            remaining.lastOrNull { !it.content.private }?.let { normalTab ->
+                tabsUseCases.selectTab(normalTab.id)
+            }
         }
+        notifyMetadataChanged()
     }
 
     /** Moves tabs untouched for the configured number of days into Recently Closed. Returns the count. */
@@ -585,22 +635,36 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun closeTabs(tabIds: Collection<String>) {
+        if (tabIds.isEmpty()) return
         val state = browserStore.state
         var hadPrivate = false
+        var hadNormal = false
+        PetalRecentlyClosedManager.init(context)
         for (id in tabIds) {
-            val tabToClose = state.tabs.firstOrNull { it.id == id }
+            val originalIndex = state.tabs.indexOfFirst { it.id == id }
+            val tabToClose = if (originalIndex >= 0) state.tabs[originalIndex] else null
             if (tabToClose != null) {
-                snapshotBeforeClose(tabToClose)
+                snapshotBeforeClose(tabToClose, originalIndex)
                 if (!tabToClose.content.private) {
+                    hadNormal = true
                     val meta = PetalTabMetadataStore.get(context, id)
+                    val groupForTab = if (meta?.tabGroupId == null) {
+                        com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(context, id)
+                    } else null
                     PetalRecentlyClosedManager.pushClosedTab(
                         id = tabToClose.id,
                         title = meta?.customTitle ?: tabToClose.content.title,
                         url = tabToClose.content.url,
+                        originalIndex = originalIndex,
                         isIncognito = false,
-                        groupId = meta?.tabGroupId,
-                        groupTitle = meta?.tabGroupTitle,
-                        groupColorHex = meta?.tabGroupColorHex
+                        groupId = meta?.tabGroupId ?: groupForTab?.id,
+                        groupTitle = meta?.tabGroupTitle ?: groupForTab?.title,
+                        groupColorHex = meta?.tabGroupColorHex ?: groupForTab?.colorHex,
+                        engineStateJson = PetalSessionRestoreManager.serializeEngineState(tabToClose.engineState.engineSessionState),
+                        workspaceId = meta?.workspaceId,
+                        isPinned = meta?.isPinned == true,
+                        isPinnedGlobal = meta?.isPinnedGlobal ?: true,
+                        parentId = meta?.parentId
                     )
                 } else {
                     hadPrivate = true
@@ -615,9 +679,16 @@ class PetalBrowserViewModel @Inject constructor(
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
         val closedSet = tabIds.toSet()
-        if (browserStore.state.tabs.none { it.id !in closedSet && !PetalEngineStore.isEphemeralTabId(it.id) }) {
+        val remaining = browserStore.state.tabs.filter { it.id !in closedSet && !PetalEngineStore.isEphemeralTabId(it.id) }
+        val hasNormal = remaining.any { !it.content.private }
+        if (remaining.isEmpty() || (hadNormal && !hasNormal)) {
             openPlaceholderHomeTab()
+        } else if (hadPrivate && remaining.none { it.content.private }) {
+            remaining.lastOrNull { !it.content.private }?.let { normalTab ->
+                tabsUseCases.selectTab(normalTab.id)
+            }
         }
+        notifyMetadataChanged()
     }
 
     fun closeOtherTabs(retainedTab: PetalTabItem) {
@@ -635,7 +706,8 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun closeAllTabs(isIncognitoOnly: Boolean = false) {
         val tabsToClose = browserStore.state.tabs.filter {
-            !PetalEngineStore.isEphemeralTabId(it.id) && (!isIncognitoOnly || it.content.private)
+            !PetalEngineStore.isEphemeralTabId(it.id) &&
+                (if (isIncognitoOnly) it.content.private else !it.content.private)
         }
         val ids = tabsToClose.map { it.id }
         if (ids.isNotEmpty()) {
@@ -643,39 +715,204 @@ class PetalBrowserViewModel @Inject constructor(
         }
     }
 
-    fun restoreTab(tab: PetalTabItem) {
-        if (!tab.isIncognito && restoreFromSnapshot(tab.id)) {
+    fun restoreTab(tab: PetalTabItem, selectTab: Boolean = false) {
+        if (!tab.isIncognito && restoreFromSnapshot(tab.id, selectTab = selectTab)) {
             dropPlaceholderHomeTab()
             return
         }
         dropPlaceholderHomeTab()
+        PetalRecentlyClosedManager.removeClosedTab(tab.id)
         val url = if (tab.url.isBlank() || tab.url == "Petal Home" || tab.url.equals("about:blank", ignoreCase = true)) {
             "about:home"
         } else {
             tab.url
         }
-        openNewTab(url = url, selectTab = false, private = tab.isIncognito)
+        val newId = openNewTab(
+            url = url,
+            selectTab = selectTab,
+            private = tab.isIncognito,
+            groupId = if (!tab.isIncognito) tab.groupId else null,
+            groupTitle = if (!tab.isIncognito) tab.groupTitle else null,
+            keepSwitcherOpen = _isTabSwitcherOpen.value
+        )
+        if (!tab.isIncognito && !tab.groupId.isNullOrBlank()) {
+            com.petal.browser.compose.tabs.PetalTabGroupManager.ensureGroupWithTab(
+                context = context,
+                groupId = tab.groupId,
+                groupTitle = tab.groupTitle,
+                groupColorHex = tab.groupColorHex,
+                tabId = newId
+            )
+        }
+        if (tab.isPinned || tab.workspaceId != null) {
+            if (tab.workspaceId != null && tab.workspaceId != PetalWorkspaceManager.DEFAULT_WORKSPACE_ID) {
+                PetalTabMetadataStore.setWorkspace(context, newId, tab.workspaceId)
+            }
+            if (tab.isPinned) {
+                PetalTabMetadataStore.setPinned(context, newId, true, tab.isPinnedGlobal)
+            }
+        }
+        notifyMetadataChanged()
+    }
+
+    fun restoreClosedRecord(rec: com.petal.browser.unit.ClosedTabRecord, selectTab: Boolean = false) {
+        if (!rec.isIncognito && restoreFromSnapshot(rec.id, selectTab = selectTab)) {
+            dropPlaceholderHomeTab()
+            return
+        }
+        dropPlaceholderHomeTab()
+        PetalRecentlyClosedManager.removeClosedTab(rec.id)
+        val effectiveUrl = if (rec.url.isBlank() || rec.url == "Petal Home" || rec.url.equals("about:blank", ignoreCase = true)) {
+            "about:home"
+        } else {
+            rec.url
+        }
+        val deserializedState = PetalSessionRestoreManager.deserializeEngineState(rec.engineStateJson)
+        val restoredTabId = if (rec.id.isNotBlank() && browserStore.state.tabs.none { it.id == rec.id }) {
+            rec.id
+        } else {
+            java.util.UUID.randomUUID().toString()
+        }
+        if (deserializedState != null && !rec.isIncognito) {
+            val restoredTabState = TabSessionState(
+                id = restoredTabId,
+                content = mozilla.components.browser.state.state.ContentState(
+                    url = effectiveUrl,
+                    private = false,
+                    title = rec.title.ifBlank { effectiveUrl }
+                ),
+                engineState = EngineState(engineSessionState = deserializedState)
+            )
+            browserStore.dispatch(TabListAction.AddTabAction(restoredTabState, select = selectTab))
+            if (rec.isPinned || rec.workspaceId != null || rec.groupId != null || rec.parentId != null) {
+                PetalTabMetadataStore.put(
+                    context,
+                    PetalTabMetadata(
+                        tabId = restoredTabId,
+                        tabGroupId = rec.groupId,
+                        tabGroupTitle = rec.groupTitle,
+                        tabGroupColorHex = rec.groupColorHex,
+                        workspaceId = rec.workspaceId,
+                        isPinned = rec.isPinned,
+                        isPinnedGlobal = rec.isPinnedGlobal,
+                        parentId = rec.parentId
+                    )
+                )
+            }
+            if (!rec.groupId.isNullOrBlank()) {
+                com.petal.browser.compose.tabs.PetalTabGroupManager.ensureGroupWithTab(
+                    context = context,
+                    groupId = rec.groupId,
+                    groupTitle = rec.groupTitle,
+                    groupColorHex = rec.groupColorHex,
+                    tabId = restoredTabId
+                )
+            }
+            notifyMetadataChanged()
+        } else {
+            restoreTab(
+                PetalTabItem(
+                    id = rec.id,
+                    title = rec.title,
+                    url = rec.url,
+                    isIncognito = rec.isIncognito,
+                    isPinned = rec.isPinned,
+                    isPinnedGlobal = rec.isPinnedGlobal,
+                    workspaceId = rec.workspaceId,
+                    groupId = rec.groupId,
+                    groupTitle = rec.groupTitle,
+                    groupColorHex = rec.groupColorHex
+                ),
+                selectTab = selectTab
+            )
+        }
+    }
+
+    fun restoreClosedRecords(records: List<com.petal.browser.unit.ClosedTabRecord>) {
+        records.forEach { restoreClosedRecord(it, selectTab = false) }
     }
 
     fun duplicateTab(tab: PetalTabItem) {
         val url = if (tab.url.isBlank() || tab.url == "Petal Home") "about:home" else tab.url
+        val sourceTab = browserStore.state.tabs.firstOrNull { it.id == tab.id }
         val meta = PetalTabMetadataStore.get(context, tab.id)
-        val newTabId = openNewTab(
-            url = url,
-            selectTab = true,
-            private = tab.isIncognito,
-            groupId = meta?.tabGroupId,
-            groupTitle = meta?.tabGroupTitle,
-            parentId = tab.id
-        )
+        val clonedState = sourceTab?.engineState?.engineSessionState?.let { existingState ->
+            PetalSessionRestoreManager.deserializeEngineState(
+                PetalSessionRestoreManager.serializeEngineState(existingState)
+            )
+        }
+        val groupId = meta?.tabGroupId ?: tab.groupId
+        val groupTitle = meta?.tabGroupTitle ?: tab.groupTitle
+        val groupColorHex = meta?.tabGroupColorHex ?: tab.groupColorHex
         val duplicateWorkspaceId = if (!tab.isIncognito && PetalWorkspaceManager.isWorkspaceChipsEnabled(context)) {
-            meta?.workspaceId
+            meta?.workspaceId ?: tab.workspaceId?.takeIf { it != PetalWorkspaceManager.DEFAULT_WORKSPACE_ID }
         } else {
             null
         }
-        if (duplicateWorkspaceId != null) {
-            PetalTabMetadataStore.setWorkspace(context, newTabId, duplicateWorkspaceId)
+        val createdTabId = if (clonedState != null && sourceTab != null) {
+            val newTabId = java.util.UUID.randomUUID().toString()
+            val resolvedTitle = sourceTab.content.title.ifBlank { tab.title }
+            val dupState = TabSessionState(
+                id = newTabId,
+                content = mozilla.components.browser.state.state.ContentState(
+                    url = url,
+                    private = tab.isIncognito,
+                    title = resolvedTitle
+                ),
+                engineState = EngineState(engineSessionState = clonedState)
+            )
+            browserStore.dispatch(TabListAction.AddTabAction(dupState, select = true))
+            PetalEngineStore.materializeTabSession(
+                context = context,
+                tabId = newTabId,
+                fallbackUrl = url,
+                fallbackTitle = resolvedTitle,
+                isIncognito = tab.isIncognito,
+                select = true
+            )
+            if (tab.isIncognito) PetalIncognitoSessionManager.syncIncognitoState(context)
+            if (_isTabSwitcherOpen.value) _isTabSwitcherOpen.value = false
+            newTabId
+        } else {
+            openNewTab(
+                url = url,
+                selectTab = true,
+                private = tab.isIncognito,
+                groupId = if (!tab.isIncognito) groupId else null,
+                groupTitle = if (!tab.isIncognito) groupTitle else null,
+                parentId = tab.id
+            )
         }
+        if (groupId != null && !tab.isIncognito) {
+            com.petal.browser.compose.tabs.PetalTabGroupManager.ensureGroupWithTab(
+                context = context,
+                groupId = groupId,
+                groupTitle = groupTitle,
+                groupColorHex = groupColorHex,
+                tabId = createdTabId
+            )
+        }
+        if (duplicateWorkspaceId != null) {
+            PetalTabMetadataStore.setWorkspace(context, createdTabId, duplicateWorkspaceId)
+        }
+        if (meta?.isPinned == true || tab.isPinned) {
+            PetalTabMetadataStore.setPinned(context, createdTabId, true, meta?.isPinnedGlobal ?: tab.isPinnedGlobal)
+        }
+        PetalTabMetadataStore.setParentId(context, createdTabId, tab.id)
+        if (tab.isMuted || PetalTabMetadataStore.isMuted(tab.id)) {
+            setTabMuted(createdTabId, true)
+        }
+        notifyMetadataChanged()
+    }
+
+    fun setTabMuted(tabId: String, muted: Boolean) {
+        PetalTabMetadataStore.setMuted(tabId, muted)
+        val tab = browserStore.state.tabs.firstOrNull { it.id == tabId }
+        try {
+            tab?.mediaSessionState?.controller?.muteAudio(muted)
+        } catch (_: Throwable) {}
+        PetalEngineStore.updateMediaMuted(context, tabId, muted)
+        notifyMetadataChanged()
     }
 
     fun saveBookmark(title: String, url: String) {
@@ -882,7 +1119,8 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun switchToNextTab() {
         val state = browserStore.state
-        val tabs = state.tabs.filterNot { PetalEngineStore.isEphemeralTabId(it.id) }
+        val activePrivate = state.selectedTabId?.let { id -> state.tabs.firstOrNull { it.id == id }?.content?.private } ?: false
+        val tabs = state.tabs.filter { !PetalEngineStore.isEphemeralTabId(it.id) && it.content.private == activePrivate }
         if (tabs.size <= 1) return
         val currentIndex = tabs.indexOfFirst { it.id == state.selectedTabId }
         val nextIndex = if (currentIndex != -1) (currentIndex + 1) % tabs.size else 0
@@ -891,7 +1129,8 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun switchToPreviousTab() {
         val state = browserStore.state
-        val tabs = state.tabs.filterNot { PetalEngineStore.isEphemeralTabId(it.id) }
+        val activePrivate = state.selectedTabId?.let { id -> state.tabs.firstOrNull { it.id == id }?.content?.private } ?: false
+        val tabs = state.tabs.filter { !PetalEngineStore.isEphemeralTabId(it.id) && it.content.private == activePrivate }
         if (tabs.size <= 1) return
         val currentIndex = tabs.indexOfFirst { it.id == state.selectedTabId }
         val prevIndex = if (currentIndex > 0) currentIndex - 1 else tabs.size - 1

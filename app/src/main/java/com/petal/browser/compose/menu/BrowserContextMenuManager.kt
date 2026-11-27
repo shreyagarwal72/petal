@@ -308,7 +308,7 @@ object BrowserContextMenuManager {
                                 url = currentAlbum?.url ?: activeStoreTab?.content?.url ?: "about:blank",
                                 isIncognito = isPriv
                             )
-                            val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, currentTab)
+                            val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTab(activity, currentTab)
                             val tabVc = currentTabSurface as? com.petal.browser.browser.PetalTabViewController
                             tabVc?.setTabGroupId(newGroup.id)
                             tabVc?.setTabGroupTitle(newGroup.title)
@@ -887,7 +887,7 @@ object BrowserContextMenuManager {
                                 url = currentAlbum?.url ?: activeStoreTab?.content?.url ?: "about:blank",
                                 isIncognito = isPriv
                             )
-                            val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, currentTab)
+                            val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTab(activity, currentTab)
                             val tabVc = currentTabSurface as? com.petal.browser.browser.PetalTabViewController
                             tabVc?.setTabGroupId(newGroup.id)
                             tabVc?.setTabGroupTitle(newGroup.title)

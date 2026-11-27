@@ -306,7 +306,23 @@ private fun domain(tab: PetalTabItem): String = PetalAndroidUtils.domain(tab.url
 @Composable
 private fun GlanceLeading(tab: PetalTabItem) {
     val shape = SmoothRoundedShape(24.dp)
-    val bmp = tab.previewBitmap ?: tab.faviconBitmap
+    var cached by androidx.compose.runtime.remember(tab.id, tab.isIncognito) {
+        androidx.compose.runtime.mutableStateOf(
+            tab.previewBitmap?.takeUnless { it.isRecycled }
+                ?: com.petal.browser.unit.TabThumbnailCache.getMemoryOnly(tab.id, tab.isIncognito)?.takeUnless { it.isRecycled }
+        )
+    }
+    androidx.compose.runtime.LaunchedEffect(tab.previewBitmap) {
+        tab.previewBitmap?.takeUnless { it.isRecycled }?.let { cached = it }
+    }
+    androidx.compose.runtime.LaunchedEffect(tab.id, tab.isIncognito) {
+        if (cached?.isRecycled != false) {
+            com.petal.browser.unit.TabThumbnailCache.loadFirstAsync(arrayOf(tab.thumbnailKey, tab.id), tab.isIncognito) { b ->
+                if (b != null && !b.isRecycled) cached = b
+            }
+        }
+    }
+    val bmp = cached ?: tab.faviconBitmap
     Box(
         modifier = Modifier.size(80.dp).clip(shape).background(MaterialTheme.colorScheme.primaryContainer),
         contentAlignment = Alignment.Center
@@ -315,8 +331,8 @@ private fun GlanceLeading(tab: PetalTabItem) {
             Image(
                 bitmap = bmp.asImageBitmap(),
                 contentDescription = null,
-                contentScale = if (tab.previewBitmap != null) ContentScale.Crop else ContentScale.Fit,
-                modifier = if (tab.previewBitmap != null) Modifier.size(80.dp) else Modifier.size(40.dp)
+                contentScale = if (cached != null) ContentScale.Crop else ContentScale.Fit,
+                modifier = if (cached != null) Modifier.size(80.dp) else Modifier.size(40.dp)
             )
         } else {
             Text(

@@ -273,6 +273,11 @@ object PetalBrowserUtils {
                 .remove("sp_removed_suggestions")
                 .apply()
         } catch (_: Exception) {}
+        // Firefox parity: clearing browsing history also purges recently closed tabs history.
+        try {
+            PetalRecentlyClosedManager.init(context)
+            PetalRecentlyClosedManager.clear()
+        } catch (_: Throwable) {}
     }
 
     @JvmStatic

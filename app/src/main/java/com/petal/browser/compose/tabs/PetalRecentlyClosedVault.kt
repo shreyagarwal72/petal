@@ -74,12 +74,10 @@ fun PetalRecentlyClosedVault(
     onDismiss: () -> Unit,
     onRestoreTab: (ClosedTabRecord) -> Unit,
     accentColor: Color,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRestoreAll: ((List<ClosedTabRecord>) -> Unit)? = null
 ) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        PetalRecentlyClosedManager.init(context)
-    }
 
     var lockType by remember { mutableStateOf(PetalRecentlyClosedManager.getLockType(context)) }
     var hasPassword by remember { mutableStateOf(PetalRecentlyClosedManager.hasPasswordConfigured(context)) }
@@ -88,11 +86,13 @@ fun PetalRecentlyClosedVault(
     // Whether vault is currently unlocked
     var isUnlocked by remember { mutableStateOf(lockType == "none") }
 
-    // Authentication UI state
+    // Authentication & UI state
     var passwordInput by remember { mutableStateOf("") }
     var passwordError by remember { mutableStateOf(false) }
     var showSettingsPage by remember { mutableStateOf(false) }
     var showForgotLockDialog by remember { mutableStateOf(false) }
+    var showClearAllConfirm by remember { mutableStateOf(false) }
+    var vaultSearchQuery by remember { mutableStateOf("") }
 
     // List of records
     var records by remember { mutableStateOf(PetalRecentlyClosedManager.getRecentlyClosedTabs()) }
@@ -100,12 +100,21 @@ fun PetalRecentlyClosedVault(
         records = PetalRecentlyClosedManager.getRecentlyClosedTabs()
     }
 
+    LaunchedEffect(Unit) {
+        PetalRecentlyClosedManager.init(context)
+        PetalRecentlyClosedManager.pruneExpiredTabs(context)
+        refreshRecords()
+        lockType = PetalRecentlyClosedManager.getLockType(context)
+        hasPassword = PetalRecentlyClosedManager.hasPasswordConfigured(context)
+        isUnlocked = (lockType == "none")
+    }
+
     // Back navigation: dialog / settings sub-page -> vault page (vault dismissal handled by PetalPredictiveBackSurface)
-    val hasSubOverlay = showForgotLockDialog || showSettingsPage
-    // The settings sub-page is a real layer with its own predictive back (PetalSubPageHost); only the
-    // dialog still needs a plain handler.
-    androidx.activity.compose.BackHandler(enabled = showForgotLockDialog) {
+    val hasSubOverlay = showForgotLockDialog || showClearAllConfirm || showSettingsPage
+    // The settings sub-page is a real layer with its own predictive back (PetalSubPageHost); dialogs use BackHandler.
+    androidx.activity.compose.BackHandler(enabled = showForgotLockDialog || showClearAllConfirm) {
         showForgotLockDialog = false
+        showClearAllConfirm = false
     }
 
     // Trigger biometric if lockType is biometric
@@ -236,6 +245,8 @@ fun PetalRecentlyClosedVault(
 
                         VaultPage.TABS -> UnlockedVaultContent(
                             records = records,
+                            searchQuery = vaultSearchQuery,
+                            onSearchQueryChange = { vaultSearchQuery = it },
                             accentColor = accentColor,
                             onRestore = { rec ->
                                 PetalRecentlyClosedManager.removeClosedTab(rec.id)
@@ -250,11 +261,14 @@ fun PetalRecentlyClosedVault(
                                 val all = records.toList()
                                 PetalRecentlyClosedManager.clear()
                                 refreshRecords()
-                                all.forEach { onRestoreTab(it) }
+                                if (onRestoreAll != null) {
+                                    onRestoreAll.invoke(all)
+                                } else {
+                                    all.forEach { onRestoreTab(it) }
+                                }
                             },
                             onClearAll = {
-                                PetalRecentlyClosedManager.clear()
-                                refreshRecords()
+                                showClearAllConfirm = true
                             }
                         )
 
@@ -320,7 +334,8 @@ fun PetalRecentlyClosedVault(
         PetalAlertDialog(
             onDismissRequest = { showForgotLockDialog = false },
             title = stringResource(R.string.ui_reset_vault_clear_data),
-            message = stringResource(R.string.ui_for_security_and_privacy_resetting, records.size),
+            // Never leak closed tab count before unlocking the vault.
+            message = "For security and privacy, resetting the vault lock will permanently erase all saved closed tabs and remove protection. You will regain immediate access to the vault.\n\nThis cannot be undone.",
             icon = Icons.Rounded.WarningAmber,
             destructive = true,
             confirmText = stringResource(R.string.ui_clear_all_data_unlock),
@@ -332,6 +347,24 @@ fun PetalRecentlyClosedVault(
                 isUnlocked = true
                 passwordInput = ""
                 passwordError = false
+                refreshRecords()
+            },
+        )
+    }
+
+    // ── Clear All Confirmation Dialog ──
+    if (showClearAllConfirm) {
+        PetalAlertDialog(
+            onDismissRequest = { showClearAllConfirm = false },
+            title = stringResource(R.string.ui_clear_all),
+            message = "Permanently erase all ${records.size} closed tabs from the vault?",
+            icon = Icons.Rounded.DeleteSweep,
+            destructive = true,
+            confirmText = stringResource(R.string.ui_clear_all),
+            onConfirm = {
+                showClearAllConfirm = false
+                PetalRecentlyClosedManager.clear()
+                vaultSearchQuery = ""
                 refreshRecords()
             },
         )
@@ -399,9 +432,12 @@ private fun LockScreenContent(
         Spacer(Modifier.height(8.dp))
 
         Text(
-            text = if (lockType == "password") "Enter your vault passcode to unlock"
-            else if (lockType == "biometric") "Verify your biometric identity to unlock"
-            else "Vault is ready to access",
+            text = when {
+                lockType == "password" -> "Enter your vault passcode to unlock"
+                lockType == "biometric" && canBiometric -> "Verify your biometric identity to unlock"
+                lockType == "biometric" -> "Biometric authentication is unavailable on this device. Re-enroll biometrics in Android settings or reset the vault below."
+                else -> "Vault is ready to access"
+            },
             style = PetalText.pageSubtitle,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -445,15 +481,6 @@ private fun LockScreenContent(
             }
 
             Spacer(Modifier.height(12.dp))
-
-            TextButton(
-                onClick = onForgotLock,
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Text(stringResource(R.string.ui_forgot_passcode), fontWeight = FontWeight.SemiBold)
-            }
         }
 
         if (canBiometric && lockType == "biometric") {
@@ -471,14 +498,21 @@ private fun LockScreenContent(
             }
 
             Spacer(Modifier.height(12.dp))
+        }
 
+        if (lockType != "none") {
             TextButton(
                 onClick = onForgotLock,
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = MaterialTheme.colorScheme.error
                 )
             ) {
-                Text(stringResource(R.string.ui_forgot_lock_reset_vault), fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = stringResource(
+                        if (lockType == "password") R.string.ui_forgot_passcode else R.string.ui_forgot_lock_reset_vault
+                    ),
+                    fontWeight = FontWeight.SemiBold
+                )
             }
         }
     }
@@ -490,6 +524,8 @@ private fun LockScreenContent(
 @Composable
 private fun UnlockedVaultContent(
     records: List<ClosedTabRecord>,
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
     accentColor: Color,
     onRestore: (ClosedTabRecord) -> Unit,
     onDelete: (ClosedTabRecord) -> Unit,
@@ -530,6 +566,15 @@ private fun UnlockedVaultContent(
         return
     }
 
+    val filteredRecords = remember(records, searchQuery) {
+        if (searchQuery.isBlank()) records
+        else records.filter { rec ->
+            rec.title.contains(searchQuery, ignoreCase = true) ||
+                rec.url.contains(searchQuery, ignoreCase = true) ||
+                rec.groupTitle?.contains(searchQuery, ignoreCase = true) == true
+        }
+    }
+
     val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -560,11 +605,39 @@ private fun UnlockedVaultContent(
             )
         }
 
+        TextField(
+            value = searchQuery,
+            onValueChange = onSearchQueryChange,
+            placeholder = { Text("Search closed tabs...", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+            leadingIcon = {
+                Icon(Icons.Rounded.Search, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+            },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { onSearchQueryChange("") }) {
+                        Icon(Icons.Rounded.Close, contentDescription = stringResource(R.string.ui_clear_search), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+                    }
+                }
+            },
+            singleLine = true,
+            shape = RoundedCornerShape(24.dp),
+            colors = TextFieldDefaults.colors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                focusedIndicatorColor = Color.Transparent,
+                unfocusedIndicatorColor = Color.Transparent,
+                disabledIndicatorColor = Color.Transparent,
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 6.dp)
+        )
+
         Text(
-            text = "Only titles and links are kept. No page previews are stored.",
+            text = "Only titles, links, and session navigation history are kept. No page previews are stored.",
             style = PetalText.caption,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp)
         )
 
         LazyColumn(
@@ -572,8 +645,8 @@ private fun UnlockedVaultContent(
             verticalArrangement = Arrangement.spacedBy(3.dp),
             modifier = Modifier.fillMaxSize()
         ) {
-            items(records.size, key = { "${records[it].id}_$it" }) { index ->
-                val rec = records[index]
+            items(filteredRecords.size, key = { "${filteredRecords[it].id}_${filteredRecords[it].closedTimestamp}" }) { index ->
+                val rec = filteredRecords[index]
                 val timeAgo = remember(rec.closedTimestamp) {
                     val diff = System.currentTimeMillis() - rec.closedTimestamp
                     when {
@@ -585,7 +658,7 @@ private fun UnlockedVaultContent(
                 }
 
                 PetalGroupListRow(
-                    position = petalGroupPositionFor(index, records.size),
+                    position = petalGroupPositionFor(index, filteredRecords.size),
                     onClick = { onRestore(rec) },
                     leading = {
                         PetalGroupIconBadge(

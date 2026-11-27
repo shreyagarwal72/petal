@@ -104,6 +104,39 @@ object PetalSessionRestoreManager {
         }
     }
 
+    /** Serializes a Gecko [EngineSessionState] to JSON for closed-tab recovery & duplication. */
+    @JvmStatic
+    fun serializeEngineState(state: mozilla.components.concept.engine.EngineSessionState?): String? {
+        if (state == null) return null
+        return try {
+            val cls = state.javaClass
+            val getter = cls.methods.firstOrNull {
+                it.parameterCount == 0 && (it.name == "getActualState" || it.name.startsWith("getActualState$"))
+            }
+            val actual = getter?.apply { isAccessible = true }?.invoke(state)
+                ?: try {
+                    cls.getDeclaredField("actualState").apply { isAccessible = true }.get(state)
+                } catch (_: Throwable) { null }
+            (actual as? org.mozilla.geckoview.GeckoSession.SessionState)?.toString()
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to serialize EngineSessionState: ${t.message}")
+            null
+        }
+    }
+
+    /** Deserializes a previously captured Gecko session JSON string back into [EngineSessionState]. */
+    @JvmStatic
+    fun deserializeEngineState(serialized: String?): mozilla.components.concept.engine.EngineSessionState? {
+        if (serialized.isNullOrBlank()) return null
+        return try {
+            val geckoState = org.mozilla.geckoview.GeckoSession.SessionState.fromString(serialized)
+            wrapGeckoState(geckoState)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Failed to deserialize EngineSessionState: ${t.message}")
+            null
+        }
+    }
+
     /**
      * Flushes open tabs state into BrowserStore (including full engineSessionState history stacks
      * and active indices) and writes the snapshot to disk via SessionStorage asynchronously.

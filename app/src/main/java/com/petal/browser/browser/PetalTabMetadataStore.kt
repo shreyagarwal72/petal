@@ -34,6 +34,7 @@ object PetalTabMetadataStore {
 
     // In-memory cache keeps the synchronous API; Room is the durable store, written off the main thread.
     private val cache = mutableMapOf<String, PetalTabMetadata>()
+    private val mutedTabIds = java.util.Collections.synchronizedSet(mutableSetOf<String>())
     private var isLoaded = false
 
     private val writer: java.util.concurrent.ExecutorService =
@@ -225,9 +226,19 @@ object PetalTabMetadataStore {
     }
 
     @JvmStatic
+    fun isMuted(tabId: String): Boolean = tabId.isNotBlank() && mutedTabIds.contains(tabId)
+
+    @JvmStatic
+    fun setMuted(tabId: String, muted: Boolean) {
+        if (tabId.isBlank()) return
+        if (muted) mutedTabIds.add(tabId) else mutedTabIds.remove(tabId)
+    }
+
+    @JvmStatic
     @Synchronized
     fun remove(context: Context, tabId: String) {
         if (tabId.isBlank()) return
+        mutedTabIds.remove(tabId)
         ensureLoaded(context)
         if (cache.remove(tabId) != null) {
             persist(context)
@@ -242,6 +253,7 @@ object PetalTabMetadataStore {
     fun prune(context: Context, activeTabIds: Collection<String>) {
         ensureLoaded(context)
         val idsSet = activeTabIds.toSet()
+        mutedTabIds.retainAll(idsSet)
         val beforeSize = cache.size
         cache.keys.retainAll(idsSet)
         if (cache.size != beforeSize) {
@@ -267,6 +279,7 @@ object PetalTabMetadataStore {
     @JvmStatic
     @Synchronized
     fun clear(context: Context) {
+        mutedTabIds.clear()
         ensureLoaded(context)
         cache.clear()
         persist(context)

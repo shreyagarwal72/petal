@@ -1,18 +1,22 @@
 package com.petal.browser.unit
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import androidx.preference.PreferenceManager
 import com.petal.browser.compose.tabs.PetalTabItem
 import org.json.JSONArray
 import org.json.JSONObject
 import java.security.MessageDigest
+import java.util.Locale
+import java.util.concurrent.Executors
 
 /**
  * Manages recently closed tabs with:
  * - Configurable expiration/retention policy (1 day, 7 days, 14 days, 30 days, or never).
- * - Persistent storage across sessions via SharedPreferences JSON.
+ * - Persistent storage across sessions via SharedPreferences JSON written off the UI thread.
+ * - Optional serialized Gecko engine session state (for back/forward history restoration).
  * - Material 3 Expressive vault security: Password/PIN hash, Biometric preference, and auto-lock state.
- * - ZERO thumbnail storage: All previews are explicitly wiped from memory and disk when tabs are closed.
+ * - ZERO thumbnail storage: All previews are explicitly excluded.
  */
 data class ClosedTabRecord(
     val id: String,
@@ -23,7 +27,12 @@ data class ClosedTabRecord(
     val groupId: String? = null,
     val groupTitle: String? = null,
     val groupColorHex: String? = null,
-    val closedTimestamp: Long = System.currentTimeMillis()
+    val closedTimestamp: Long = System.currentTimeMillis(),
+    val engineStateJson: String? = null,
+    val workspaceId: String? = null,
+    val isPinned: Boolean = false,
+    val isPinnedGlobal: Boolean = true,
+    val parentId: String? = null
 )
 
 object PetalRecentlyClosedManager {
@@ -36,9 +45,27 @@ object PetalRecentlyClosedManager {
     private const val MAX_RECENTLY_CLOSED = 60
     private val closedTabs = mutableListOf<ClosedTabRecord>()
     private var isInitialized = false
+    @Volatile
+    private var appContext: Context? = null
+    private val ioExecutor = Executors.newSingleThreadExecutor { r ->
+        Thread(r, "petal-recently-closed-io").apply { isDaemon = true }
+    }
+
+    @JvmStatic
+    fun isHomeOrBlankUrl(url: String?): Boolean {
+        val clean = url?.trim()?.lowercase(Locale.ROOT).orEmpty()
+        return clean.isEmpty() ||
+            clean == "about:blank" ||
+            clean == "about:home" ||
+            clean == "petal://home" ||
+            clean == "petal://start" ||
+            clean.contains("petal_home.html") ||
+            clean.startsWith("file:///android_asset/")
+    }
 
     @Synchronized
     fun init(context: Context) {
+        appContext = context.applicationContext ?: context
         if (isInitialized) return
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         val json = sp.getString(PREFS_KEY_RECORDS, null)
@@ -48,17 +75,25 @@ object PetalRecentlyClosedManager {
                 closedTabs.clear()
                 for (i in 0 until array.length()) {
                     val obj = array.getJSONObject(i)
+                    val recUrl = obj.optString("url")
+                    val recIncognito = obj.optBoolean("isIncognito", false)
+                    if (recIncognito || isHomeOrBlankUrl(recUrl)) continue
                     closedTabs.add(
                         ClosedTabRecord(
                             id = obj.optString("id"),
                             title = obj.optString("title"),
-                            url = obj.optString("url"),
+                            url = recUrl,
                             originalIndex = obj.optInt("originalIndex", -1),
-                            isIncognito = obj.optBoolean("isIncognito", false),
+                            isIncognito = false,
                             groupId = obj.optString("groupId").takeIf { it.isNotEmpty() },
                             groupTitle = obj.optString("groupTitle").takeIf { it.isNotEmpty() },
                             groupColorHex = obj.optString("groupColorHex").takeIf { it.isNotEmpty() },
-                            closedTimestamp = obj.optLong("closedTimestamp", System.currentTimeMillis())
+                            closedTimestamp = obj.optLong("closedTimestamp", System.currentTimeMillis()),
+                            engineStateJson = obj.optString("engineStateJson").takeIf { it.isNotEmpty() },
+                            workspaceId = obj.optString("workspaceId").takeIf { it.isNotEmpty() },
+                            isPinned = obj.optBoolean("isPinned", false),
+                            isPinnedGlobal = obj.optBoolean("isPinnedGlobal", true),
+                            parentId = obj.optString("parentId").takeIf { it.isNotEmpty() }
                         )
                     )
                 }
@@ -68,32 +103,45 @@ object PetalRecentlyClosedManager {
         isInitialized = true
     }
 
-    private fun persist(context: Context?) {
-        val ctx = context ?: try {
+    private fun resolveContext(context: Context?): Context? {
+        return context?.applicationContext ?: appContext ?: try {
             com.petal.browser.PetalApplication.instance
-        } catch (_: Exception) { null } ?: return
+        } catch (_: Exception) {
+            null
+        }
+    }
 
-        try {
-            val array = JSONArray()
-            closedTabs.forEach { rec ->
-                val obj = JSONObject().apply {
-                    put("id", rec.id)
-                    put("title", rec.title)
-                    put("url", rec.url)
-                    put("originalIndex", rec.originalIndex)
-                    put("isIncognito", rec.isIncognito)
-                    rec.groupId?.let { put("groupId", it) }
-                    rec.groupTitle?.let { put("groupTitle", it) }
-                    rec.groupColorHex?.let { put("groupColorHex", it) }
-                    put("closedTimestamp", rec.closedTimestamp)
+    private fun persist(context: Context?) {
+        val ctx = resolveContext(context) ?: return
+        val snapshot = closedTabs.toList()
+        ioExecutor.execute {
+            try {
+                val array = JSONArray()
+                snapshot.forEach { rec ->
+                    val obj = JSONObject().apply {
+                        put("id", rec.id)
+                        put("title", rec.title)
+                        put("url", rec.url)
+                        put("originalIndex", rec.originalIndex)
+                        put("isIncognito", rec.isIncognito)
+                        rec.groupId?.let { put("groupId", it) }
+                        rec.groupTitle?.let { put("groupTitle", it) }
+                        rec.groupColorHex?.let { put("groupColorHex", it) }
+                        put("closedTimestamp", rec.closedTimestamp)
+                        rec.engineStateJson?.let { put("engineStateJson", it) }
+                        rec.workspaceId?.let { put("workspaceId", it) }
+                        if (rec.isPinned) put("isPinned", true)
+                        if (!rec.isPinnedGlobal) put("isPinnedGlobal", false)
+                        rec.parentId?.let { put("parentId", it) }
+                    }
+                    array.put(obj)
                 }
-                array.put(obj)
-            }
-            PreferenceManager.getDefaultSharedPreferences(ctx)
-                .edit()
-                .putString(PREFS_KEY_RECORDS, array.toString())
-                .apply()
-        } catch (_: Exception) {}
+                PreferenceManager.getDefaultSharedPreferences(ctx)
+                    .edit()
+                    .putString(PREFS_KEY_RECORDS, array.toString())
+                    .apply()
+            } catch (_: Exception) {}
+        }
     }
 
     /**
@@ -124,22 +172,27 @@ object PetalRecentlyClosedManager {
         isIncognito: Boolean = false,
         groupId: String? = null,
         groupTitle: String? = null,
-        groupColorHex: String? = null
+        groupColorHex: String? = null,
+        engineStateJson: String? = null,
+        workspaceId: String? = null,
+        isPinned: Boolean = false,
+        isPinnedGlobal: Boolean = true,
+        parentId: String? = null
     ) {
         // Strict privacy: Do not store incognito tabs in recently closed history
         if (isIncognito) return
 
         val cleanUrl = url?.trim() ?: ""
-        if (cleanUrl.isEmpty() || cleanUrl.equals("about:blank", ignoreCase = true) || cleanUrl.equals("petal://home", ignoreCase = true)) {
+        if (isHomeOrBlankUrl(cleanUrl)) {
             return
         }
 
-        // Avoid exact duplicate at the top
-        if (closedTabs.isNotEmpty() && closedTabs[0].url.equals(cleanUrl, ignoreCase = true)) {
-            closedTabs.removeAt(0)
+        val safeId = if (id.isNullOrBlank()) "closed_${System.currentTimeMillis()}" else id
+        // Deduplicate by URL and ID anywhere in the list so restored/re-closed entries move cleanly to top
+        closedTabs.removeAll {
+            it.url.equals(cleanUrl, ignoreCase = true) || (!id.isNullOrBlank() && it.id == id)
         }
 
-        val safeId = if (id.isNullOrBlank()) "closed_${System.currentTimeMillis()}" else id
         val safeTitle = if (title.isNullOrBlank() || title == "Petal Home" || title == "Petal Start") cleanUrl else title
 
         val record = ClosedTabRecord(
@@ -151,7 +204,12 @@ object PetalRecentlyClosedManager {
             groupId = groupId,
             groupTitle = groupTitle,
             groupColorHex = groupColorHex,
-            closedTimestamp = System.currentTimeMillis()
+            closedTimestamp = System.currentTimeMillis(),
+            engineStateJson = engineStateJson?.takeIf { it.isNotBlank() },
+            workspaceId = workspaceId,
+            isPinned = isPinned,
+            isPinnedGlobal = isPinnedGlobal,
+            parentId = parentId
         )
 
         closedTabs.add(0, record)
@@ -173,7 +231,10 @@ object PetalRecentlyClosedManager {
             isIncognito = tabItem.isIncognito,
             groupId = tabItem.groupId,
             groupTitle = tabItem.groupTitle,
-            groupColorHex = tabItem.groupColorHex
+            groupColorHex = tabItem.groupColorHex,
+            workspaceId = tabItem.workspaceId,
+            isPinned = tabItem.isPinned,
+            isPinnedGlobal = tabItem.isPinnedGlobal
         )
     }
 
@@ -213,6 +274,14 @@ object PetalRecentlyClosedManager {
         persist(null)
     }
 
+    @VisibleForTesting
+    @Synchronized
+    fun resetForTest() {
+        closedTabs.clear()
+        isInitialized = false
+        appContext = null
+    }
+
     // --- Vault Security & Passcode Helpers ---
 
     fun getLockType(context: Context): String {
@@ -221,13 +290,17 @@ object PetalRecentlyClosedManager {
     }
 
     fun setLockType(context: Context, type: String) {
-        PreferenceManager.getDefaultSharedPreferences(context)
+        val editor = PreferenceManager.getDefaultSharedPreferences(context)
             .edit()
             .putString(PREF_LOCK_TYPE, type)
-            .apply()
+        if (type != "password") {
+            editor.remove(PREF_PASSWORD_HASH)
+        }
+        editor.apply()
     }
 
     fun setPassword(context: Context, plainText: String) {
+        if (plainText.isBlank()) return
         val hash = hashString(plainText)
         PreferenceManager.getDefaultSharedPreferences(context)
             .edit()
@@ -239,7 +312,7 @@ object PetalRecentlyClosedManager {
     fun verifyPassword(context: Context, plainText: String): Boolean {
         val storedHash = PreferenceManager.getDefaultSharedPreferences(context)
             .getString(PREF_PASSWORD_HASH, "") ?: ""
-        if (storedHash.isBlank()) return true
+        if (storedHash.isBlank() || plainText.isBlank()) return false
         return hashString(plainText) == storedHash
     }
 

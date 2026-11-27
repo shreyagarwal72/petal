@@ -306,13 +306,19 @@ fun PetalRootApp(
     val effectiveFloating = floatingTabBar && !isBottomAddressBar
     val haptic = remember(context) { PetalHapticEngine.getInstance(context) }
 
-    // Window security in incognito mode: prevent screenshots, screen recordings and app switcher previews
-    DisposableEffect(isIncognito, activity) {
-        if (activity != null && isIncognito) {
+    var isSwitcherIncognitoSurface by remember { mutableStateOf(false) }
+    LaunchedEffect(isTabSwitcherOpen) {
+        if (!isTabSwitcherOpen) isSwitcherIncognitoSurface = false
+    }
+    val requireSecureWindow = isIncognito || (isTabSwitcherOpen && isSwitcherIncognitoSurface)
+
+    // Window security in incognito mode / private switcher / vault: prevent screenshots and recents previews
+    DisposableEffect(requireSecureWindow, activity) {
+        if (activity != null && requireSecureWindow) {
             PetalIncognitoSessionManager.enableIncognitoSecurity(activity)
         }
         onDispose {
-            if (activity != null && isIncognito) {
+            if (activity != null && requireSecureWindow) {
                 PetalIncognitoSessionManager.disableIncognitoSecurity(activity)
             }
         }
@@ -855,19 +861,14 @@ fun PetalRootApp(
                 val showDesktopTabBar = isDesktopTabBarActive && !isHome
                 val desktopBarHeight = if (showDesktopTabBar) PetalDesktopTabBarBridge.BAR_HEIGHT_DP.dp else 0.dp
 
-                val desktopTabHandler = remember(viewModel, activity) {
+                val desktopTabHandler = remember(viewModel) {
                     object : PetalDesktopTabBarHandler {
                         override fun onTabSelect(tabId: String) { viewModel.selectTab(tabId) }
 
                         override fun onTabClose(tabId: String) { viewModel.closeTab(tabId) }
 
                         override fun onNewTab(incognito: Boolean) {
-                            val mainAct = activity as? MainActivity
-                            if (mainAct != null) {
-                                mainAct.addAlbum(context.getString(R.string.app_name), "about:home", true, incognito)
-                            } else {
-                                viewModel.openNewTab("about:home", selectTab = true, private = incognito)
-                            }
+                            viewModel.openNewTab("about:home", selectTab = true, private = incognito)
                         }
                     }
                 }
@@ -1337,6 +1338,9 @@ fun PetalRootApp(
                         onTabClose = { tab ->
                             viewModel.closeTab(tab.id)
                         },
+                        onBatchClose = { batchTabs, _ ->
+                            viewModel.closeTabs(batchTabs.map { it.id })
+                        },
                         onNewTab = { privateMode ->
                             viewModel.openNewTab("about:home", selectTab = true, private = privateMode)
                         },
@@ -1346,11 +1350,20 @@ fun PetalRootApp(
                         onRestoreTab = { tab ->
                             viewModel.restoreTab(tab)
                         },
+                        onRestoreClosedRecord = { rec ->
+                            viewModel.restoreClosedRecord(rec)
+                        },
+                        onRestoreAllClosedRecords = { all ->
+                            viewModel.restoreClosedRecords(all)
+                        },
                         onDuplicateTab = { tab ->
                             viewModel.duplicateTab(tab)
                         },
                         onCloseOtherTabs = { tab ->
                             viewModel.closeOtherTabs(tab)
+                        },
+                        onMuteTab = { tab, muted ->
+                            viewModel.setTabMuted(tab.id, muted)
                         },
                         onTabVisible = { tab ->
                             viewModel.loadTabThumbnailAsync(tab.id, tab.isIncognito)
@@ -1364,6 +1377,12 @@ fun PetalRootApp(
                         onCreateGroup = { tab ->
                             PetalTabGroupManager.createGroupWithTab(context, tab)
                             viewModel.notifyMetadataChanged()
+                        },
+                        onMetadataChanged = {
+                            viewModel.notifyMetadataChanged()
+                        },
+                        onIncognitoSurfaceVisible = { visible ->
+                            isSwitcherIncognitoSurface = visible
                         },
                         onOpenSettings = {
                             viewModel.openSettings(SettingsCategory.TABS)

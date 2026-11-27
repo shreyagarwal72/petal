@@ -1050,6 +1050,10 @@ object PetalEngineStore {
         getStore(context).dispatch(
             mozilla.components.browser.state.action.MediaSessionAction.ActivatedMediaSessionAction(tabId, controller)
         )
+        if (com.petal.browser.browser.PetalTabMetadataStore.isMuted(tabId)) {
+            try { controller.muteAudio(true) } catch (_: Throwable) {}
+            updateMediaMuted(context, tabId, true)
+        }
     }
 
     @JvmStatic
