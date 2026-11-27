@@ -504,7 +504,9 @@ object PetalBrowserUtils {
                 key.startsWith("sp_google") ||
                 key.startsWith("sp_user_") ||
                 key.startsWith("sp_custom_font") ||
-                key.startsWith("sp_custom_")
+                key.startsWith("sp_custom_home_shortcuts") ||
+                key == "sp_custom_search_engines" ||
+                key == "sp_custom_user_scripts_json"
             )) {
                 protectedMap[key] = value
             }
@@ -521,6 +523,9 @@ object PetalBrowserUtils {
             }
         }
         editor.apply()
+        try {
+            PetalGeckoRuntime.syncPreferences(sp)
+        } catch (_: Throwable) {}
     }
 
     @JvmStatic

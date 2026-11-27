@@ -92,6 +92,15 @@ fun MediaSettingsScreen(
                     title = stringResource(R.string.ui_media_engine),
                     icon = Icons.Rounded.VideoLibrary,
                     cardId = "media_engine",
+                    highlightIds = listOf(
+                        "media_native_player",
+                        "media_detect_background",
+                        "media_button_address_bar",
+                        "media_auto_open_panel",
+                        "media_validate_streams",
+                        "media_background_play",
+                        "media_auto_pip"
+                    ),
                     targetHighlightId = targetHighlightItemId
                 ) {
                     // Native Video Player Toggle

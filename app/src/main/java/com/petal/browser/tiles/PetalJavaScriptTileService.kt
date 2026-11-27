@@ -30,7 +30,10 @@ class PetalJavaScriptTileService : PetalTileBase() {
         val sp = PreferenceManager.getDefaultSharedPreferences(this)
         val current = sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
         val next = !current
-        sp.edit().putBoolean("sp_javascript", next).apply()
+        sp.edit()
+            .putBoolean("sp_javascript", next)
+            .putBoolean("profileStandard_javascript", next)
+            .apply()
         try {
             PetalGeckoRuntime.syncPreferences(sp)
         } catch (_: Throwable) {}

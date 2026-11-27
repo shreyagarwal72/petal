@@ -242,7 +242,12 @@ fun ScannerHost(
             if (onResultDispatched != null) {
                 onResultDispatched(primary.rawValue)
             } else {
-                PetalScanActionHandler.openUrl(context, (primary.payload as ScanPayload.Url).url)
+                val openInNewTab = PetalScannerSettings.getDefaultUrlAction(context) == "NEW_TAB"
+                PetalScanActionHandler.openUrl(
+                    context,
+                    (primary.payload as ScanPayload.Url).url,
+                    inNewTab = openInNewTab
+                )
             }
             onDismiss()
             return

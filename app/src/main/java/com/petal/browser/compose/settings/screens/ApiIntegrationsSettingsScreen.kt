@@ -105,14 +105,9 @@ private const val ENDPOINT_LLAMA_CPP = "http://localhost:8080/v1"
 fun ApiIntegrationsSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    targetHighlightItemId: String? = null,
-    viewModel: SearchHomeSettingsViewModel = hiltViewModel()
+    targetHighlightItemId: String? = null
 ) {
-    val enableLiveSuggestions by viewModel.enableLiveSuggestions.collectAsStateWithLifecycle()
-
     ApiIntegrationsSettingsScreenContent(
-        enableLiveSuggestions = enableLiveSuggestions,
-        onEnableLiveSuggestionsChange = viewModel::setEnableLiveSuggestions,
         onNavigateBack = onNavigateBack,
         modifier = modifier,
         targetHighlightItemId = targetHighlightItemId
@@ -226,8 +221,6 @@ private fun hubFieldColors() = petalFilledTextFieldColors(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ApiIntegrationsSettingsScreenContent(
-    enableLiveSuggestions: Boolean,
-    onEnableLiveSuggestionsChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     targetHighlightItemId: String? = null
@@ -282,6 +275,7 @@ fun ApiIntegrationsSettingsScreenContent(
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_petal_ai_api_keys_hub),
                     cardId = "ai_provider",
+                    highlightIds = listOf("ai_api_key", "ai_model_selection"),
                     targetHighlightId = targetHighlightItemId,
                     onInfoClick = if (isCustom) ({ showCustomAiGuide = true }) else null,
                 ) {

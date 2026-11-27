@@ -46,9 +46,6 @@ fun SearchHomeSettingsScreen(
     val searchEngineIndex by viewModel.searchEngineIndex.collectAsStateWithLifecycle()
     val homepageType by viewModel.homepageType.collectAsStateWithLifecycle()
     val customHomepageUrl by viewModel.customHomepageUrl.collectAsStateWithLifecycle()
-    val backgroundPlay by viewModel.backgroundPlay.collectAsStateWithLifecycle()
-    val autoPip by viewModel.autoPip.collectAsStateWithLifecycle()
-    val forceDarkMode by viewModel.forceDarkMode.collectAsStateWithLifecycle()
     val enableLiveSuggestions by viewModel.enableLiveSuggestions.collectAsStateWithLifecycle()
     val searchSuggestionsPrivate by viewModel.searchSuggestionsPrivate.collectAsStateWithLifecycle()
     val showSearchEngineSelectorInOmnibox by viewModel.showSearchEngineSelectorInOmnibox.collectAsStateWithLifecycle()
@@ -57,18 +54,12 @@ fun SearchHomeSettingsScreen(
         searchEngineIndex = searchEngineIndex,
         homepageType = homepageType,
         customHomepageUrl = customHomepageUrl,
-        backgroundPlay = backgroundPlay,
-        autoPip = autoPip,
-        forceDarkMode = forceDarkMode,
         enableLiveSuggestions = enableLiveSuggestions,
         searchSuggestionsPrivate = searchSuggestionsPrivate,
         showSearchEngineSelectorInOmnibox = showSearchEngineSelectorInOmnibox,
         onSearchEngineIndexChange = viewModel::setSearchEngineIndex,
         onHomepageTypeChange = viewModel::setHomepageType,
         onCustomHomepageUrlChange = viewModel::setCustomHomepageUrl,
-        onBackgroundPlayChange = viewModel::setBackgroundPlay,
-        onAutoPipChange = viewModel::setAutoPip,
-        onForceDarkModeChange = viewModel::setForceDarkMode,
         onEnableLiveSuggestionsChange = viewModel::setEnableLiveSuggestions,
         onSearchSuggestionsPrivateChange = viewModel::setSearchSuggestionsPrivate,
         onShowSearchEngineSelectorInOmniboxChange = viewModel::setShowSearchEngineSelectorInOmnibox,
@@ -85,18 +76,12 @@ fun SearchHomeSettingsScreenContent(
     searchEngineIndex: String,
     homepageType: String,
     customHomepageUrl: String,
-    backgroundPlay: Boolean,
-    autoPip: Boolean,
-    forceDarkMode: Boolean,
     enableLiveSuggestions: Boolean,
     searchSuggestionsPrivate: Boolean,
     showSearchEngineSelectorInOmnibox: Boolean,
     onSearchEngineIndexChange: (String) -> Unit,
     onHomepageTypeChange: (String) -> Unit,
     onCustomHomepageUrlChange: (String) -> Unit,
-    onBackgroundPlayChange: (Boolean) -> Unit,
-    onAutoPipChange: (Boolean) -> Unit,
-    onForceDarkModeChange: (Boolean) -> Unit,
     onEnableLiveSuggestionsChange: (Boolean) -> Unit,
     onSearchSuggestionsPrivateChange: (Boolean) -> Unit,
     onShowSearchEngineSelectorInOmniboxChange: (Boolean) -> Unit,
@@ -107,10 +92,6 @@ fun SearchHomeSettingsScreenContent(
 ) {
     val context = LocalContext.current
     var showEngineSheet by remember { mutableStateOf(false) }
-
-    val isPipSupported = remember(context) {
-        context.packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
-    }
 
     if (showEngineSheet) {
         PetalSheet(
@@ -159,6 +140,7 @@ fun SearchHomeSettingsScreenContent(
                     title = stringResource(R.string.ui_default_search_engine),
                     iconRes = com.petal.browser.R.drawable.globe_2_cancel_rounded,
                     cardId = "search_engine",
+                    highlightIds = listOf("api_live_suggestions", "search_live_suggestions"),
                     targetHighlightId = targetHighlightItemId
                 ) {
                     val currentEngineName = remember(searchEngineIndex) {
@@ -224,6 +206,7 @@ fun SearchHomeSettingsScreenContent(
                     title = stringResource(R.string.ui_custom_homepage),
                     iconRes = com.petal.browser.R.drawable.home_filled,
                     cardId = "search_homepage",
+                    highlightIds = listOf("search_homepage_type", "search_custom_homepage_url"),
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(

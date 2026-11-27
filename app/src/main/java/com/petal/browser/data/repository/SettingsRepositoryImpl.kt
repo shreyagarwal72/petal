@@ -32,17 +32,20 @@ class SettingsRepositoryImpl @Inject constructor(
 
     private val sp: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(application)
 
-    init {
-        sp.registerOnSharedPreferenceChangeListener { _, key ->
-            if (key != null && (key.startsWith("sp_liquid_glass") || key == "useDynamicColor" || key == "sp_palette_id" || key == "sp_color_style" || key == "sp_amoled" || key == "sp_theme_config" || PetalFontPrefs.isFontKey(key))) {
-                com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
-            }
+    // Held strongly: SharedPreferences only keeps weak references to its listeners.
+    private val glancePrefsListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+        if (key == null || key.startsWith("sp_liquid_glass") || key == "useDynamicColor" || key == "sp_palette_id" || key == "sp_color_style" || key == "sp_amoled" || key == "sp_theme_config" || PetalFontPrefs.isFontKey(key)) {
+            com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater.refresh(application)
         }
+    }
+
+    init {
+        sp.registerOnSharedPreferenceChangeListener(glancePrefsListener)
     }
 
     private fun <T> preferenceFlow(key: String, getter: () -> T): Flow<T> = callbackFlow {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
-            if (changedKey == key) {
+            if (changedKey == null || changedKey == key) {
                 trySend(getter())
             }
         }
@@ -52,7 +55,7 @@ class SettingsRepositoryImpl @Inject constructor(
 
     private fun <T> preferenceFlow(keys: Set<String>, getter: () -> T): Flow<T> = callbackFlow {
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, changedKey ->
-            if (changedKey != null && keys.contains(changedKey)) {
+            if (changedKey == null || keys.contains(changedKey)) {
                 trySend(getter())
             }
         }
@@ -161,12 +164,12 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_launch_ripple_enabled", true)
     }
 
-    override val motionBlurEnabled: Flow<Boolean> = preferenceFlow("sp_motion_blur_enabled") {
-        sp.getBoolean("sp_motion_blur_enabled", false)
+    override val motionBlurEnabled: Flow<Boolean> = preferenceFlow(setOf("sp_motion_blur_enabled", "motion_blur")) {
+        sp.getBoolean("sp_motion_blur_enabled", sp.getBoolean("motion_blur", false))
     }
 
-    override val motionBlurScale: Flow<Float> = preferenceFlow("sp_motion_blur_scale") {
-        sp.getFloat("sp_motion_blur_scale", 1.0f)
+    override val motionBlurScale: Flow<Float> = preferenceFlow(setOf("sp_motion_blur_scale", "motion_blur_scale")) {
+        sp.getFloat("sp_motion_blur_scale", sp.getFloat("motion_blur_scale", 1.0f))
     }
 
     override val liquidGlassUnlocked: Flow<Boolean> = preferenceFlow("sp_liquid_glass_unlocked") {
@@ -264,20 +267,26 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     // ── Privacy & Security ────────────────────────────────────────────────────
-    override val adBlockEnabled: Flow<Boolean> = preferenceFlow("sp_ad_block") {
-        sp.getBoolean("sp_ad_block", true)
+    override val adBlockEnabled: Flow<Boolean> = preferenceFlow(setOf("sp_ad_block", "profileStandard_adBlock")) {
+        sp.getBoolean("sp_ad_block", sp.getBoolean("profileStandard_adBlock", true))
     }
 
-    override val blockThirdPartyCookies: Flow<Boolean> = preferenceFlow("sp_block_third_party_cookies") {
-        sp.getBoolean("sp_block_third_party_cookies", false)
+    override val blockThirdPartyCookies: Flow<Boolean> = preferenceFlow(setOf("sp_block_third_party_cookies", "profileStandard_cookiesThirdParty")) {
+        if (sp.contains("sp_block_third_party_cookies")) {
+            sp.getBoolean("sp_block_third_party_cookies", false)
+        } else if (sp.contains("profileStandard_cookiesThirdParty")) {
+            !sp.getBoolean("profileStandard_cookiesThirdParty", true)
+        } else {
+            false
+        }
     }
 
-    override val totalCookieProtection: Flow<Boolean> = preferenceFlow("sp_total_cookie_protection") {
-        sp.getBoolean("sp_total_cookie_protection", true)
+    override val totalCookieProtection: Flow<Boolean> = preferenceFlow(setOf("sp_total_cookie_protection", "sp_cookies_isolate")) {
+        sp.getBoolean("sp_total_cookie_protection", sp.getBoolean("sp_cookies_isolate", true))
     }
 
-    override val cookieBannerAutoReject: Flow<Boolean> = preferenceFlow("sp_cookie_banner_auto_reject") {
-        sp.getBoolean("sp_cookie_banner_auto_reject", true)
+    override val cookieBannerAutoReject: Flow<Boolean> = preferenceFlow(setOf("sp_cookie_banner_auto_reject", "petal_builtin_consent_manager")) {
+        sp.getBoolean("sp_cookie_banner_auto_reject", sp.getBoolean("petal_builtin_consent_manager", true))
     }
 
     override val etpStrict: Flow<Boolean> = preferenceFlow("sp_etp_strict") {
@@ -296,16 +305,16 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_tor_private_window", false)
     }
 
-    override val fingerprintProtection: Flow<Boolean> = preferenceFlow("sp_fingerprint_protection") {
-        sp.getBoolean("sp_fingerprint_protection", false)
+    override val fingerprintProtection: Flow<Boolean> = preferenceFlow(setOf("sp_fingerprint_protection", "profileStandard_fingerPrintProtection")) {
+        sp.getBoolean("sp_fingerprint_protection", sp.getBoolean("profileStandard_fingerPrintProtection", false))
     }
 
-    override val webrtcProtection: Flow<Boolean> = preferenceFlow("sp_webrtc_protection") {
-        sp.getBoolean("sp_webrtc_protection", true)
+    override val webrtcProtection: Flow<Boolean> = preferenceFlow(setOf("sp_webrtc_protection", "profileStandard_webrtcProtection")) {
+        sp.getBoolean("sp_webrtc_protection", sp.getBoolean("profileStandard_webrtcProtection", true))
     }
 
-    override val dntGpc: Flow<Boolean> = preferenceFlow("sp_dnt_gpc") {
-        sp.getBoolean("sp_dnt_gpc", true)
+    override val dntGpc: Flow<Boolean> = preferenceFlow(setOf("sp_dnt_gpc", "profileStandard_dnt")) {
+        sp.getBoolean("sp_dnt_gpc", sp.getBoolean("profileStandard_dnt", true))
     }
 
     override val trimReferrers: Flow<Boolean> = preferenceFlow("sp_trim_referrers") {
@@ -316,16 +325,16 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getBoolean("sp_webauthn_enabled", true)
     }
 
-    override val httpsOnly: Flow<Boolean> = preferenceFlow("sp_https_only") {
-        sp.getBoolean("sp_https_only", false)
+    override val httpsOnly: Flow<Boolean> = preferenceFlow(setOf("sp_https_only", "profileStandard_httpsOnly")) {
+        sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
     }
 
-    override val javaScriptEnabled: Flow<Boolean> = preferenceFlow("sp_javascript") {
-        sp.getBoolean("sp_javascript", true)
+    override val javaScriptEnabled: Flow<Boolean> = preferenceFlow(setOf("sp_javascript", "profileStandard_javascript")) {
+        sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
     }
 
-    override val blockPopups: Flow<Boolean> = preferenceFlow("sp_block_popups") {
-        sp.getBoolean("sp_block_popups", true)
+    override val blockPopups: Flow<Boolean> = preferenceFlow(setOf("sp_block_popups", "profileStandard_javascriptPopUp")) {
+        sp.getBoolean("sp_block_popups", sp.getBoolean("profileStandard_javascriptPopUp", true))
     }
 
     override val openRedirectsInBackground: Flow<Boolean> = preferenceFlow("sp_open_redirects_in_background") {
@@ -333,10 +342,10 @@ class SettingsRepositoryImpl @Inject constructor(
     }
 
     override val privacyProfile: Flow<String> = preferenceFlow("sp_privacy_profile") {
-        sp.getString("sp_privacy_profile", "HARDENED") ?: "HARDENED"
+        sp.getString("sp_privacy_profile", "STANDARD") ?: "STANDARD"
     }
 
-    override val webglEnabled: Flow<Boolean> = preferenceFlow("sp_webgl_enabled") {
+    override val webglEnabled: Flow<Boolean> = preferenceFlow(setOf("sp_webgl_enabled", "sp_webgl_disabled")) {
         sp.getBoolean("sp_webgl_enabled", !sp.getBoolean("sp_webgl_disabled", false))
     }
 
@@ -344,8 +353,8 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString("sp_private_dns_mode", "OFF") ?: "OFF"
     }
 
-    override val customDohUrl: Flow<String> = preferenceFlow("sp_custom_doh_url") {
-        sp.getString("sp_custom_doh_url", "") ?: ""
+    override val customDohUrl: Flow<String> = preferenceFlow(setOf("sp_custom_doh_url", "sp_private_dns_custom_url")) {
+        sp.getString("sp_custom_doh_url", sp.getString("sp_private_dns_custom_url", "")) ?: ""
     }
 
     override val nextDnsProfileId: Flow<String> = preferenceFlow("sp_nextdns_profile_id") {
@@ -370,6 +379,10 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override val fetchShortcutFavicons: Flow<Boolean> = preferenceFlow("sp_fetch_shortcut_favicons") {
         sp.getBoolean("sp_fetch_shortcut_favicons", true)
+    }
+
+    override val clearOnExit: Flow<Boolean> = preferenceFlow(setOf("sp_clear_quit", "sp_clear_on_exit")) {
+        sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
     }
 
     // ── Accessibility & Display ───────────────────────────────────────────────
@@ -439,7 +452,7 @@ class SettingsRepositoryImpl @Inject constructor(
         com.petal.browser.ui.components.AddressBarHeight.fromPref(sp.getString("sp_address_bar_height", null)).pref
     }
 
-    override val addressBarAction: Flow<String> = preferenceFlow("sp_address_bar_action") {
+    override val addressBarAction: Flow<String> = preferenceFlow(setOf("sp_address_bar_action", "sp_ai_search_address_bar")) {
         sp.getString("sp_address_bar_action", if (sp.getBoolean("sp_ai_search_address_bar", true)) "AI" else "NONE") ?: "AI"
     }
 
@@ -817,6 +830,7 @@ class SettingsRepositoryImpl @Inject constructor(
             .putBoolean("sp_force_dark_mode", enabled)
             .putBoolean("petal_builtin_dark_webpages", enabled)
             .apply()
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
     }
 
     override suspend fun setEnableLiveSuggestions(enabled: Boolean) {
@@ -973,6 +987,13 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setFetchShortcutFavicons(enabled: Boolean) {
         sp.edit().putBoolean("sp_fetch_shortcut_favicons", enabled).apply()
+    }
+
+    override suspend fun setClearOnExit(enabled: Boolean) {
+        sp.edit()
+            .putBoolean("sp_clear_quit", enabled)
+            .putBoolean("sp_clear_on_exit", enabled)
+            .apply()
     }
 
     override suspend fun setCrossSiteTracking(strict: Boolean) {

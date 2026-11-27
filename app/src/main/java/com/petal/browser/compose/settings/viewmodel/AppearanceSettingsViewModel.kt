@@ -110,7 +110,7 @@ class AppearanceSettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), 1.0f)
 
     val liquidGlassUnlocked: StateFlow<Boolean> = settingsRepository.liquidGlassUnlocked
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val liquidGlassEnabled: StateFlow<Boolean> = settingsRepository.liquidGlassEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -140,7 +140,7 @@ class AppearanceSettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val liquidGlassBgMode: StateFlow<String> = settingsRepository.liquidGlassBgMode
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "STRIDE")
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "BLOOM_GLASS")
 
     val liquidGlassBgImageUri: StateFlow<String> = settingsRepository.liquidGlassBgImageUri
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
@@ -158,14 +158,31 @@ class AppearanceSettingsViewModel @Inject constructor(
         data class CustomAll(val axis: FontAxes.Axis, val value: Float) : AxisWrite
     }
 
-    private var axisWriteDebounceJob: Job? = null
+    private val axisWriteDebounceJobs = mutableMapOf<String, Job>()
+
+    private fun AxisWrite.debounceKey(): String = when (this) {
+        is AxisWrite.GsFlexTier -> "gs_${tier.name}_${axis.name}"
+        is AxisWrite.GsFlexAll -> "gs_all_${axis.name}"
+        is AxisWrite.CustomTier -> "custom_${tier.name}_${axis.name}"
+        is AxisWrite.CustomAll -> "custom_all_${axis.name}"
+    }
+
+    private fun cancelAllPendingAxisWrites() {
+        axisWriteDebounceJobs.values.forEach { it.cancel() }
+        axisWriteDebounceJobs.clear()
+    }
 
     private fun scheduleAxisWrite(debounced: Boolean, write: AxisWrite) {
-        axisWriteDebounceJob?.cancel()
+        val key = write.debounceKey()
+        axisWriteDebounceJobs.remove(key)?.cancel()
         if (debounced) {
-            axisWriteDebounceJob = viewModelScope.launch {
-                delay(110L)
-                executeAxisWrite(write)
+            axisWriteDebounceJobs[key] = viewModelScope.launch {
+                try {
+                    delay(110L)
+                    executeAxisWrite(write)
+                } finally {
+                    axisWriteDebounceJobs.remove(key)
+                }
             }
         } else {
             viewModelScope.launch { executeAxisWrite(write) }
@@ -182,17 +199,17 @@ class AppearanceSettingsViewModel @Inject constructor(
     }
 
     fun setAppFont(font: AppFont) = viewModelScope.launch {
-        axisWriteDebounceJob?.cancel()
+        cancelAllPendingAxisWrites()
         settingsRepository.setAppFont(font)
     }
 
     fun setGsFlexPreset(preset: GSFlexPreset) = viewModelScope.launch {
-        axisWriteDebounceJob?.cancel()
+        cancelAllPendingAxisWrites()
         settingsRepository.setGsFlexPreset(preset)
     }
 
     fun setGsFlexSettings(settings: com.petal.browser.ui.theme.GSFlexSettings) = viewModelScope.launch {
-        axisWriteDebounceJob?.cancel()
+        cancelAllPendingAxisWrites()
         settingsRepository.setGsFlexSettings(settings)
     }
 
@@ -205,12 +222,12 @@ class AppearanceSettingsViewModel @Inject constructor(
     }
 
     fun resetGsFlexToPreset(preset: GSFlexPreset) = viewModelScope.launch {
-        axisWriteDebounceJob?.cancel()
+        cancelAllPendingAxisWrites()
         settingsRepository.resetGsFlexToPreset(preset)
     }
 
     fun setNunitoWeight(weight: Int) = viewModelScope.launch {
-        axisWriteDebounceJob?.cancel()
+        cancelAllPendingAxisWrites()
         settingsRepository.setNunitoWeight(weight)
     }
 
@@ -223,7 +240,7 @@ class AppearanceSettingsViewModel @Inject constructor(
     }
 
     fun setCustomFontSettings(settings: CustomFontSettings) = viewModelScope.launch {
-        axisWriteDebounceJob?.cancel()
+        cancelAllPendingAxisWrites()
         settingsRepository.setCustomFontSettings(settings)
     }
 

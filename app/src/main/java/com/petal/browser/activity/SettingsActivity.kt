@@ -39,9 +39,14 @@ open class SettingsActivity : AppCompatActivity() {
         PetalHighRefreshRateManager.applyHighRefreshRate(this)
         PetalAndroidUtils.initTheme(this)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(this)
         val controller = WindowCompat.getInsetsController(window, window.decorView)
-        controller.hide(WindowInsetsCompat.Type.systemBars())
-        controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        if (sp.getBoolean("sp_immersive_fullscreen", false)) {
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            controller.show(WindowInsetsCompat.Type.systemBars())
+        }
 
         var initialCategory = SettingsCategory.OVERVIEW
         val requestedCategory = intent?.getStringExtra(EXTRA_SETTINGS_CATEGORY)

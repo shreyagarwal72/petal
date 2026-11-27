@@ -121,8 +121,17 @@ fun PetalAccountScreen(
     DisposableEffect(sp) {
         val l = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when (key) {
-                "sp_app_lock_enabled" -> appLockOn = sp.getBoolean("sp_app_lock_enabled", false)
+                null, "sp_app_lock_enabled" -> appLockOn = sp.getBoolean("sp_app_lock_enabled", false)
                 "sp_app_lock_type" -> appLockType = sp.getString("sp_app_lock_type", "FINGERPRINT") ?: "FINGERPRINT"
+                "sp_https_only", "profileStandard_httpsOnly" ->
+                    httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
+                "sp_clear_quit", "sp_clear_on_exit" ->
+                    clearOnExit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
+            }
+            if (key == null) {
+                appLockType = sp.getString("sp_app_lock_type", "FINGERPRINT") ?: "FINGERPRINT"
+                httpsOnly = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
+                clearOnExit = sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)
             }
         }
         sp.registerOnSharedPreferenceChangeListener(l)
@@ -578,7 +587,16 @@ fun PetalAccountScreen(
                                     PetalGroupControlRow(
                                         title = "HTTPS-only mode", subtitle = "Upgrade insecure connections",
                                         checked = httpsOnly,
-                                        onCheckedChange = { httpsOnly = it; sp.edit().putBoolean("sp_https_only", it).apply() },
+                                        onCheckedChange = {
+                                            httpsOnly = it
+                                            sp.edit()
+                                                .putBoolean("sp_https_only", it)
+                                                .putBoolean("profileStandard_httpsOnly", it)
+                                                .apply()
+                                            try {
+                                                com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
+                                            } catch (_: Throwable) {}
+                                        },
                                         position = petalGroupPositionFor(2, 3),
                                         variant = PetalBadgeVariant.TERTIARY,
                                         leadingIcon = { Icon(Icons.Rounded.Https, null) }

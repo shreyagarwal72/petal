@@ -77,13 +77,6 @@ object PetalSettingsSearchIndex {
             category = SettingsCategory.API_INTEGRATIONS,
             keywords = listOf("model", "gpt-4o", "sonnet", "haiku", "llama", "deepseek", "flash", "pro", "r1", "v3", "qwen")
         ),
-        SettingsSearchItem(
-            id = "api_live_suggestions",
-            title = "Live Search Suggestions",
-            subtitle = "Query search suggestion API dynamically as you type in the address bar",
-            category = SettingsCategory.API_INTEGRATIONS,
-            keywords = listOf("live suggestions", "query suggestions", "autocomplete", "search api", "typeahead")
-        ),
 
         // ==================== APPEARANCE & THEME ====================
         SettingsSearchItem(
@@ -336,18 +329,11 @@ object PetalSettingsSearchIndex {
             keywords = listOf("custom homepage", "start url", "homepage url", "web address")
         ),
         SettingsSearchItem(
-            id = "search_background_play",
-            title = "Background Audio & Video Play",
-            subtitle = "Keep YouTube, Spotify, and media playing seamlessly when switching apps or locking screen",
+            id = "api_live_suggestions",
+            title = "Live Search Suggestions",
+            subtitle = "Query search suggestion API dynamically as you type in the address bar",
             category = SettingsCategory.SEARCH_HOMEPAGE,
-            keywords = listOf("background play", "background audio", "media", "youtube", "music", "lock screen audio")
-        ),
-        SettingsSearchItem(
-            id = "search_auto_pip",
-            title = "Automatic Picture-in-Picture (PiP)",
-            subtitle = "Automatically pop playing video into a floating PiP overlay window when leaving the browser",
-            category = SettingsCategory.SEARCH_HOMEPAGE,
-            keywords = listOf("pip", "picture in picture", "floating video", "video popout", "mini player")
+            keywords = listOf("live suggestions", "query suggestions", "autocomplete", "search api", "typeahead")
         ),
 
         // ==================== DISPLAY & ACCESSIBILITY ====================
@@ -475,6 +461,43 @@ object PetalSettingsSearchIndex {
             keywords = listOf("workspace", "workspace chips", "general", "personal", "work", "tabs", "tab manager")
         ),
 
+        // ==================== DOWNLOADS ====================
+        SettingsSearchItem(
+            id = "misc_download",
+            title = "Default Download Manager",
+            subtitle = "Choose In-App accelerated downloader, external app, or system chooser",
+            category = SettingsCategory.DOWNLOADS,
+            keywords = listOf("download", "downloads", "download manager", "external downloader", "in-app")
+        ),
+        SettingsSearchItem(
+            id = "misc_download_behavior",
+            title = "Download Behavior & Live Updates",
+            subtitle = "Auto-preview downloaded images, smart download folder routing, and live status notifications",
+            category = SettingsCategory.DOWNLOADS,
+            keywords = listOf("live updates", "smart routing", "download routing", "image preview", "subfolders", "notifications")
+        ),
+        SettingsSearchItem(
+            id = "misc_download_speed",
+            title = "Parallel Downloads & Connections",
+            subtitle = "Multi-connection accelerated downloads and unrestricted background battery mode",
+            category = SettingsCategory.DOWNLOADS,
+            keywords = listOf("parallel", "connections", "speed", "multi-thread", "background downloads", "battery")
+        ),
+        SettingsSearchItem(
+            id = "misc_download_queue",
+            title = "Download Queue, Wi-Fi Only & Checksums",
+            subtitle = "Simultaneous downloads, speed limit cap, Wi-Fi only mode, checksum verification, and clipboard import",
+            category = SettingsCategory.DOWNLOADS,
+            keywords = listOf("wifi", "wi-fi", "queue", "concurrent", "speed limit", "checksum", "clipboard", "kbps")
+        ),
+        SettingsSearchItem(
+            id = "misc_download_delete",
+            title = "Download Deletion Options",
+            subtitle = "Confirm before removing downloads and delete files from device storage",
+            category = SettingsCategory.DOWNLOADS,
+            keywords = listOf("delete download", "confirm delete", "storage", "remove download")
+        ),
+
         // ==================== MISCELLANEOUS ====================
         SettingsSearchItem(
             id = "misc_custom_tabs",
@@ -503,13 +526,6 @@ object PetalSettingsSearchIndex {
             subtitle = "Add Quick Settings tiles to Android's status bar shade for instant browser tools",
             category = SettingsCategory.MISCELLANEOUS,
             keywords = listOf("quick tiles", "quick settings", "tiles", "status bar", "shade")
-        ),
-        SettingsSearchItem(
-            id = "misc_check_updates_launch",
-            title = "Check for Updates on App Launch",
-            subtitle = "Automatically verify latest GitHub releases and notify when a new APK update is available",
-            category = SettingsCategory.MISCELLANEOUS,
-            keywords = listOf("update on launch", "auto check updates", "version check", "release notify")
         ),
 
         // ==================== DATA & BACKUP ====================
@@ -542,10 +558,10 @@ object PetalSettingsSearchIndex {
             keywords = listOf("import bookmarks", "html import", "chrome bookmarks", "firefox bookmarks", "saf import")
         ),
         SettingsSearchItem(
-            id = "data_clear_browsing_data",
+            id = "privacy_incognito",
             title = "Clear Browsing Data & Cache",
             subtitle = "Delete browsing history, cookies, cached images, web storage, and form autofill data",
-            category = SettingsCategory.DATA_STORAGE,
+            category = SettingsCategory.PRIVACY,
             keywords = listOf("clear data", "clear cache", "delete history", "clear cookies", "wipe data", "storage")
         ),
 
@@ -556,6 +572,13 @@ object PetalSettingsSearchIndex {
             subtitle = "Query GitHub release API for new Petal Browser versions and changelogs",
             category = SettingsCategory.UPDATER,
             keywords = listOf("check for updates", "update app", "github release", "latest version", "apk update")
+        ),
+        SettingsSearchItem(
+            id = "updater_check_launch",
+            title = "Check for Updates on App Launch",
+            subtitle = "Automatically verify latest GitHub releases and notify when a new APK update is available",
+            category = SettingsCategory.UPDATER,
+            keywords = listOf("update on launch", "auto check updates", "version check", "release notify")
         ),
         SettingsSearchItem(
             id = "updater_crash_reporting",
@@ -678,11 +701,17 @@ object PetalSettingsSearchIndex {
     private val allCategories: List<SettingsCategory> = listOf(
         SettingsCategory.API_INTEGRATIONS,
         SettingsCategory.APPEARANCE,
+        SettingsCategory.APP_ICON,
         SettingsCategory.PRIVACY,
+        SettingsCategory.APP_LOCK,
         SettingsCategory.SEARCH_HOMEPAGE,
         SettingsCategory.DISPLAY_ZOOM,
         SettingsCategory.ADDRESS_BAR,
         SettingsCategory.MEDIA,
+        SettingsCategory.DOWNLOADS,
+        SettingsCategory.TABS,
+        SettingsCategory.ACCOUNT_SYNC,
+        SettingsCategory.EXTENSIONS,
         SettingsCategory.MISCELLANEOUS,
         SettingsCategory.DATA_STORAGE,
         SettingsCategory.UPDATER,

@@ -22,6 +22,7 @@ data class PetalScannerSettingsUiState(
     val beep: Boolean = false,
     val historyEnabled: Boolean = true,
     val safetyWarnings: Boolean = true,
+    val defaultUrlAction: String = "ASK",
 )
 
 /**
@@ -43,6 +44,7 @@ object PetalScannerSettings {
             beep = sp.getBoolean(PREF_BEEP, false),
             historyEnabled = sp.getBoolean(PREF_HISTORY_ENABLED, true),
             safetyWarnings = sp.getBoolean(PREF_SAFETY_WARNINGS, true),
+            defaultUrlAction = sp.getString(PREF_DEFAULT_URL_ACTION, "ASK") ?: "ASK",
         )
     }
 
@@ -169,6 +171,11 @@ class PetalScannerSettingsStateHolder(
         _state.value = _state.value.copy(safetyWarnings = enabled)
     }
 
+    fun setDefaultUrlAction(action: String) {
+        prefs.edit().putString(PetalScannerSettings.PREF_DEFAULT_URL_ACTION, action).apply()
+        _state.value = _state.value.copy(defaultUrlAction = action)
+    }
+
     private companion object {
         val OBSERVED_KEYS = setOf(
             PetalScannerSettings.PREF_AUTO_OPEN,
@@ -176,6 +183,7 @@ class PetalScannerSettingsStateHolder(
             PetalScannerSettings.PREF_BEEP,
             PetalScannerSettings.PREF_HISTORY_ENABLED,
             PetalScannerSettings.PREF_SAFETY_WARNINGS,
+            PetalScannerSettings.PREF_DEFAULT_URL_ACTION,
         )
     }
 }

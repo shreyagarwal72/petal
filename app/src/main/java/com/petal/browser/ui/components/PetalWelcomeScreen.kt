@@ -1058,8 +1058,15 @@ private fun ThemeAndLanguageStepPage(sp: SharedPreferences, activity: Activity?)
 // ==========================================
 @Composable
 private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
-    var apiKey by remember { mutableStateOf(sp.getString("sp_gemini_api_key", "") ?: "") }
-    var selectedProvider by remember { mutableStateOf(sp.getString("sp_ai_provider", "Gemini 2.5 Flash") ?: "Gemini 2.5 Flash") }
+    val context = LocalContext.current
+    var selectedProvider by remember {
+        mutableStateOf(com.petal.browser.compose.ai.PetalAiResearchEngine.getSelectedProvider(context))
+    }
+    var apiKey by remember(selectedProvider) {
+        mutableStateOf(
+            com.petal.browser.compose.ai.PetalAiResearchEngine.getApiKey(context, selectedProvider)
+        )
+    }
 
     Spacer(Modifier.height(12.dp))
 
@@ -1102,7 +1109,11 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
             Text(stringResource(R.string.ui_select_ai_engine_provider), style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
             Spacer(Modifier.height(10.dp))
 
-            val providers = listOf("Gemini 2.5 Flash", "OpenAI GPT-4o", "DeepSeek R1", "Groq Llama 3")
+            val providers = listOf(
+                com.petal.browser.compose.ai.AiProvider.GEMINI,
+                com.petal.browser.compose.ai.AiProvider.GROQ,
+                com.petal.browser.compose.ai.AiProvider.CUSTOM
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1114,14 +1125,14 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
                     Surface(
                         onClick = {
                             selectedProvider = provider
-                            sp.edit().putString("sp_ai_provider", provider).apply()
+                            com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedProvider(context, provider)
                         },
                         shape = RoundedCornerShape(50.dp),
                         color = if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
                         modifier = Modifier.height(36.dp)
                     ) {
                         Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 14.dp)) {
-                            Text(provider, style = PetalText.chip.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                            Text(provider.displayName, style = PetalText.chip.copy(fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium), color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                         }
                     }
                 }
@@ -1133,7 +1144,8 @@ private fun SetupPetalAiKeyStepPage(sp: SharedPreferences) {
                 value = apiKey,
                 onValueChange = { input ->
                     apiKey = input
-                    sp.edit().putString("sp_gemini_api_key", input).apply()
+                    com.petal.browser.compose.ai.PetalAiResearchEngine.setSelectedProvider(context, selectedProvider)
+                    com.petal.browser.compose.ai.PetalAiResearchEngine.setApiKey(context, selectedProvider, input)
                 },
                 label = { Text(stringResource(R.string.ui_api_key_optional)) },
                 placeholder = { Text(stringResource(R.string.ui_paste_your_api_key_here)) },

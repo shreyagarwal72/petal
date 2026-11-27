@@ -72,15 +72,15 @@ fun PetalAdBlockSettingsScreen(
     var cookieDismissEnabled by remember {
         mutableStateOf(sp.getBoolean("sp_cookie_banner_auto_reject", sp.getBoolean("petal_builtin_consent_manager", true)))
     }
+    // Filter List & Advanced State
+    var subscriptions by remember { mutableStateOf(PetalFilterSubscriptionManager.getSubscriptions(context)) }
     var blockAnnoyances by remember {
-        mutableStateOf(sp.getBoolean("sp_block_annoyances", true))
+        val socialEnabled = subscriptions.firstOrNull { it.id == "brave_social" }?.isEnabled
+        mutableStateOf(socialEnabled ?: sp.getBoolean("sp_block_annoyances", false))
     }
     var stripTrackingParams by remember {
         mutableStateOf(sp.getBoolean("sp_strip_tracking_parameters", true))
     }
-
-    // Filter List & Advanced State
-    var subscriptions by remember { mutableStateOf(PetalFilterSubscriptionManager.getSubscriptions(context)) }
     var isUpdatingLists by remember { mutableStateOf(false) }
     var updateStatusMessage by remember { mutableStateOf<String?>(null) }
     var showAdvancedLists by remember { mutableStateOf(false) }
@@ -500,6 +500,7 @@ fun PetalAdBlockSettingsScreen(
                             blockAnnoyances = on
                             sp.edit().putBoolean("sp_block_annoyances", on).apply()
                             PetalFilterSubscriptionManager.toggleSubscription(context, "brave_social", on)
+                            subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
                             PetalFilterSubscriptionManager.reloadActiveRules(context)
                         }
                     )
@@ -629,6 +630,11 @@ fun PetalAdBlockSettingsScreen(
                             val toggle: (Boolean) -> Unit = { enabled ->
                                 PetalFilterSubscriptionManager.toggleSubscription(context, sub.id, enabled)
                                 subscriptions = PetalFilterSubscriptionManager.getSubscriptions(context)
+                                if (sub.id == "brave_social") {
+                                    blockAnnoyances = enabled
+                                    sp.edit().putBoolean("sp_block_annoyances", enabled).apply()
+                                    PetalFilterSubscriptionManager.reloadActiveRules(context)
+                                }
                             }
                             PetalGroupListRow(
                                 position = petalGroupPositionFor(index, subscriptions.size + 1),

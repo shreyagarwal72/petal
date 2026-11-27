@@ -99,6 +99,7 @@ fun AppearanceLayoutPage(
             title = "Tab bar",
             iconRes = com.petal.browser.R.drawable.layers_filled,
             cardId = "appearance_layout",
+            highlightIds = listOf("appearance_floating_tab_bar"),
             targetHighlightId = targetHighlightItemId
         ) {
             // Floating Tab Bar Toggle

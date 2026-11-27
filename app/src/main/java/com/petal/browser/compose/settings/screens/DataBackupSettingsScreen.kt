@@ -47,7 +47,8 @@ import com.petal.browser.R
 @Composable
 fun DataBackupSettingsScreen(
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null
 ) {
     val context = LocalContext.current
 
@@ -618,7 +619,15 @@ fun DataBackupSettingsScreen(
             ) {
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_backup_restore_json),
-                    iconRes = com.petal.browser.R.drawable.backup_filled
+                    iconRes = com.petal.browser.R.drawable.backup_filled,
+                    cardId = "data_backup",
+                    highlightIds = listOf(
+                        "data_export_backup",
+                        "data_restore_backup",
+                        "data_export_bookmarks_saf",
+                        "data_import_bookmarks_saf"
+                    ),
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
                         stringResource(R.string.ui_export_backups_directly_to_downloads),

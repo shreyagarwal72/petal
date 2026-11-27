@@ -30,7 +30,10 @@ class PetalHttpsOnlyTileService : PetalTileBase() {
         val sp = PreferenceManager.getDefaultSharedPreferences(this)
         val current = sp.getBoolean("sp_https_only", sp.getBoolean("profileStandard_httpsOnly", false))
         val next = !current
-        sp.edit().putBoolean("sp_https_only", next).apply()
+        sp.edit()
+            .putBoolean("sp_https_only", next)
+            .putBoolean("profileStandard_httpsOnly", next)
+            .apply()
         try {
             PetalGeckoRuntime.syncPreferences(sp)
         } catch (_: Throwable) {}

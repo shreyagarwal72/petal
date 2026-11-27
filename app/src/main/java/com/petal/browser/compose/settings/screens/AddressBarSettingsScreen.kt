@@ -200,7 +200,9 @@ fun AddressBarSettingsScreen(
                 PetalSettingsSection(
                     title = "Bar Style",
                     icon = Icons.Rounded.DashboardCustomize,
-                    cardId = "address_bar_style"
+                    cardId = "address_bar_style",
+                    highlightIds = listOf("address_bar"),
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     Text(
                         text = "Choose between separate address/bottom bars or a unified Merge bar.",

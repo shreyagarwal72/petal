@@ -72,17 +72,42 @@ object PetalDeleteBridge {
                 val context = LocalContext.current
                 val sp = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
 
-                val styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
-                val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
-                val dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
-                val isAmoled = sp.getBoolean("sp_amoled", false)
+                var styleName by remember { mutableStateOf(sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT") }
+                var paletteId by remember { mutableStateOf(sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId) }
+                var dynamicColor by remember { mutableStateOf(sp.getBoolean("useDynamicColor", isDynamicColorSupported)) }
+                var isAmoled by remember { mutableStateOf(sp.getBoolean("sp_amoled", false)) }
+                var themeConfigName by remember { mutableStateOf(sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM") }
+
+                DisposableEffect(sp) {
+                    val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                        if (key == null || key == "sp_color_style" || key == "sp_palette_id" || key == "useDynamicColor" || key == "sp_amoled" || key == "sp_theme_config") {
+                            styleName = sp.getString("sp_color_style", "TONAL_SPOT") ?: "TONAL_SPOT"
+                            paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
+                            dynamicColor = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
+                            isAmoled = sp.getBoolean("sp_amoled", false)
+                            themeConfigName = sp.getString("sp_theme_config", "FOLLOW_SYSTEM") ?: "FOLLOW_SYSTEM"
+                        }
+                    }
+                    sp.registerOnSharedPreferenceChangeListener(listener)
+                    onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
+                }
 
                 val fontState = com.petal.browser.ui.theme.rememberFontState()
                 val colorStyle = remember(styleName) {
                     try { ColorStyle.valueOf(styleName) } catch (e: Exception) { ColorStyle.TONAL_SPOT }
                 }
+                val themeConfig = remember(themeConfigName) {
+                    try { ThemeConfig.valueOf(themeConfigName) } catch (e: Exception) { ThemeConfig.FOLLOW_SYSTEM }
+                }
+                val systemDark = androidx.compose.foundation.isSystemInDarkTheme()
+                val isDarkTheme = when (themeConfig) {
+                    ThemeConfig.FOLLOW_SYSTEM -> systemDark
+                    ThemeConfig.LIGHT -> false
+                    ThemeConfig.DARK -> true
+                }
 
                 PetalExpressiveTheme(
+                    darkTheme = isDarkTheme,
                     dynamicColor = dynamicColor,
                     useAmoled = isAmoled,
                     fontState = fontState,
@@ -121,7 +146,7 @@ fun PetalDeleteScreen(
     var clearCookie by remember { mutableStateOf(sp.getBoolean("sp_clear_cookie", false)) }
     var clearDatabase by remember { mutableStateOf(sp.getBoolean("sp_deleteDatabase", false)) }
     var clearSettings by remember { mutableStateOf(sp.getBoolean("sp_clear_settings", false)) }
-    var clearQuit by remember { mutableStateOf(sp.getBoolean("sp_clear_quit", false)) }
+    var clearQuit by remember { mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) }
 
     var showConfirmDialog by remember { mutableStateOf(false) }
 

@@ -35,6 +35,7 @@ object PetalGeckoRuntime {
         "sp_login_autofill_enabled", "sp_private_dns_mode", "sp_custom_doh_url",
         "sp_private_dns_custom_url", "sp_nextdns_profile_id", "sp_privacy_profile", "sp_security_slider",
         "sp_https_only", "profileStandard_httpsOnly", "sp_theme_config", "sp_force_dark_mode",
+        "petal_builtin_dark_webpages",
         "sp_trim_referrers", "sp_webauthn_enabled",
         "sp_fingerprint_protection", "profileStandard_fingerPrintProtection",
         "sp_webrtc_protection", "profileStandard_webrtcProtection",

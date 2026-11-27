@@ -504,14 +504,21 @@ private fun RenderCategoryContent(
             )
         }
         SettingsCategory.DATA_STORAGE -> {
-            DataBackupSettingsScreen(onNavigateBack = onNavigateBack)
+            DataBackupSettingsScreen(
+                onNavigateBack = onNavigateBack,
+                targetHighlightItemId = targetHighlightItemId
+            )
         }
         SettingsCategory.UPDATER -> {
-            UpdaterSettingsScreen(onNavigateBack = onNavigateBack)
+            UpdaterSettingsScreen(
+                onNavigateBack = onNavigateBack,
+                targetHighlightItemId = targetHighlightItemId
+            )
         }
         SettingsCategory.ABOUT -> {
             AboutSettingsScreen(
                 onNavigateBack = onNavigateBack,
+                targetHighlightItemId = targetHighlightItemId,
                 onNavigateToUpdater = onNavigateToUpdater
             )
         }

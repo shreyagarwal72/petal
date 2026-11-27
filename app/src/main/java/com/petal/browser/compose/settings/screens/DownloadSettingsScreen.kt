@@ -219,7 +219,7 @@ fun DownloadSettingsScreenContent(
                     val notificationsAllowed = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
                         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 2) { index, rowPosition ->
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, rowPosition ->
                         when (index) {
                             0 -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                 title = stringResource(R.string.ui_auto_preview_downloaded_images),
@@ -242,6 +242,23 @@ fun DownloadSettingsScreenContent(
                                     onCheckedChange = { viewModel.setSmartDownloadRouting(it) }
                                 )
                             }
+                            else -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
+                                title = stringResource(R.string.ui_live_updates_alerts),
+                                subtitle = stringResource(R.string.live_updates_sub),
+                                icon = Icons.Rounded.NotificationsActive,
+                                checked = liveUpdates && notificationsAllowed,
+                                position = rowPosition,
+                                onCheckedChange = { enabled ->
+                                    if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationsAllowed) {
+                                        notifPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                    } else {
+                                        onLiveUpdatesChange(enabled)
+                                        if (enabled && Build.VERSION.SDK_INT >= 36 && !LiveUpdateNotificationManager.canPostPromotedNotifications(context)) {
+                                            showPromotedSettingsDialog = true
+                                        }
+                                    }
+                                }
+                            )
                         }
                     }
                 }

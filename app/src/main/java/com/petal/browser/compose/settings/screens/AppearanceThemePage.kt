@@ -129,6 +129,7 @@ fun AppearanceThemePage(
                     title = stringResource(R.string.ui_theme_color_palette),
                     iconRes = com.petal.browser.R.drawable.brightness_medium_filled,
                     cardId = "appearance_theme",
+                    highlightIds = listOf("appearance_amoled", "appearance_dynamic_color", "appearance_color_styles"),
                     targetHighlightId = targetHighlightItemId
                 ) {
                     Text(

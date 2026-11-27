@@ -98,6 +98,7 @@ interface SettingsRepository {
     val drmEnabled: Flow<Boolean>
     val loginAutofillEnabled: Flow<Boolean>
     val fetchShortcutFavicons: Flow<Boolean>
+    val clearOnExit: Flow<Boolean>
 
     // Accessibility & Display
     val immersiveFullScreen: Flow<Boolean>
@@ -244,6 +245,7 @@ interface SettingsRepository {
     suspend fun setDrmEnabled(enabled: Boolean)
     suspend fun setLoginAutofillEnabled(enabled: Boolean)
     suspend fun setFetchShortcutFavicons(enabled: Boolean)
+    suspend fun setClearOnExit(enabled: Boolean)
     suspend fun setCrossSiteTracking(strict: Boolean)
     suspend fun resetPrivacyToRecommended()
 

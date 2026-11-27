@@ -28,7 +28,7 @@ class PrivacySettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val etpStrict: StateFlow<Boolean> = settingsRepository.etpStrict
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val biometricTabLock: StateFlow<Boolean> = settingsRepository.biometricTabLock
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
@@ -40,7 +40,7 @@ class PrivacySettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val fingerprintProtection: StateFlow<Boolean> = settingsRepository.fingerprintProtection
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val webrtcProtection: StateFlow<Boolean> = settingsRepository.webrtcProtection
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -55,7 +55,7 @@ class PrivacySettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
 
     val httpsOnly: StateFlow<Boolean> = settingsRepository.httpsOnly
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     val javaScriptEnabled: StateFlow<Boolean> = settingsRepository.javaScriptEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -76,7 +76,7 @@ class PrivacySettingsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
 
     val privacyProfile: StateFlow<String> = settingsRepository.privacyProfile
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "HARDENED")
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "STANDARD")
 
     val webglEnabled: StateFlow<Boolean> = settingsRepository.webglEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
@@ -95,6 +95,9 @@ class PrivacySettingsViewModel @Inject constructor(
 
     val fetchShortcutFavicons: StateFlow<Boolean> = settingsRepository.fetchShortcutFavicons
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val clearOnExit: StateFlow<Boolean> = settingsRepository.clearOnExit
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun setAdBlockEnabled(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setAdBlockEnabled(enabled)
@@ -202,6 +205,10 @@ class PrivacySettingsViewModel @Inject constructor(
 
     fun setFetchShortcutFavicons(enabled: Boolean) = viewModelScope.launch {
         settingsRepository.setFetchShortcutFavicons(enabled)
+    }
+
+    fun setClearOnExit(enabled: Boolean) = viewModelScope.launch {
+        settingsRepository.setClearOnExit(enabled)
     }
 
     fun setCrossSiteTracking(strict: Boolean) = viewModelScope.launch {

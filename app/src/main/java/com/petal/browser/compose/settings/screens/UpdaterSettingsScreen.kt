@@ -55,6 +55,7 @@ import com.petal.browser.R
 fun UpdaterSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null,
     viewModel: MiscSettingsViewModel = hiltViewModel()
 ) {
     val checkUpdateOnLaunch by viewModel.checkUpdateOnLaunch.collectAsStateWithLifecycle()
@@ -63,6 +64,7 @@ fun UpdaterSettingsScreen(
         checkUpdateOnLaunch = checkUpdateOnLaunch,
         onCheckUpdateOnLaunchChange = viewModel::setCheckUpdateOnLaunch,
         onNavigateBack = onNavigateBack,
+        targetHighlightItemId = targetHighlightItemId,
         modifier = modifier
     )
 }
@@ -73,6 +75,7 @@ fun UpdaterSettingsScreenContent(
     checkUpdateOnLaunch: Boolean,
     onCheckUpdateOnLaunchChange: (Boolean) -> Unit,
     onNavigateBack: () -> Unit,
+    targetHighlightItemId: String? = null,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -156,7 +159,10 @@ fun UpdaterSettingsScreenContent(
                 // ── Section 1: Inbuilt Update Engine & Tracker ──
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_update_tracker_releases),
-                    iconRes = com.petal.browser.R.drawable.update_rounded
+                    iconRes = com.petal.browser.R.drawable.update_rounded,
+                    cardId = "updater_check_now",
+                    highlightIds = listOf("updater_check_launch", "misc_check_updates_launch"),
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(
                         position = com.petal.browser.ui.containment.PetalGroupPosition.TOP,
@@ -532,7 +538,9 @@ fun UpdaterSettingsScreenContent(
                 // ── Section 2: Crash Reporting & Diagnostic Tracker (Inspired by Essentials) ──
                 PetalSettingsSection(
                     title = stringResource(R.string.ui_crash_reporting_diagnostics),
-                    icon = Icons.Rounded.BugReport
+                    icon = Icons.Rounded.BugReport,
+                    cardId = "updater_crash_reporting",
+                    targetHighlightId = targetHighlightItemId
                 ) {
                     PetalCrashReportingPicker(
                         selectedMode = crashReportMode,

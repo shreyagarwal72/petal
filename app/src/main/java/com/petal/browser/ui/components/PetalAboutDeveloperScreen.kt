@@ -162,6 +162,7 @@ fun PetalAboutDeveloperScreen(
     modifier: Modifier = Modifier,
     /** False when hosted inside Settings, whose container owns the single predictive-back surface. */
     wrapPredictive: Boolean = true,
+    targetHighlightItemId: String? = null,
     onNavigateToUpdater: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -369,7 +370,9 @@ fun PetalAboutDeveloperScreen(
                             PetalSettingsSection(
                                 title = "Developer & Architect",
                                 icon = Icons.Rounded.Person,
-                                cardId = "about_developer_profile"
+                                cardId = "about_developer_profile",
+                                highlightIds = listOf("about_developer", "about_developer_github"),
+                                targetHighlightId = targetHighlightItemId
                             ) {
                                 DeveloperProfileGroup(
                                     onCopyGithub = {
@@ -391,7 +394,9 @@ fun PetalAboutDeveloperScreen(
                             PetalSettingsSection(
                                 title = "Application & Engine",
                                 icon = Icons.Rounded.Info,
-                                cardId = "about_app_info"
+                                cardId = "about_app_info",
+                                highlightIds = listOf("about_petal_version"),
+                                targetHighlightId = targetHighlightItemId
                             ) {
                                 AppInfoGroup(
                                     versionName = verName,
@@ -449,7 +454,9 @@ fun PetalAboutDeveloperScreen(
                             PetalSettingsSection(
                                 title = "Project & Source",
                                 icon = Icons.Rounded.Code,
-                                cardId = "about_repo"
+                                cardId = "about_repo",
+                                highlightIds = listOf("about_star_github", "about_send_feedback"),
+                                targetHighlightId = targetHighlightItemId
                             ) {
                                 ProjectSourceGroup(
                                     onOpenUrl = { openUrl(it) },
@@ -478,7 +485,9 @@ fun PetalAboutDeveloperScreen(
                             PetalSettingsSection(
                                 title = "Ecosystem & Community",
                                 icon = Icons.Rounded.Favorite,
-                                cardId = "about_community"
+                                cardId = "about_community",
+                                highlightIds = listOf("about_rate_play_store"),
+                                targetHighlightId = targetHighlightItemId
                             ) {
                                 CommunityEcosystemGroup(
                                     onOpenUrl = { openUrl(it) },

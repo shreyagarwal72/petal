@@ -30,7 +30,10 @@ class PetalForceDarkTileService : PetalTileBase() {
         val sp = PreferenceManager.getDefaultSharedPreferences(this)
         val current = sp.getBoolean("sp_force_dark_mode", false)
         val next = !current
-        sp.edit().putBoolean("sp_force_dark_mode", next).apply()
+        sp.edit()
+            .putBoolean("sp_force_dark_mode", next)
+            .putBoolean("petal_builtin_dark_webpages", next)
+            .apply()
         try {
             PetalGeckoRuntime.syncPreferences(sp)
         } catch (_: Throwable) {}

@@ -98,6 +98,7 @@ fun MiscSettingsScreenContent(
                     title = stringResource(R.string.ui_custom_tabs_external_links),
                     icon = Icons.Rounded.OpenInBrowser,
                     cardId = "misc_apps",
+                    highlightIds = listOf("misc_custom_tabs", "misc_auto_open_apps"),
                     targetHighlightId = targetHighlightItemId
                 ) {
                     com.petal.browser.ui.containment.PetalSettingsToggleRow(

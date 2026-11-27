@@ -88,6 +88,7 @@ fun PrivacySettingsScreen(
     val drmEnabled by viewModel.drmEnabled.collectAsStateWithLifecycle()
     val loginAutofillEnabled by viewModel.loginAutofillEnabled.collectAsStateWithLifecycle()
     val fetchShortcutFavicons by viewModel.fetchShortcutFavicons.collectAsStateWithLifecycle()
+    val clearOnExit by viewModel.clearOnExit.collectAsStateWithLifecycle()
 
     PrivacySettingsScreenContent(
         privacyProfile = privacyProfile,
@@ -113,6 +114,7 @@ fun PrivacySettingsScreen(
         drmEnabled = drmEnabled,
         loginAutofillEnabled = loginAutofillEnabled,
         fetchShortcutFavicons = fetchShortcutFavicons,
+        clearOnExit = clearOnExit,
         onPrivacyProfileChange = viewModel::setPrivacyProfile,
         onAdBlockEnabledChange = viewModel::setAdBlockEnabled,
         onBlockThirdPartyCookiesChange = viewModel::setBlockThirdPartyCookies,
@@ -137,6 +139,7 @@ fun PrivacySettingsScreen(
         onDrmEnabledChange = viewModel::setDrmEnabled,
         onLoginAutofillEnabledChange = viewModel::setLoginAutofillEnabled,
         onFetchShortcutFaviconsChange = viewModel::setFetchShortcutFavicons,
+        onClearOnExitChange = viewModel::setClearOnExit,
         onResetPrivacyToRecommended = viewModel::resetPrivacyToRecommended,
         onNavigateBack = onNavigateBack,
         onNavigateToAppLock = onNavigateToAppLock,
@@ -148,7 +151,7 @@ fun PrivacySettingsScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PrivacySettingsScreenContent(
-    privacyProfile: String = "HARDENED",
+    privacyProfile: String = "STANDARD",
     adBlockEnabled: Boolean,
     blockThirdPartyCookies: Boolean,
     totalCookieProtection: Boolean = true,
@@ -171,6 +174,7 @@ fun PrivacySettingsScreenContent(
     drmEnabled: Boolean = true,
     loginAutofillEnabled: Boolean = true,
     fetchShortcutFavicons: Boolean = true,
+    clearOnExit: Boolean = false,
     onPrivacyProfileChange: (String) -> Unit = {},
     onAdBlockEnabledChange: (Boolean) -> Unit,
     onBlockThirdPartyCookiesChange: (Boolean) -> Unit,
@@ -195,6 +199,7 @@ fun PrivacySettingsScreenContent(
     onDrmEnabledChange: (Boolean) -> Unit = {},
     onLoginAutofillEnabledChange: (Boolean) -> Unit = {},
     onFetchShortcutFaviconsChange: (Boolean) -> Unit = {},
+    onClearOnExitChange: (Boolean) -> Unit = {},
     onResetPrivacyToRecommended: () -> Unit = {},
     onNavigateBack: () -> Unit,
     onNavigateToAppLock: () -> Unit = {},
@@ -246,10 +251,6 @@ fun PrivacySettingsScreenContent(
         }
     }
 
-    var clearOnExit by remember {
-        mutableStateOf(sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false))
-    }
-
     if (showResetPrivacyDialog) {
         PetalAlertDialog(
             onDismissRequest = { showResetPrivacyDialog = false },
@@ -258,7 +259,6 @@ fun PrivacySettingsScreenContent(
             onConfirm = {
                 showResetPrivacyDialog = false
                 onResetPrivacyToRecommended()
-                clearOnExit = false
                 PetalAdBlockEngine.setAdBlockEnabled(context, true)
             },
             dismissText = stringResource(R.string.ui_cancel),
@@ -634,13 +634,7 @@ fun PrivacySettingsScreenContent(
                             subtitle = "Automatically purge cache, cookies, and browsing sessions when closing Petal",
                             icon = Icons.Rounded.DeleteSweep,
                             checked = clearOnExit,
-                            onCheckedChange = { newValue ->
-                                clearOnExit = newValue
-                                sp.edit()
-                                    .putBoolean("sp_clear_quit", newValue)
-                                    .putBoolean("sp_clear_on_exit", newValue)
-                                    .apply()
-                            }
+                            onCheckedChange = onClearOnExitChange
                         )
 
                         PetalGroupNavigationRow(

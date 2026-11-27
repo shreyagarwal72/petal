@@ -13,12 +13,14 @@ import com.petal.browser.ui.components.PetalAboutDeveloperScreen
 fun AboutSettingsScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    targetHighlightItemId: String? = null,
     onNavigateToUpdater: (() -> Unit)? = null
 ) {
     PetalAboutDeveloperScreen(
         onBack = onNavigateBack,
         modifier = modifier,
         wrapPredictive = false,
+        targetHighlightItemId = targetHighlightItemId,
         onNavigateToUpdater = onNavigateToUpdater
     )
 }

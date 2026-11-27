@@ -45,9 +45,6 @@ fun TabsSettingsScreen(
     var confirmTabClose by remember {
         mutableStateOf(sp.getBoolean("sp_close_tab_confirm", false))
     }
-    var autoOpenFromOtherDevices by remember {
-        mutableStateOf(sp.getBoolean("sp_auto_open_tab_groups_other_devices", true))
-    }
     var showWorkspaceChips by remember {
         mutableStateOf(sp.getBoolean(com.petal.browser.compose.tabs.PetalWorkspaceManager.PREF_SHOW_WORKSPACE_CHIPS, false))
     }
@@ -88,7 +85,7 @@ fun TabsSettingsScreen(
                     cardId = "tabs_management",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 4) { index, position ->
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 3) { index, position ->
                         when (index) {
                             0 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
@@ -105,19 +102,6 @@ fun TabsSettingsScreen(
                             }
                             1 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
-                                    title = stringResource(R.string.ui_automatically_open_tab_groups_from),
-                                    subtitle = stringResource(R.string.ui_sync_tab_sessions_seamlessly_across),
-                                    icon = Icons.Rounded.Devices,
-                                    checked = autoOpenFromOtherDevices,
-                                    position = position,
-                                    onCheckedChange = {
-                                        autoOpenFromOtherDevices = it
-                                        sp.edit().putBoolean("sp_auto_open_tab_groups_other_devices", it).apply()
-                                    }
-                                )
-                            }
-                            2 -> {
-                                com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = stringResource(R.string.ui_confirm_before_closing_tab),
                                     subtitle = stringResource(R.string.ui_prompt_for_confirmation_before_closing),
                                     icon = Icons.Rounded.Close,
@@ -129,7 +113,7 @@ fun TabsSettingsScreen(
                                     }
                                 )
                             }
-                            3 -> {
+                            2 -> {
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = stringResource(R.string.ui_show_workspace_chips),
                                     subtitle = stringResource(R.string.ui_show_workspace_chips_desc),
