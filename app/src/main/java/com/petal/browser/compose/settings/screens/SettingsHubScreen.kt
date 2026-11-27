@@ -1,6 +1,6 @@
 package com.petal.browser.compose.settings.screens
 
-import com.petal.browser.compose.settings.iconAccent
+import com.petal.browser.compose.settings.hubIconAccent
 import com.petal.browser.ui.components.PetalSpring
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -291,7 +291,7 @@ fun SettingsHubScreen(
                     }
 
                     itemsIndexed(filteredCategories, key = { _, category -> category.name }) { index, category ->
-                        val iconAccent = category.iconAccent()
+                        val iconAccent = category.hubIconAccent()
                         val tileBounds = androidx.compose.runtime.remember { arrayOfNulls<androidx.compose.ui.geometry.Rect>(1) }
                         PetalGroupListRow(
                             position = petalGroupPositionFor(index, filteredCategories.size),

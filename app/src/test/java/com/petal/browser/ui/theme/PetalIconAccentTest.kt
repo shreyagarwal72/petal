@@ -9,6 +9,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
 import com.petal.browser.compose.settings.SettingsCategory
+import com.petal.browser.compose.settings.hubIconAccent
 import com.petal.browser.compose.settings.iconAccent
 import com.petal.browser.ui.containment.resolveBadgeShape
 import com.petal.browser.ui.theme.layout.PetalBadgeShape
@@ -238,5 +239,34 @@ class PetalIconAccentTest {
         assertEquals(PetalIconAccent.NEUTRAL, SettingsCategory.UPDATER.iconAccent())
         assertEquals(PetalIconAccent.NEUTRAL, SettingsCategory.ABOUT.iconAccent())
         assertEquals(PetalIconAccent.NEUTRAL, SettingsCategory.MISCELLANEOUS.iconAccent())
+    }
+
+    @Test
+    fun testSettingsCategoryHubIconAccentCyclesByFixedPosition() {
+        val hubCategories = SettingsCategory.entries.filter { it != SettingsCategory.OVERVIEW }
+        assertTrue(hubCategories.size >= 5)
+
+        assertEquals(PetalIconAccent.PRIMARY, hubCategories[0].hubIconAccent())
+        assertEquals(PetalIconAccent.SECONDARY, hubCategories[1].hubIconAccent())
+        assertEquals(PetalIconAccent.TERTIARY, hubCategories[2].hubIconAccent())
+        assertEquals(PetalIconAccent.NEUTRAL, hubCategories[3].hubIconAccent())
+        assertEquals(PetalIconAccent.PRIMARY, hubCategories[4].hubIconAccent())
+
+        val expectedCycle = listOf(
+            PetalIconAccent.PRIMARY,
+            PetalIconAccent.SECONDARY,
+            PetalIconAccent.TERTIARY,
+            PetalIconAccent.NEUTRAL
+        )
+        hubCategories.forEachIndexed { idx, category ->
+            assertEquals(expectedCycle[idx % expectedCycle.size], category.hubIconAccent())
+            if (idx > 0) {
+                assertNotEquals(
+                    "Adjacent hub categories must not share the same accent",
+                    hubCategories[idx - 1].hubIconAccent(),
+                    category.hubIconAccent()
+                )
+            }
+        }
     }
 }

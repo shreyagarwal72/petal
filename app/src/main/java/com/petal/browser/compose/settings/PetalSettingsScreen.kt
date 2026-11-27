@@ -106,6 +106,27 @@ fun SettingsCategory.iconAccent(): com.petal.browser.ui.theme.PetalIconAccent = 
     SettingsCategory.MISCELLANEOUS -> com.petal.browser.ui.theme.PetalIconAccent.NEUTRAL
 }
 
+private val HUB_ICON_ACCENTS = arrayOf(
+    com.petal.browser.ui.theme.PetalIconAccent.PRIMARY,
+    com.petal.browser.ui.theme.PetalIconAccent.SECONDARY,
+    com.petal.browser.ui.theme.PetalIconAccent.TERTIARY,
+    com.petal.browser.ui.theme.PetalIconAccent.NEUTRAL
+)
+
+private val HUB_SETTINGS_CATEGORIES: List<SettingsCategory> by lazy {
+    SettingsCategory.entries.filter { it != SettingsCategory.OVERVIEW }
+}
+
+/**
+ * Fixed-position icon accent for the Settings Hub "Categories" list so adjacent rows never
+ * repeat the same color and each category keeps its color while filtering/searching.
+ */
+fun SettingsCategory.hubIconAccent(): com.petal.browser.ui.theme.PetalIconAccent {
+    val idx = HUB_SETTINGS_CATEGORIES.indexOf(this)
+    if (idx < 0) return com.petal.browser.ui.theme.PetalIconAccent.PRIMARY
+    return HUB_ICON_ACCENTS[idx % HUB_ICON_ACCENTS.size]
+}
+
 object PetalSettingsBridge {
     @JvmStatic
     @JvmOverloads
