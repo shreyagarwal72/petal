@@ -322,12 +322,13 @@ open class HistoryBookmarkRepository(context: Context?) {
         return record
     }
 
-    fun listEntries(activity: Activity): List<Record> {
+    fun listEntries(context: Context): List<Record> {
         val list = ArrayList<Record>()
-        val repo = HistoryBookmarkRepository(activity)
+        val appContext = context.applicationContext ?: context
+        val repo = HistoryBookmarkRepository(appContext)
         repo.open(false)
-        list.addAll(repo.listBookmark(activity, false, 0)) // move bookmarks to top of list
-        list.addAll(repo.listHistory(activity.applicationContext))
+        list.addAll(repo.listBookmark(appContext, false, 0)) // move bookmarks to top of list
+        list.addAll(repo.listHistory(appContext))
         repo.close()
         return list
     }
