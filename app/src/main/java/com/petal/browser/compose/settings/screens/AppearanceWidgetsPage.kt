@@ -127,5 +127,32 @@ fun AppearanceWidgetsPage(
                 )
             }
         }
+
+        PetalSettingsSection(
+            title = "Liquid Glass Widgets",
+            icon = Icons.Rounded.AutoAwesome,
+            cardId = "appearance_glass_widgets",
+            targetHighlightId = targetHighlightItemId
+        ) {
+            Text(
+                "Real-time refracted wallpaper glass bars for your home screen.",
+                style = PetalText.caption,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            com.petal.browser.ui.containment.PetalGroupNavigationRow(
+                title = "Customize Liquid Glass Widgets",
+                subtitle = "Configure optics, wallpaper source, live wallpaper, and pin Search Bar or Pill",
+                position = com.petal.browser.ui.containment.PetalGroupPosition.SINGLE,
+                leadingIcon = { Icon(Icons.Rounded.AutoAwesome, contentDescription = null) },
+                onClick = {
+                    context.startActivity(
+                        Intent(
+                            context,
+                            com.petal.browser.widget.liquidglass.PetalLiquidGlassSettingsActivity::class.java
+                        )
+                    )
+                }
+            )
+        }
     }
 }

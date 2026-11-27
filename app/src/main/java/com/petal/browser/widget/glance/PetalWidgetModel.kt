@@ -49,7 +49,7 @@ enum class PetalWidgetAction(
     SEARCH("search", R.string.ui_search, R.drawable.widget_ic_search, PetalSearchWidgetProvider.ACTION_OPEN_SEARCH),
     AI("ai", R.string.ui_petal_ai_search, R.drawable.widget_ic_auto_awesome, PetalSearchWidgetProvider.ACTION_OPEN_AI_SEARCH),
     VOICE("voice", R.string.ui_voice_search_2, R.drawable.widget_ic_mic, PetalSearchWidgetProvider.ACTION_OPEN_VOICE),
-    LENS("lens", R.string.ui_visual_camera_scanner, R.drawable.widget_ic_lens_camera, PetalSearchWidgetProvider.ACTION_OPEN_SNAP_CAMERA),
+    LENS("lens", R.string.ui_visual_camera_scanner, R.drawable.widget_ic_lens_camera, PetalSearchWidgetProvider.ACTION_OPEN_LENS),
     NEW_TAB("new_tab", R.string.ui_new_tab, R.drawable.widget_ic_tab_plus, PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB),
     BOOKMARKS("bookmarks", R.string.ui_bookmarks, R.drawable.widget_ic_bookmark, PetalSearchWidgetProvider.ACTION_OPEN_BOOKMARKS),
     DOWNLOADS("downloads", R.string.ui_downloads, R.drawable.ic_download, PetalSearchWidgetProvider.ACTION_OPEN_DOWNLOADS),

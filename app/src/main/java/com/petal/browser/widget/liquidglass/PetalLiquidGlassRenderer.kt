@@ -101,7 +101,7 @@ object PetalLiquidGlassRenderer {
         val clampedRadiusDp = min(effRadiusDp, maxRadiusDp)
         val cornerRadiusPx = clampedRadiusDp * density
 
-        val effHighlightAlpha = if (highlightAlphaPct >= 0f) highlightAlphaPct.toInt() else config.edgeAlpha
+        val effHighlightAlpha = (if (highlightAlphaPct >= 0f) highlightAlphaPct.toInt() else config.edgeAlpha).coerceIn(0, 100)
         val effHighlightWidthDp = if (highlightWidthDp >= 0f) highlightWidthDp else config.edgeWidthDp
 
         // API 33+ (Android 13+): Offscreen HardwareRenderer with AGSL RuntimeShader
@@ -121,8 +121,8 @@ object PetalLiquidGlassRenderer {
                     outBmp = applyOverlays(outBmp, config, cornerRadiusPx)
                     if (effHighlightAlpha > 0) {
                         outBmp = drawKyantHighlight(outBmp, cornerRadiusPx, density, effHighlightWidthDp, effHighlightAlpha)
+                        outBmp = drawGlassEdges(outBmp, cornerRadiusPx, effHighlightWidthDp * density, effHighlightAlpha)
                     }
-                    outBmp = drawGlassEdges(outBmp, cornerRadiusPx, effHighlightWidthDp * density, true)
                     outBmp = applyRoundedCorners(outBmp, cornerRadiusPx)
                     return outBmp
                 }
@@ -139,8 +139,8 @@ object PetalLiquidGlassRenderer {
             outBmp = applyOverlays(outBmp, config, cornerRadiusPx)
             if (effHighlightAlpha > 0) {
                 outBmp = drawKyantHighlight(outBmp, cornerRadiusPx, density, effHighlightWidthDp, effHighlightAlpha)
+                outBmp = drawGlassEdges(outBmp, cornerRadiusPx, effHighlightWidthDp * density, effHighlightAlpha)
             }
-            outBmp = drawGlassEdges(outBmp, cornerRadiusPx, effHighlightWidthDp * density, true)
             outBmp = applyRoundedCorners(outBmp, cornerRadiusPx)
             outBmp
         } catch (t: Throwable) {
@@ -268,8 +268,8 @@ object PetalLiquidGlassRenderer {
         }
     }
 
-    private fun drawGlassEdges(bitmap: Bitmap, cornerRadiusPx: Float, strokeWidthPx: Float, enabled: Boolean): Bitmap {
-        if (!enabled || bitmap.width <= 0 || bitmap.height <= 0) return bitmap
+    private fun drawGlassEdges(bitmap: Bitmap, cornerRadiusPx: Float, strokeWidthPx: Float, alphaPct: Int): Bitmap {
+        if (alphaPct <= 0 || bitmap.width <= 0 || bitmap.height <= 0) return bitmap
         val mutableBmp = if (bitmap.isMutable) bitmap else bitmap.copy(Bitmap.Config.ARGB_8888, true).also { bitmap.recycle() }
 
         val canvas = Canvas(mutableBmp)
@@ -283,17 +283,14 @@ object PetalLiquidGlassRenderer {
         val rect = RectF(halfStroke, halfStroke, mutableBmp.width - halfStroke, mutableBmp.height - halfStroke)
         paint.strokeWidth = stroke
 
-        val colors = intArrayOf(
-            0x40FFFFFF,
-            0x80FFFFFF.toInt(),
-            0x40FFFFFF,
-            0x20FFFFFF,
-            0x40FFFFFF,
-            0x80FFFFFF.toInt(),
-            0x40FFFFFF,
-            0x20FFFFFF,
-            0x40FFFFFF
-        )
+        val scale = (alphaPct.coerceIn(0, 100) / 100f)
+        fun rimColor(baseAlpha: Int): Int =
+            (((baseAlpha * scale).roundToInt().coerceIn(0, 255)) shl 24) or 0x00FFFFFF
+
+        val cMid = rimColor(0x60)
+        val cPeak = rimColor(0xB8)
+        val cLow = rimColor(0x30)
+        val colors = intArrayOf(cMid, cPeak, cMid, cLow, cMid, cPeak, cMid, cLow, cMid)
         val positions = floatArrayOf(
             0f, 0.125f, 0.25f, 0.375f, 0.5f, 0.625f, 0.75f, 0.875f, 1f
         )

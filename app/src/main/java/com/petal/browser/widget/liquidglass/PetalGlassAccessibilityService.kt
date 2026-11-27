@@ -63,6 +63,8 @@ class PetalGlassAccessibilityService : AccessibilityService() {
     private var scanScheduled = false
     private var ignoreEventsUntil = 0L
     private var lastColorsInvalidate = 0L
+    @Volatile
+    private var destroyed = false
 
     private val scanRunnable = Runnable {
         scanScheduled = false
@@ -130,15 +132,33 @@ class PetalGlassAccessibilityService : AccessibilityService() {
     /** Returns id -> on-screen rect for every glass widget currently visible. */
     private fun findWidgets(ids: Set<Int>): Map<Int, Rect> {
         val out = HashMap<Int, Rect>()
-        val root = rootInActiveWindow ?: return out
-        try {
-            val unlabeled = ArrayList<Rect>()
-            collect(root, out, unlabeled, 0)
-            // Fallback for launchers that drop content descriptions: only safe with ONE widget.
-            if (out.isEmpty() && ids.size == 1 && unlabeled.size == 1) out[ids.first()] = unlabeled[0]
-        } finally {
-            @Suppress("DEPRECATION") root.recycle()
+        val unlabeled = ArrayList<Rect>()
+        val root = rootInActiveWindow
+        if (root != null) {
+            try {
+                collect(root, out, unlabeled, 0)
+            } finally {
+                @Suppress("DEPRECATION") root.recycle()
+            }
         }
+        // Fallback across interactive windows if overlays/system UI intercepted rootInActiveWindow.
+        if (out.isEmpty()) {
+            val winList = try { windows } catch (_: Throwable) { null }
+            winList?.forEach { win ->
+                if (win.type != android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION) return@forEach
+                val winRoot = try { win.root } catch (_: Throwable) { null } ?: return@forEach
+                try {
+                    val pkg = winRoot.packageName?.toString()
+                    if (pkg != packageName && pkg != "com.android.systemui") {
+                        collect(winRoot, out, unlabeled, 0)
+                    }
+                } finally {
+                    @Suppress("DEPRECATION") winRoot.recycle()
+                }
+            }
+        }
+        // Fallback for launchers that drop content descriptions: only safe with ONE widget.
+        if (out.isEmpty() && ids.size == 1 && unlabeled.size == 1) out[ids.first()] = unlabeled[0]
         return out
     }
 
@@ -236,11 +256,20 @@ class PetalGlassAccessibilityService : AccessibilityService() {
     }
 
     private fun restore(id: Int) {
-        try {
-            val mgr = AppWidgetManager.getInstance(this)
-            PetalLiquidGlassWidgetBinder.update(this, mgr, id, PetalLiquidGlassWidgetBinder.isPill(this, id))
-        } catch (t: Throwable) {
-            Log.w(TAG, "restore failed", t)
+        if (destroyed) return
+        val applyRestore = Runnable {
+            if (destroyed) return@Runnable
+            try {
+                val mgr = AppWidgetManager.getInstance(this)
+                PetalLiquidGlassWidgetBinder.update(this, mgr, id, PetalLiquidGlassWidgetBinder.isPill(this, id))
+            } catch (t: Throwable) {
+                Log.w(TAG, "restore failed", t)
+            }
+        }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            applyRestore.run()
+        } else {
+            handler.post(applyRestore)
         }
     }
 
@@ -351,6 +380,7 @@ class PetalGlassAccessibilityService : AccessibilityService() {
     override fun onInterrupt() {}
 
     override fun onDestroy() {
+        destroyed = true
         super.onDestroy()
         isRunning = false
         instance = null

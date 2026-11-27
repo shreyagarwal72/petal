@@ -128,6 +128,7 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     private var isSessionUnlockedForAppLock: Boolean = false
     private var stoppedForAppLock: Boolean = false
+    private var pendingIncomingIntent: Intent? = null
 
     private fun isAppLockConfiguredAndEnabled(): Boolean {
         if (!sp.getBoolean("sp_app_lock_enabled", false)) return false
@@ -138,12 +139,23 @@ class MainActivity : FragmentActivity(), BrowserController {
         return passcode.isNotBlank() || hasBiometric
     }
 
+    private fun flushPendingIncomingIntent() {
+        if (com.petal.browser.compose.splash.PetalSplashState.splashActive.value) return
+        val pending = pendingIncomingIntent ?: return
+        pendingIncomingIntent = null
+        handleIncomingIntent(pending)
+    }
+
     private fun maybeShowAppLockOnForeground() {
         if (isFinishing || isDestroyed) return
         if (com.petal.browser.compose.splash.PetalSplashState.splashActive.value) return
-        if (isSessionUnlockedForAppLock) return
+        if (isSessionUnlockedForAppLock) {
+            flushPendingIncomingIntent()
+            return
+        }
         if (!isAppLockConfiguredAndEnabled()) {
             isSessionUnlockedForAppLock = true
+            flushPendingIncomingIntent()
             return
         }
         if (com.petal.browser.compose.security.PetalAppLockBridge.isLockOverlayShowing) return
@@ -152,6 +164,7 @@ class MainActivity : FragmentActivity(), BrowserController {
             onUnlocked = {
                 isSessionUnlockedForAppLock = true
                 stoppedForAppLock = false
+                flushPendingIncomingIntent()
             },
             onCancel = {
                 moveTaskToBack(true)
@@ -269,8 +282,11 @@ class MainActivity : FragmentActivity(), BrowserController {
             val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this)
             if (!restored && store.state.tabs.isEmpty()) {
                 val action = intent?.action
-                val willOpenTab = action == com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB ||
-                    action == com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO
+                val canActImmediately = isSessionUnlockedForAppLock || !isAppLockConfiguredAndEnabled()
+                val willOpenTab = canActImmediately && (
+                    action == com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB ||
+                        action == com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO
+                    )
                 if (willOpenTab) {
                     viewModel.openNewTab(
                         "about:home",
@@ -389,6 +405,7 @@ class MainActivity : FragmentActivity(), BrowserController {
     }
 
     override fun onDestroy() {
+        pendingIncomingIntent = null
         super.onDestroy()
         sp.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
         com.petal.browser.engine.gecko.PetalFileUploadMiddleware.detachActivity(this)
@@ -1229,6 +1246,24 @@ class MainActivity : FragmentActivity(), BrowserController {
         }
 
         val action = intent.action
+        val shouldDeferForSplash = com.petal.browser.compose.splash.PetalSplashState.splashActive.value
+        val shouldDeferForAppLock = !isSessionUnlockedForAppLock && isAppLockConfiguredAndEnabled()
+        val isDeferrableAction = action != null && (
+            action.startsWith("com.petal.browser.action.OPEN_") ||
+                action == Intent.ACTION_PROCESS_TEXT ||
+                action == Intent.ACTION_VIEW
+            )
+        if ((shouldDeferForSplash || shouldDeferForAppLock) && isDeferrableAction) {
+            pendingIncomingIntent = Intent(intent)
+            if (intent === this.intent && action.startsWith("com.petal.browser.action.OPEN_")) {
+                intent.action = Intent.ACTION_MAIN
+            }
+            if (shouldDeferForAppLock && !shouldDeferForSplash) {
+                maybeShowAppLockOnForeground()
+            }
+            return
+        }
+
         // A widget button's action is one-shot: clear it so a rotation or recreate doesn't run it again.
         if (action != null && action.startsWith("com.petal.browser.action.OPEN_")) {
             intent.action = Intent.ACTION_MAIN

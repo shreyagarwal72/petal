@@ -40,7 +40,9 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
     private val wallpaperChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            // Not just a redraw: the cached wallpaper slice and glass tiles must be rebuilt from the new wallpaper.
+            if (intent.action != Intent.ACTION_WALLPAPER_CHANGED) return
+            // Invalidate old clean captures before rebaking so stale launcher crops don't shadow the new wallpaper.
+            try { com.petal.browser.widget.liquidglass.PetalWallpaperBlurHelper.invalidateCaptures(this@PetalApplication) } catch (_: Throwable) {}
             try { com.petal.browser.widget.liquidglass.PetalWallpaperBlurHelper.rebakeAllFromWallpaper(this@PetalApplication) } catch (_: Throwable) {}
         }
     }
@@ -272,7 +274,12 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
         }
 
         try {
-            registerReceiver(wallpaperChangeReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED))
+            androidx.core.content.ContextCompat.registerReceiver(
+                this,
+                wallpaperChangeReceiver,
+                IntentFilter(Intent.ACTION_WALLPAPER_CHANGED),
+                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+            )
         } catch (e: Exception) {
             Log.e(TAG, "Failed to register wallpaper change receiver", e)
         }

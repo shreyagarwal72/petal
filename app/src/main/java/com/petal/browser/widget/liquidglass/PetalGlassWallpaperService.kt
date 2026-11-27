@@ -1,12 +1,14 @@
 package com.petal.browser.widget.liquidglass
 
-import android.app.WallpaperManager
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
+import android.content.SharedPreferences
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
+import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.Rect
 import android.graphics.RectF
+import android.graphics.Shader
 import android.graphics.SweepGradient
 import android.os.Handler
 import android.os.Looper
@@ -14,15 +16,15 @@ import android.service.wallpaper.WallpaperService
 import android.util.Log
 import android.view.MotionEvent
 import android.view.SurfaceHolder
-import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 /**
  * Interactive Live Wallpaper engine providing Dynamic 60/120 Hz real-time glass rendering
  * underneath Petal Liquid Glass widgets.
  *
  * When enabled, widgets switch to 100% transparent backgrounds while this engine renders
- * real-time glass refraction panels and touch ripples directly on the wallpaper surface.
+ * real-time glass panels and specular highlights directly on the wallpaper surface.
  */
 class PetalGlassWallpaperService : WallpaperService() {
 
@@ -39,10 +41,25 @@ class PetalGlassWallpaperService : WallpaperService() {
 
         private val drawRunnable = Runnable { drawFrame() }
 
+        private val prefListener = SharedPreferences.OnSharedPreferenceChangeListener { _, _ ->
+            loadWallpaper()
+            if (visible) scheduleRedraw()
+        }
+
         override fun onCreate(surfaceHolder: SurfaceHolder?) {
             super.onCreate(surfaceHolder)
             setTouchEventsEnabled(true)
+            PetalBlurConfig.getPrefs(this@PetalGlassWallpaperService)
+                .registerOnSharedPreferenceChangeListener(prefListener)
+            PetalWallpaperBlurHelper.getPrefs(this@PetalGlassWallpaperService)
+                .registerOnSharedPreferenceChangeListener(prefListener)
             loadWallpaper()
+        }
+
+        override fun onSurfaceChanged(holder: SurfaceHolder?, format: Int, width: Int, height: Int) {
+            super.onSurfaceChanged(holder, format, width, height)
+            loadWallpaper(width, height)
+            if (visible) scheduleRedraw()
         }
 
         override fun onVisibilityChanged(visible: Boolean) {
@@ -64,7 +81,7 @@ class PetalGlassWallpaperService : WallpaperService() {
             yPixelOffset: Int
         ) {
             super.onOffsetsChanged(xOffset, yOffset, xOffsetStep, yOffsetStep, xPixelOffset, yPixelOffset)
-            this.xOffset = xOffset
+            this.xOffset = xOffset.coerceIn(0f, 1f)
             if (visible) scheduleRedraw()
         }
 
@@ -75,10 +92,23 @@ class PetalGlassWallpaperService : WallpaperService() {
             }
         }
 
-        private fun loadWallpaper() {
+        private fun loadWallpaper(reqWidth: Int = 0, reqHeight: Int = 0) {
             try {
-                val (screenW, screenH) = PetalWallpaperBlurHelper.getScreenSize(this@PetalGlassWallpaperService)
-                wallpaperBitmap = PetalWallpaperBlurHelper.renderWallpaperAtScreenSize(this@PetalGlassWallpaperService, screenW, screenH)
+                val (screenW, screenH) = if (reqWidth > 0 && reqHeight > 0) {
+                    reqWidth to reqHeight
+                } else {
+                    PetalWallpaperBlurHelper.getScreenSize(this@PetalGlassWallpaperService)
+                }
+                val next = PetalWallpaperBlurHelper.renderWallpaperAtScreenSize(
+                    this@PetalGlassWallpaperService,
+                    screenW,
+                    screenH
+                )
+                val old = wallpaperBitmap
+                wallpaperBitmap = next
+                if (old != null && old !== next && !old.isRecycled) {
+                    old.recycle()
+                }
             } catch (t: Throwable) {
                 Log.w("PetalGlassWallpaper", "loadWallpaper failed", t)
             }
@@ -111,39 +141,65 @@ class PetalGlassWallpaperService : WallpaperService() {
         private fun renderOnCanvas(canvas: Canvas) {
             val bmp = wallpaperBitmap
             if (bmp != null && !bmp.isRecycled) {
-                canvas.drawBitmap(bmp, 0f, 0f, null)
+                val maxShift = (bmp.width - canvas.width).coerceAtLeast(0)
+                val dx = if (maxShift > 0) -(maxShift * xOffset) else 0f
+                canvas.drawBitmap(bmp, dx, 0f, null)
             } else {
-                canvas.drawColor(Color.DKGRAY)
+                val fallbackPaint = Paint().apply {
+                    shader = LinearGradient(
+                        0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(),
+                        0xFF232C44.toInt(), 0xFF42304F.toInt(), Shader.TileMode.CLAMP
+                    )
+                }
+                canvas.drawRect(0f, 0f, canvas.width.toFloat(), canvas.height.toFloat(), fallbackPaint)
             }
 
-            // Draw glass panels under all placed widget coordinates
+            // Draw glass panels under all active placed Liquid Glass widgets
+            val ctx = this@PetalGlassWallpaperService
+            val mgr = AppWidgetManager.getInstance(ctx)
+            val searchIds = mgr.getAppWidgetIds(ComponentName(ctx, PetalLiquidGlassSearchWidgetReceiver::class.java))
+                ?.toSet() ?: emptySet()
+            val pillIds = mgr.getAppWidgetIds(ComponentName(ctx, PetalLiquidGlassPillWidgetReceiver::class.java))
+                ?.toSet() ?: emptySet()
+            val activeIds = searchIds + pillIds
+            if (activeIds.isEmpty()) return
+
             val density = resources.displayMetrics.density
-            val config = PetalBlurConfig.load(this@PetalGlassWallpaperService)
-            val cornerPx = config.cornerRadius * density
+            val config = PetalBlurConfig.load(ctx)
 
-            val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                color = if (config.darkLightMode == PetalBlurConfig.DARK_LIGHT_DARK) 0x66000000 else 0x44FFFFFF
-            }
+            val darkLightColor = config.getDarkLightColor()
+            val customTintColor = config.getTintColor()
+            val baseFrostColor = if (darkLightColor != 0) darkLightColor else 0x22FFFFFF
 
-            val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                strokeWidth = config.edgeWidthDp * density
-            }
+            val glassPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = baseFrostColor }
+            val customPaint = if (customTintColor != 0) Paint(Paint.ANTI_ALIAS_FLAG).apply { color = customTintColor } else null
 
-            val sp = PetalWallpaperBlurHelper.getPrefs(this@PetalGlassWallpaperService)
-            val allKeys = sp.all.keys
-            for (key in allKeys) {
-                if (key.endsWith("_left")) {
-                    val widgetIdStr = key.removePrefix("rect_").removeSuffix("_left")
-                    val widgetId = widgetIdStr.toIntOrNull() ?: continue
-                    val rect = PetalWallpaperBlurHelper.getWidgetRect(this@PetalGlassWallpaperService, widgetId) ?: continue
-                    val rectF = RectF(rect)
+            val edgePct = config.edgeAlpha.coerceIn(0, 100)
+            val strokePaint = if (edgePct > 0) {
+                Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                    style = Paint.Style.STROKE
+                    strokeWidth = config.edgeWidthDp * density
+                }
+            } else null
 
-                    // Draw translucent frosted backing
-                    canvas.drawRoundRect(rectF, cornerPx, cornerPx, glassPaint)
+            val scale = edgePct / 100f
+            fun rim(alpha: Int): Int = (((alpha * scale).roundToInt().coerceIn(0, 255)) shl 24) or 0x00FFFFFF
 
-                    // Draw specular highlight sweep
-                    val colors = intArrayOf(0x30FFFFFF, 0x80FFFFFF.toInt(), 0x00FFFFFF, 0x30FFFFFF, 0x80FFFFFF.toInt(), 0x30FFFFFF, 0x00FFFFFF, 0x30FFFFFF, 0x30FFFFFF)
+            for (widgetId in activeIds) {
+                val rect = PetalWallpaperBlurHelper.getWidgetRect(ctx, widgetId) ?: continue
+                val rectF = RectF(rect)
+                val cornerPx = min(config.cornerRadius * density, rectF.height() / 2f)
+
+                canvas.drawRoundRect(rectF, cornerPx, cornerPx, glassPaint)
+                if (customPaint != null) {
+                    canvas.drawRoundRect(rectF, cornerPx, cornerPx, customPaint)
+                }
+
+                if (strokePaint != null) {
+                    val colors = intArrayOf(
+                        rim(0x55), rim(0xA8), rim(0x18), rim(0x55),
+                        rim(0xA8), rim(0x55), rim(0x18), rim(0x55), rim(0x55)
+                    )
                     val pos = floatArrayOf(0f, 0.125f, 0.25f, 0.375f, 0.5f, 0.625f, 0.75f, 0.875f, 1f)
                     strokePaint.shader = SweepGradient(rectF.centerX(), rectF.centerY(), colors, pos)
                     canvas.drawRoundRect(rectF, cornerPx, cornerPx, strokePaint)
@@ -153,6 +209,12 @@ class PetalGlassWallpaperService : WallpaperService() {
 
         override fun onDestroy() {
             super.onDestroy()
+            try {
+                PetalBlurConfig.getPrefs(this@PetalGlassWallpaperService)
+                    .unregisterOnSharedPreferenceChangeListener(prefListener)
+                PetalWallpaperBlurHelper.getPrefs(this@PetalGlassWallpaperService)
+                    .unregisterOnSharedPreferenceChangeListener(prefListener)
+            } catch (_: Throwable) {}
             handler.removeCallbacksAndMessages(null)
             wallpaperBitmap?.recycle()
             wallpaperBitmap = null

@@ -23,6 +23,10 @@ object PetalLiquidGlassWidgetBinder {
 
     private val lastBakeRequest = ConcurrentHashMap<Int, Long>()
 
+    fun clearBakeThrottle() {
+        lastBakeRequest.clear()
+    }
+
     fun pillIds(context: Context): IntArray =
         AppWidgetManager.getInstance(context)
             .getAppWidgetIds(ComponentName(context, PetalLiquidGlassPillWidgetReceiver::class.java)) ?: IntArray(0)
@@ -61,14 +65,14 @@ object PetalLiquidGlassWidgetBinder {
         views.setViewVisibility(R.id.widget_glass_content, View.VISIBLE)
 
         if (clearForCapture) {
-            views.setImageViewBitmap(R.id.widget_glass_bg, null)
+            views.setImageViewResource(R.id.widget_glass_bg, android.R.color.transparent)
             views.setViewVisibility(R.id.widget_glass_content, View.INVISIBLE)
             mgr.updateAppWidget(id, views)
             return
         }
 
         if (PetalWallpaperBlurHelper.isWallpaperOwnsGlass(context)) {
-            views.setImageViewBitmap(R.id.widget_glass_bg, null) // live wallpaper draws the glass
+            views.setImageViewResource(R.id.widget_glass_bg, android.R.color.transparent) // live wallpaper draws the glass
         } else {
             val bmp = PetalWallpaperBlurHelper.loadBlurBitmap(context, id)
             if (bmp != null) {

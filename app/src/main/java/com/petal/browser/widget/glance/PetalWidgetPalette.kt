@@ -14,6 +14,7 @@ import com.petal.browser.ui.theme.ColorStyle
 import com.petal.browser.ui.theme.PetalCustomPalette
 import com.petal.browser.ui.theme.applyAmoled
 import com.petal.browser.ui.theme.applyStyle
+import com.petal.browser.ui.theme.defaultPaletteId
 import com.petal.browser.ui.theme.isDynamicColorSupported
 import com.petal.browser.ui.theme.paletteById
 import kotlin.math.roundToInt
@@ -76,7 +77,7 @@ private fun buildWidgetScheme(context: Context, cfg: PetalWidgetConfig): ColorSc
         // The widget's own seed, run through the same HCT algorithm the app's custom palette uses.
         scheme = PetalCustomPalette.scheme(PetalCustomPalette.Spec(cfg.seedColor), colorStyle, isDark)
     } else {
-        val paletteId = sp.getString("sp_palette_id", "petal") ?: "petal"
+        val paletteId = sp.getString("sp_palette_id", defaultPaletteId) ?: defaultPaletteId
         val useDynamic = sp.getBoolean("useDynamicColor", isDynamicColorSupported)
         scheme = if (useDynamic && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (isDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)

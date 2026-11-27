@@ -90,7 +90,7 @@ import androidx.compose.material3.Icon
  *
  * A live preview, drawn from the very same layout plan and palette the real widget uses, stays pinned above four
  * tabs: Style (badge, shapes, hint), Colors (app theme or custom, transparency, per-element colors), Shortcuts
- * (which action each button and tile does) and Shape (corner radius, outline, Liquid Glass alignment).
+ * (which action each button and tile does) and Shape (corner radius, outline).
  * Nothing is applied to the home screen until Save, as in the reference app's editor.
  */
 class PetalWidgetSettingsActivity : ComponentActivity() {
@@ -257,7 +257,7 @@ private fun PetalWidgetSettingsScreen(
                     SettingsTab.STYLE -> StyleTab(draft) { draft = it }
                     SettingsTab.COLORS -> ColorsTab(draft) { draft = it }
                     SettingsTab.SHORTCUTS -> ShortcutsTab(draft) { draft = it }
-                    SettingsTab.SHAPE -> ShapeTab(draft, appWidgetId) { draft = it }
+                    SettingsTab.SHAPE -> ShapeTab(draft) { draft = it }
                 }
                 Text(
                     stringResource(R.string.pw_visibility_note),
@@ -451,8 +451,7 @@ private fun ShortcutsTab(cfg: PetalWidgetConfig, onChange: (PetalWidgetConfig) -
 }
 
 @Composable
-private fun ShapeTab(cfg: PetalWidgetConfig, appWidgetId: Int, onChange: (PetalWidgetConfig) -> Unit) {
-    val context = LocalContext.current
+private fun ShapeTab(cfg: PetalWidgetConfig, onChange: (PetalWidgetConfig) -> Unit) {
     SectionCard(stringResource(R.string.pw_corner_radius)) {
         val index = PETAL_RADIUS_STEPS.indexOf(cfg.cornerRadius).coerceAtLeast(0)
         LabeledSlider(

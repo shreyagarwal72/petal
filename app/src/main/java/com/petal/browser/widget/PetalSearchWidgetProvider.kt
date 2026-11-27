@@ -2,6 +2,8 @@ package com.petal.browser.widget
 
 import android.content.Context
 import com.petal.browser.widget.glance.PetalSearchGlanceWidgetUpdater
+import com.petal.browser.widget.glance.PetalWidgetShapes
+import com.petal.browser.widget.liquidglass.PetalLiquidGlassWidgetBinder
 
 /**
  * Action constants for Petal's home screen search widget.
@@ -19,9 +21,14 @@ object PetalSearchWidgetProvider {
     const val ACTION_OPEN_SNAP_CAMERA = "com.petal.browser.action.OPEN_SNAP_CAMERA"
     const val ACTION_OPEN_MENU = "com.petal.browser.action.OPEN_MENU"
 
-    /** Refreshes every placed instance of the widget, e.g. after a theme/palette change. */
+    /** Refreshes every placed Glance and Liquid Glass widget, e.g. after theme, font, or night-mode changes. */
     @JvmStatic
     fun updateAllWidgets(context: Context) {
-        PetalSearchGlanceWidgetUpdater.refresh(context)
+        val appContext = context.applicationContext
+        PetalWidgetShapes.clear()
+        PetalSearchGlanceWidgetUpdater.refresh(appContext)
+        try {
+            PetalLiquidGlassWidgetBinder.updateAll(appContext)
+        } catch (_: Throwable) {}
     }
 }

@@ -35,6 +35,25 @@ object PetalWallpaperBlurHelper {
     private const val PREFS_NAME = "com.petal.browser.widget.liquidglass.PositionPrefs"
     private const val KEY_RECT_PREFIX = "rect_"
     private const val WIDGET_DIR = "glass_widgets"
+    private const val CUSTOM_WALLPAPER_NAME = "glass_wallpaper_photo.jpg"
+    // Keep RemoteViews bitmaps safely below Binder IPC's 1MB transaction ceiling (~240k px * 4B = 960KB).
+    private const val MAX_REMOTE_BITMAP_PIXELS = 240_000
+
+    fun getCustomWallpaperFile(context: Context): File =
+        File(context.filesDir, CUSTOM_WALLPAPER_NAME)
+
+    fun hasCustomWallpaperPhoto(context: Context): Boolean {
+        val f = getCustomWallpaperFile(context)
+        return f.exists() && f.length() > 0
+    }
+
+    fun clearCustomWallpaperPhoto(context: Context) {
+        try {
+            val f = getCustomWallpaperFile(context)
+            if (f.exists()) f.delete()
+        } catch (_: Throwable) {}
+        invalidateCaptures(context)
+    }
 
     fun getPrefs(context: Context): SharedPreferences {
         return context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -93,7 +112,7 @@ object PetalWallpaperBlurHelper {
         if (screenW <= 0 || screenH <= 0) return null
 
         // 1. Check custom picked wallpaper photo
-        val customPhoto = File(context.filesDir, "glass_wallpaper_photo.jpg")
+        val customPhoto = getCustomWallpaperFile(context)
         if (customPhoto.exists() && customPhoto.length() > 0) {
             try {
                 val bmp = BitmapFactory.decodeFile(customPhoto.absolutePath)
@@ -350,17 +369,69 @@ object PetalWallpaperBlurHelper {
     }
 
     /**
+     * Computes a safe centered fallback screen rect from widget options (in px) when Accessibility
+     * has not captured the exact launcher coordinates yet.
+     */
+    internal fun computeFallbackRect(
+        screenW: Int,
+        screenH: Int,
+        density: Float,
+        minWidthDp: Int,
+        minHeightDp: Int,
+        isPill: Boolean
+    ): Rect? {
+        if (screenW <= 0 || screenH <= 0 || density <= 0f) return null
+        val fallbackWdp = if (minWidthDp > 0) minWidthDp else if (isPill) 220 else 296
+        val fallbackHdp = if (minHeightDp > 0) minHeightDp else if (isPill) 48 else 56
+        val w = (fallbackWdp * density).roundToInt().coerceIn(2, screenW)
+        val h = (fallbackHdp * density).roundToInt().coerceIn(2, screenH)
+        val l = ((screenW - w) / 2).coerceIn(0, (screenW - w).coerceAtLeast(0))
+        val t = ((screenH * 0.36f).roundToInt()).coerceIn(0, (screenH - h).coerceAtLeast(0))
+        return Rect(l, t, l + w, t + h)
+    }
+
+    /**
+     * Ensures a baked widget bitmap fits safely within Binder / RemoteViews transaction limits.
+     */
+    internal fun capRemoteBitmap(bitmap: Bitmap, maxPixels: Int = MAX_REMOTE_BITMAP_PIXELS): Bitmap {
+        val pixels = bitmap.width.toLong() * bitmap.height.toLong()
+        if (pixels <= maxPixels || bitmap.width <= 1 || bitmap.height <= 1) return bitmap
+        val scale = kotlin.math.sqrt(maxPixels.toDouble() / pixels.toDouble()).toFloat()
+        val newW = max(2, (bitmap.width * scale).roundToInt())
+        val newH = max(2, (bitmap.height * scale).roundToInt())
+        return try {
+            Bitmap.createScaledBitmap(bitmap, newW, newH, true).also {
+                if (it !== bitmap) bitmap.recycle()
+            }
+        } catch (_: Throwable) {
+            bitmap
+        }
+    }
+
+    /**
      * Bakes one widget. Source priority: (1) real screenshot capture, (2) wallpaper slice at the
-     * detected rect. With neither, returns false and the widget keeps its frosted placeholder
-     * (never a guessed/wrong crop).
+     * detected rect, (3) centered fallback slice when a custom wallpaper photo or static system
+     * wallpaper is available (so Accessibility-off setups can still bake custom/static wallpapers).
      */
     fun bakeWidget(context: Context, widgetId: Int, isPill: Boolean, config: PetalBlurConfig): Boolean {
-        val rect = getWidgetRect(context, widgetId)
+        val detectedRect = getWidgetRect(context, widgetId)
+        val effectiveRect = detectedRect ?: run {
+            val (sw, sh) = getScreenSize(context)
+            val dm = context.resources.displayMetrics
+            val opts = try {
+                AppWidgetManager.getInstance(context).getAppWidgetOptions(widgetId)
+            } catch (_: Throwable) {
+                null
+            }
+            val minWdp = opts?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0) ?: 0
+            val minHdp = opts?.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0) ?: 0
+            computeFallbackRect(sw, sh, dm.density, minWdp, minHdp, isPill)
+        }
         var source: Bitmap? = loadCleanBitmap(context, widgetId)
-        var w = rect?.width() ?: source?.width ?: 0
-        var h = rect?.height() ?: source?.height ?: 0
-        if (source == null && rect != null && isOnScreen(context, rect)) {
-            source = getWallpaperCrop(context, rect.left, rect.top, rect.right, rect.bottom)
+        val w = detectedRect?.width() ?: source?.width ?: effectiveRect?.width() ?: 0
+        val h = detectedRect?.height() ?: source?.height ?: effectiveRect?.height() ?: 0
+        if (source == null && effectiveRect != null && isOnScreen(context, effectiveRect)) {
+            source = getWallpaperCrop(context, effectiveRect.left, effectiveRect.top, effectiveRect.right, effectiveRect.bottom)
         }
         if (source == null || w <= 0 || h <= 0) return false
         return try {
@@ -372,12 +443,12 @@ object PetalWallpaperBlurHelper {
                 widthPx = w,
                 heightPx = h,
                 config = config,
-                density = density,
-                cornerRadiusDp = if (isPill) 28f else -1f
+                density = density
             )
             if (baked != null) {
-                saveBlurBitmap(context, widgetId, baked)
-                baked.recycle()
+                val safeBaked = capRemoteBitmap(baked)
+                saveBlurBitmap(context, widgetId, safeBaked)
+                safeBaked.recycle()
                 true
             } else false
         } catch (t: Throwable) {
@@ -397,6 +468,7 @@ object PetalWallpaperBlurHelper {
      */
     fun rebakeAllFromWallpaper(context: Context) {
         val app = context.applicationContext
+        PetalLiquidGlassWidgetBinder.clearBakeThrottle()
         if (!isRebaking.compareAndSet(false, true)) {
             rebakeAgain.set(true)
             return
