@@ -238,7 +238,9 @@ fun ComposeEngineViewport(
                         android.view.MotionEvent.ACTION_UP,
                         android.view.MotionEvent.ACTION_CANCEL -> {
                             BarCollapseState.scrollDecider.onTouch(false)
-                            BarCollapseState.isPageScrolling = false
+                            if (!GeckoGlassBackend.isScrollingOrFlinging()) {
+                                BarCollapseState.isPageScrolling = false
+                            }
                             BarCollapseState.onGeckoScrollEnd()
                         }
                     }
@@ -256,6 +258,13 @@ fun ComposeEngineViewport(
 
     LaunchedEffect(engineView) {
         onEngineViewReady?.invoke(engineView.asView())
+    }
+
+    DisposableEffect(engineView) {
+        onDispose {
+            try { engineView.release() } catch (_: Throwable) {}
+            (engineView.asView().parent as? ViewGroup)?.removeView(engineView.asView())
+        }
     }
 
     // Resample page edge colors when scroll stops cleanly and track the legacy padding fallback pref.
@@ -276,10 +285,19 @@ fun ComposeEngineViewport(
             }
         }
         sp.registerOnSharedPreferenceChangeListener(listener)
-        GeckoGlassBackend.onScrollIdleCallback = { PageEdgeColors.requestResample() }
+        val idleCallback: () -> Unit = {
+            BarCollapseState.isPageScrolling = false
+            PageEdgeColors.requestResample()
+            findGeckoView(engineView.asView())?.let { gv ->
+                try { GeckoGlassBackend.applyBackend(gv, context) } catch (_: Throwable) {}
+            }
+        }
+        GeckoGlassBackend.onScrollIdleCallback = idleCallback
         onDispose {
             sp.unregisterOnSharedPreferenceChangeListener(listener)
-            GeckoGlassBackend.onScrollIdleCallback = null
+            if (GeckoGlassBackend.onScrollIdleCallback === idleCallback) {
+                GeckoGlassBackend.onScrollIdleCallback = null
+            }
         }
     }
 
@@ -307,6 +325,27 @@ fun ComposeEngineViewport(
     val dynamicToolbarMaxPx = dynamicTopPx + dynamicBottomPx
     val lastDynamicMaxHeight = remember { intArrayOf(Int.MIN_VALUE) }
     val lastVerticalClipping = remember { intArrayOf(Int.MIN_VALUE) }
+
+    DisposableEffect(engineView) {
+        val backendCallback: (GeckoView) -> Unit = { switchedGv ->
+            if (findGeckoView(engineView.asView()) === switchedGv) {
+                val maxPx = lastDynamicMaxHeight[0]
+                if (maxPx != Int.MIN_VALUE) {
+                    try { engineView.setDynamicToolbarMaxHeight(maxPx) } catch (_: Throwable) {}
+                }
+                val clipPx = lastVerticalClipping[0]
+                if (clipPx != Int.MIN_VALUE) {
+                    try { engineView.setVerticalClipping(clipPx) } catch (_: Throwable) {}
+                }
+            }
+        }
+        GeckoGlassBackend.onBackendSwitchedCallback = backendCallback
+        onDispose {
+            if (GeckoGlassBackend.onBackendSwitchedCallback === backendCallback) {
+                GeckoGlassBackend.onBackendSwitchedCallback = null
+            }
+        }
+    }
 
     // Keep the Firefox-style spinner below the bars.
     SideEffect {
@@ -343,7 +382,11 @@ fun ComposeEngineViewport(
                     } else {
                         BarCollapseState.onViewportLayoutApplied()
                     }
-                    val shift = if (collapsedLayout) (fullTopPx - minTopPx).coerceAtLeast(0) * (1f - f) else 0f
+                    val pageFrac = com.petal.browser.ui.components.BarCollapseMath.pageFraction(
+                        com.petal.browser.ui.components.BarSettings.collapseStyle,
+                        f
+                    )
+                    val shift = if (collapsedLayout) (fullTopPx - minTopPx).coerceAtLeast(0) * (1f - pageFrac) else 0f
                     if (swipeLayout.translationY != shift) swipeLayout.translationY = shift
                 }
         } else {
@@ -492,7 +535,11 @@ fun ComposeEngineViewport(
                 .fillMaxWidth()
                 .height(topPadding)
                 .drawBehind {
-                    val h = lerp(topPadding.toPx(), collapsedTopPadding.toPx(), BarCollapseState.collapsedFraction)
+                    val pageFrac = com.petal.browser.ui.components.BarCollapseMath.pageFraction(
+                        com.petal.browser.ui.components.BarSettings.collapseStyle,
+                        BarCollapseState.collapsedFraction
+                    )
+                    val h = lerp(topPadding.toPx(), collapsedTopPadding.toPx(), pageFrac)
                     if (h > 0f) drawRect(color = topStripState.value, size = Size(size.width, h))
                 }
         )
@@ -606,49 +653,48 @@ private fun attachSessionDelegates(
         }
     }
 
+    val appContext = context.applicationContext
+    val liveTabProvider: () -> TabSessionState = {
+        PetalEngineStore.getStore(appContext).state.tabs.firstOrNull { it.id == tab.id } ?: tab
+    }
     // 2. Content Delegate (wraps Mozilla's delegate for onContextMenu, fullScreen, crashes)
     val crashCallback: () -> Unit = {
         (context as? android.app.Activity)?.runOnUiThread {
             try {
+                if (!ComposeViewportCrashGuard.allowRecovery(tab.id)) {
+                    android.util.Log.w("ComposeEngineViewport", "Crash recovery rate-limited for tab ${tab.id}")
+                    return@runOnUiThread
+                }
+                val liveTab = liveTabProvider()
                 android.util.Log.i("ComposeEngineViewport", "Recovering terminated GeckoSession for tab ${tab.id}")
-                try {
-                    engineView.release()
-                } catch (_: Throwable) {}
+                val store = PetalEngineStore.getStore(appContext)
+                val isSelected = store.state.selectedTabId == tab.id
+                if (isSelected) {
+                    try { engineView.release() } catch (_: Throwable) {}
+                }
                 try {
                     if (session.isOpen) session.close()
                 } catch (_: Throwable) {}
 
-                val store = PetalEngineStore.getStore(context)
-                val eng = PetalEngineStore.getEngine(context)
-                val newEngineSession = eng.createSession(private = tab.content.private)
+                val eng = PetalEngineStore.getEngine(appContext)
+                val newEngineSession = eng.createSession(private = liveTab.content.private)
+                val restored = liveTab.engineState.engineSessionState?.let { savedState ->
+                    try {
+                        newEngineSession.restoreState(savedState)
+                    } catch (_: Throwable) {
+                        false
+                    }
+                } ?: false
+
+                val restoreUrl = liveTab.content.url
+                val shouldLoad = !restored && restoreUrl.isNotBlank() && !PetalBrowserUtils.isHomePage(restoreUrl)
                 store.dispatch(
                     mozilla.components.browser.state.action.EngineAction.LinkEngineSessionAction(
                         tabId = tab.id,
                         engineSession = newEngineSession,
-                        skipLoading = true
+                        skipLoading = !shouldLoad
                     )
                 )
-
-                try {
-                    engineView.render(newEngineSession)
-                } catch (t: Throwable) {
-                    android.util.Log.w("ComposeEngineViewport", "Error rendering recovered session: ${t.message}")
-                }
-
-                val newGs = PetalEngineBridge.extractGeckoSession(newEngineSession)
-                if (newGs != null) {
-                    attachSessionDelegates(
-                        context = context,
-                        session = newGs,
-                        tab = tab,
-                        engineView = engineView
-                    )
-                }
-
-                val restoreUrl = tab.content.url
-                if (restoreUrl.isNotBlank() && !PetalBrowserUtils.isHomePage(restoreUrl)) {
-                    newEngineSession.loadUrl(restoreUrl)
-                }
             } catch (t: Throwable) {
                 android.util.Log.e("ComposeEngineViewport", "Failed to recover session after kill/crash", t)
             }
@@ -657,22 +703,22 @@ private fun attachSessionDelegates(
     val currentContent = session.contentDelegate
     if (currentContent is PetalContentDelegateWrapper) {
         currentContent.rebind(
-            contextProvider = { context },
-            isPrivateProvider = { tab.content.private },
-            referrerProvider = { tab.content.url },
+            contextProvider = { actSupplier() ?: appContext },
+            isPrivateProvider = { liveTabProvider().content.private },
+            referrerProvider = { liveTabProvider().content.url },
             onCrashCallback = crashCallback,
-            pageUrlProvider = { tab.content.url },
-            pageTitleProvider = { tab.content.title }
+            pageUrlProvider = { liveTabProvider().content.url },
+            pageTitleProvider = { liveTabProvider().content.title }
         )
     } else {
         session.contentDelegate = PetalContentDelegateWrapper(
             engine = currentContent,
-            contextProvider = { context },
-            isPrivateProvider = { tab.content.private },
-            referrerProvider = { tab.content.url },
+            contextProvider = { actSupplier() ?: appContext },
+            isPrivateProvider = { liveTabProvider().content.private },
+            referrerProvider = { liveTabProvider().content.url },
             onCrashCallback = crashCallback,
-            pageUrlProvider = { tab.content.url },
-            pageTitleProvider = { tab.content.title }
+            pageUrlProvider = { liveTabProvider().content.url },
+            pageTitleProvider = { liveTabProvider().content.title }
         )
     }
 
@@ -687,14 +733,14 @@ private fun attachSessionDelegates(
     if (currentPerm is PetalPermissionDelegateWrapper) {
         currentPerm.rebind(
             newActivitySupplier = actSupplier,
-            newIsPrivateProvider = { tab.content.private }
+            newIsPrivateProvider = { liveTabProvider().content.private }
         )
     } else {
         session.permissionDelegate = PetalPermissionDelegateWrapper(
             engine = currentPerm,
-            context = context.applicationContext,
+            context = appContext,
             activitySupplier = actSupplier,
-            isPrivateProvider = { tab.content.private }
+            isPrivateProvider = { liveTabProvider().content.private }
         )
     }
 
@@ -704,11 +750,100 @@ private fun attachSessionDelegates(
     if (existingScroll is PetalBarScrollDelegate) {
         existingScroll.actSupplier = actSupplier
     } else {
-        session.scrollDelegate = PetalBarScrollDelegate(existingScroll, actSupplier, context)
+        session.scrollDelegate = PetalBarScrollDelegate(existingScroll, actSupplier, appContext)
     }
 
-    // 6. Extensions: bound by WebExtensionSupport from the BrowserStore (the tab's engine session is
+    // 6. ContentBlocking Delegate (wires ETP & AdBlock telemetry for Compose tabs)
+    val existingBlocking = session.contentBlockingDelegate
+    if (existingBlocking is PetalComposeContentBlockingWrapper) {
+        existingBlocking.rebind(liveTabProvider)
+    } else {
+        session.contentBlockingDelegate = PetalComposeContentBlockingWrapper(existingBlocking, liveTabProvider)
+    }
+
+    // 7. On-device Firefox Translations delegate
+    try {
+        val existingTranslations = session.translationsSessionDelegate
+        if (existingTranslations !is com.petal.browser.browser.PetalOwnedDelegate) {
+            session.setTranslationsSessionDelegate(
+                com.petal.browser.engine.gecko.PetalTranslationsManager.createDelegate(tab.id, existingTranslations)
+            )
+        }
+    } catch (_: Throwable) {}
+
+    // 8. Extensions: bound by WebExtensionSupport from the BrowserStore (the tab's engine session is
     //    linked and selected through the store), so nothing is attached here.
+}
+
+private class PetalComposeContentBlockingWrapper(
+    private val chained: org.mozilla.geckoview.ContentBlocking.Delegate?,
+    @Volatile private var tabProvider: () -> TabSessionState
+) : org.mozilla.geckoview.ContentBlocking.Delegate, com.petal.browser.browser.PetalOwnedDelegate {
+
+    fun rebind(newProvider: () -> TabSessionState) {
+        tabProvider = newProvider
+    }
+
+    override fun onContentBlocked(
+        session: GeckoSession,
+        event: org.mozilla.geckoview.ContentBlocking.BlockEvent
+    ) {
+        try { chained?.onContentBlocked(session, event) } catch (_: Throwable) {}
+        val current = tabProvider()
+        val atCat = try { event.antiTrackingCategory } catch (_: Throwable) { 0 }
+        val cookieCat = try { event.cookieBehaviorCategory } catch (_: Throwable) { 0 }
+        com.petal.browser.browser.PetalAdBlockEngine.recordBlockWithCategories(
+            current.content.url,
+            atCat,
+            cookieCat,
+            isPrivate = current.content.private
+        )
+    }
+
+    override fun onContentLoaded(
+        session: GeckoSession,
+        event: org.mozilla.geckoview.ContentBlocking.BlockEvent
+    ) {
+        try { chained?.onContentLoaded(session, event) } catch (_: Throwable) {}
+    }
+}
+
+private object ComposeViewportCrashGuard {
+    private const val WINDOW_MS = 15_000L
+    private const val MAX_RECOVERIES = 3
+    private val history = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, Int>>()
+
+    fun allowRecovery(tabId: String): Boolean {
+        val now = android.os.SystemClock.uptimeMillis()
+        val prev = history[tabId]
+        val count = if (prev == null || now - prev.first > WINDOW_MS) 1 else prev.second + 1
+        history[tabId] = (if (prev == null || now - prev.first > WINDOW_MS) now else prev.first) to count
+        return count <= MAX_RECOVERIES
+    }
+}
+
+private object HideBarsScrollPrefObserver {
+    @Volatile
+    var hideBarsOnScroll: Boolean = true
+        private set
+    @Volatile
+    private var registered = false
+    private val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
+        if (key == "sp_hide_bars_on_scroll") {
+            hideBarsOnScroll = prefs.getBoolean("sp_hide_bars_on_scroll", true)
+        }
+    }
+
+    fun ensureRegistered(appContext: Context) {
+        if (registered) return
+        synchronized(this) {
+            if (registered) return
+            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
+            hideBarsOnScroll = sp.getBoolean("sp_hide_bars_on_scroll", true)
+            sp.registerOnSharedPreferenceChangeListener(listener)
+            registered = true
+        }
+    }
 }
 
 /**
@@ -718,22 +853,13 @@ private fun attachSessionDelegates(
 private class PetalBarScrollDelegate(
     private val chained: GeckoSession.ScrollDelegate?,
     var actSupplier: () -> MainActivity?,
-    private val context: Context,
+    context: Context,
 ) : GeckoSession.ScrollDelegate {
 
-    private val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context.applicationContext)
-
-    @Volatile
-    private var hideBarsOnScroll: Boolean = sp.getBoolean("sp_hide_bars_on_scroll", true)
-
-    private val prefListener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { prefs, key ->
-        if (key == "sp_hide_bars_on_scroll") {
-            hideBarsOnScroll = prefs.getBoolean("sp_hide_bars_on_scroll", true)
-        }
-    }
+    private val appContext = context.applicationContext
 
     init {
-        sp.registerOnSharedPreferenceChangeListener(prefListener)
+        HideBarsScrollPrefObserver.ensureRegistered(appContext)
     }
 
     override fun onScrollChanged(session: GeckoSession, scrollX: Int, scrollY: Int) {
@@ -744,13 +870,13 @@ private class PetalBarScrollDelegate(
         }
         GeckoGlassBackend.notifyScrollActivity(flinging = decider.isFlingCandidate())
         val act = actSupplier() ?: return
-        if (!hideBarsOnScroll) {
+        if (!HideBarsScrollPrefObserver.hideBarsOnScroll) {
             // Preference off: bars stay open. animateAddressBarCollapse(false) re-opens them if needed.
             decider.reset()
             if (act.isAddressBarCollapsed()) act.runOnUiThread { act.animateAddressBarCollapse(false) }
             return
         }
-        val decision = decider.onScroll(scrollY, context.resources.displayMetrics.density, act.isAddressBarCollapsed())
+        val decision = decider.onScroll(scrollY, appContext.resources.displayMetrics.density, act.isAddressBarCollapsed())
         if (decision != 0) act.runOnUiThread { act.animateAddressBarCollapse(decision > 0) }
     }
 }

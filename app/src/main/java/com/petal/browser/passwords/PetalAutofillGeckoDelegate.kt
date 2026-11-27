@@ -42,12 +42,23 @@ class PetalAutofillGeckoDelegate(private val context: Context) : Autocomplete.St
             "https://$cleanReqDomain"
         }
 
+        val isInsecureHttpRequest = requestedOrigin.startsWith("http://", ignoreCase = true)
         val matches = PetalCredentialVault.getAll()
-            .filter { PetalCredentialVault.domainMatches(it.domain, cleanReqDomain) }
+            .filter { cred ->
+                if (!PetalCredentialVault.domainMatches(cred.domain, cleanReqDomain)) return@filter false
+                // Never expose HTTPS credentials to plain HTTP pages (prevents downgrade MITM theft).
+                if (isInsecureHttpRequest && cred.originUrl.startsWith("https://", ignoreCase = true)) {
+                    return@filter false
+                }
+                true
+            }
             .map { cred ->
+                val entryOrigin = cred.originUrl.takeIf {
+                    it.startsWith("https://", ignoreCase = true) || it.startsWith("http://", ignoreCase = true)
+                } ?: requestedOrigin
                 Autocomplete.LoginEntry.Builder()
-                    .origin(requestedOrigin)
-                    .formActionOrigin(requestedOrigin)
+                    .origin(entryOrigin)
+                    .formActionOrigin(cred.formActionOrigin?.takeIf { it.startsWith("http") } ?: entryOrigin)
                     .username(cred.username)
                     .password(cred.password)
                     .guid(cred.id)

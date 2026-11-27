@@ -19,6 +19,7 @@ import mozilla.components.feature.prompts.PromptMiddleware
 import mozilla.components.feature.prompts.file.FileUploadsDirCleaner
 import mozilla.components.feature.prompts.file.FileUploadsDirCleanerMiddleware
 import mozilla.components.feature.readerview.ReaderViewMiddleware
+import mozilla.components.feature.session.middleware.LastAccessMiddleware
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -162,6 +163,39 @@ object PetalEngineStore {
                 lazy { com.petal.browser.database.PetalPlacesProvider.getHistoryStorage(appContext) }
             ),
             requestInterceptor = object : RequestInterceptor {
+                override fun onLoadRequest(
+                    engineSession: EngineSession,
+                    uri: String,
+                    lastUri: String?,
+                    hasUserGesture: Boolean,
+                    isSameDomain: Boolean,
+                    isRedirect: Boolean,
+                    isDirectNavigation: Boolean,
+                    isSubframeRequest: Boolean
+                ): RequestInterceptor.InterceptionResponse? {
+                    if (isSubframeRequest) return null
+                    val act = PetalGeckoRuntime.getForegroundActivity() ?: return null
+                    val matchedTab = store?.state?.tabs?.firstOrNull {
+                        it.engineState.engineSession === engineSession
+                    }
+                    val isPrivate = matchedTab?.content?.private ?: false
+                    var fallbackLoadedUrl: String? = null
+                    val handled = PetalAppLinksBridge.handleExternalLoadRequest(
+                        activity = act,
+                        uri = uri,
+                        hasUserGesture = hasUserGesture,
+                        isIncognito = isPrivate,
+                        isRedirect = isRedirect,
+                        isDirectNavigation = isDirectNavigation,
+                        onLoadFallbackUrl = { fallback -> fallbackLoadedUrl = fallback }
+                    )
+                    return when {
+                        fallbackLoadedUrl != null -> RequestInterceptor.InterceptionResponse.Url(fallbackLoadedUrl!!)
+                        handled -> RequestInterceptor.InterceptionResponse.Deny
+                        else -> null
+                    }
+                }
+
                 override fun onErrorRequest(
                     session: EngineSession,
                     errorType: ErrorType,
@@ -264,6 +298,7 @@ object PetalEngineStore {
                 downloadMiddleware,
                 PromptMiddleware(),
                 FileUploadsDirCleanerMiddleware(uploadCleaner),
+                LastAccessMiddleware(),
                 SessionPrioritizationMiddleware(),
                 ReaderViewMiddleware(),
                 thumbnailsMiddleware
@@ -523,6 +558,7 @@ object PetalEngineStore {
     fun isEphemeralTabId(id: String): Boolean = PetalSessionRules.isEphemeralTabId(id)
 
     @Volatile private var lastPersistedSelectedId: String? = null
+    @Volatile var blockWritesUntilRestart: Boolean = false
 
     private const val SESSION_FILE = "mozilla_components_session_storage_gecko.json"
     private const val SESSION_BACKUP_FILE = "mozilla_components_session_storage_gecko.json.bak"
@@ -536,10 +572,11 @@ object PetalEngineStore {
      */
     @JvmStatic
     fun writeSession(context: Context, storage: SessionStorage, state: BrowserState): Boolean {
-        if (!state.restoreComplete) return false
-        val toWrite = PetalSessionRules.withoutEphemeralTabs(state, lastPersistedSelectedId)
-        toWrite.selectedTabId?.let { lastPersistedSelectedId = it }
+        if (!state.restoreComplete || blockWritesUntilRestart) return false
         synchronized(sessionWriteLock) {
+            if (blockWritesUntilRestart) return false
+            val toWrite = PetalSessionRules.withoutEphemeralTabs(state, lastPersistedSelectedId)
+            toWrite.selectedTabId?.let { lastPersistedSelectedId = it }
             try { rollBackupLocked(context) } catch (t: Throwable) {
                 Log.w(TAG, "Session backup skipped: ${t.message}")
             }
@@ -721,9 +758,6 @@ object PetalEngineStore {
                 url = url,
                 private = isIncognito,
                 title = title
-            ),
-            engineState = mozilla.components.browser.state.state.EngineState(
-                engineSession = session
             )
         )
 
@@ -735,7 +769,7 @@ object PetalEngineStore {
                 skipLoading = false
             )
         )
-        return Pair(tabState, session)
+        return Pair(tabState.copy(engineState = tabState.engineState.copy(engineSession = session)), session)
     }
 
     /**
@@ -819,7 +853,12 @@ object PetalEngineStore {
             if (select) {
                 st.dispatch(mozilla.components.browser.state.action.TabListAction.SelectTabAction(tabId))
             }
-            val updatedTab = st.state.tabs.firstOrNull { it.id == tabId } ?: existingTab
+            val latest = st.state.tabs.firstOrNull { it.id == tabId } ?: existingTab
+            val updatedTab = if (latest.engineState.engineSession == null) {
+                latest.copy(engineState = latest.engineState.copy(engineSession = session))
+            } else {
+                latest
+            }
             return Pair(updatedTab, session)
         }
 
@@ -851,8 +890,7 @@ object PetalEngineStore {
                 url = url,
                 private = isIncognito,
                 title = title
-            ),
-            engineState = mozilla.components.browser.state.state.EngineState(engineSession = session)
+            )
         )
         val st = getStore(context)
         st.dispatch(
@@ -865,7 +903,7 @@ object PetalEngineStore {
                 skipLoading = true
             )
         )
-        return tabState
+        return tabState.copy(engineState = tabState.engineState.copy(engineSession = session))
     }
 
     /**
@@ -894,6 +932,7 @@ object PetalEngineStore {
             if (st.state.tabs.any { it.id == id }) {
                 st.dispatch(mozilla.components.browser.state.action.TabListAction.RemoveTabAction(id))
             }
+            com.petal.browser.browser.PetalTabMetadataStore.remove(context, id)
         }
     }
 

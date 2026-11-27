@@ -138,7 +138,8 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
     fun closeTabById(tabId: String) {
         mainHandler.post {
             try {
-                PetalEngineStore.getStore(context).dispatch(TabListAction.RemoveTabAction(tabId))
+                PetalEngineStore.removeTab(context, tabId)
+                com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
             } catch (t: Throwable) {
                 Log.w(TAG, "Extension tab close request failed", t)
             }
@@ -151,7 +152,8 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
         val tab = store.state.tabs.firstOrNull { it.engineState.engineSession === engineSession } ?: return false
         mainHandler.post {
             try {
-                store.dispatch(TabListAction.RemoveTabAction(tab.id))
+                PetalEngineStore.removeTab(context, tab.id)
+                com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
             } catch (t: Throwable) {
                 Log.w(TAG, "Extension tab close request failed", t)
             }
@@ -221,7 +223,11 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
         action: Action,
         isPrivate: Boolean
     ): EngineSession? {
-        val allowedInPrivate = isPrivate || try { extension.isAllowedInPrivateBrowsing() } catch (_: Throwable) { false }
+        val allowedInPrivate = try { extension.isAllowedInPrivateBrowsing() } catch (_: Throwable) { false }
+        if (isPrivate && !allowedInPrivate) {
+            Log.i(TAG, "Blocked extension popup in private browsing: ${extension.id}")
+            return null
+        }
         return PetalExtensionManager.createPopupEngineSession(extension.id, nameOf(extension), allowedInPrivate)
     }
 

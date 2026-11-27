@@ -60,6 +60,7 @@ fun PetalAddressBar(
     onReaderClick: () -> Unit = {},
     isBottom: Boolean = false,
     hasBottomNav: Boolean = false,
+    extraBottomSlidePx: Int = 0,
     isPreview: Boolean = false,
     suppressStatusBarTopInset: Boolean = false,
     modifier: Modifier = Modifier
@@ -98,7 +99,8 @@ fun PetalAddressBar(
             .graphicsLayer {
                 // HIDE (Full Slide): the whole bar slides off its own edge using the settled full bar height.
                 val v = chrome.currentVisuals()
-                translationY = (if (resolvedIsBottom) 1f else -1f) * fullBarHeightPx * v.slideFraction
+                val slideDist = fullBarHeightPx + if (resolvedIsBottom) extraBottomSlidePx else 0
+                translationY = (if (resolvedIsBottom) 1f else -1f) * slideDist * v.slideFraction
             },
         contentAlignment = Alignment.Center
     ) {

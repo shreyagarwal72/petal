@@ -116,11 +116,12 @@ class GlassBackdrop internal constructor(private val source: View) {
                 // A top bar sits over the strip main_content reserves above the page, which is
                 // empty (the window shows black there). Fill it with the page's first rows,
                 // mirrored about the strip's lower edge, so the glass has real content to bend.
-                val strip = source.paddingTop
+                val parentTx = (source.parent as? View)?.translationY?.toInt()?.coerceAtLeast(0) ?: 0
+                val strip = (source.paddingTop + parentTx).coerceAtMost(h - 1)
                 if (strip in 1 until h) {
                     val save = canvas.save()
                     canvas.clipRect(0, 0, w, strip)
-                    canvas.translate(0f, 2f * strip)
+                    canvas.translate(0f, 2f * strip - parentTx)
                     canvas.scale(1f, -1f)
                     source.draw(canvas)
                     canvas.restoreToCount(save)

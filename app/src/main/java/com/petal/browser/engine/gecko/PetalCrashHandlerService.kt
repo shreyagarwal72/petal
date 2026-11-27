@@ -53,12 +53,12 @@ class PetalCrashHandlerService : Service() {
     companion object {
         private const val TAG = "PetalCrashHandler"
 
-        // GeckoView crash intent extras (official GeckoView 159 API)
-        const val EXTRA_MINIDUMP_PATH = "minidumpPath"
-        const val EXTRA_EXTRAS_PATH = "extrasPath"
-        const val EXTRA_CRASH_IS_FATAL = "isFatal"
-        const val EXTRA_CRASH_PROCESS = "processType"
-        const val EXTRA_CRASH_PROCESS_VISIBILITY = "processVisibility"
+        // GeckoView 161 crash intent extras
+        const val EXTRA_MINIDUMP_PATH = GeckoRuntime.EXTRA_CRASH_MINIDUMP_PATH
+        const val EXTRA_EXTRAS_PATH = GeckoRuntime.EXTRA_CRASH_EXTRAS_PATH
+        const val EXTRA_CRASH_PROCESS = GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE
+        const val EXTRA_CRASH_PROCESS_VISIBILITY = GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY
+        const val EXTRA_CRASH_REMOTE_TYPE = GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE
         private const val CRASH_NOTIFICATION_ID = 9021
     }
 
@@ -122,20 +122,21 @@ class PetalCrashHandlerService : Service() {
             return
         }
 
-        val isFatal = intent.getBooleanExtra(EXTRA_CRASH_IS_FATAL, false)
         val processType = intent.getStringExtra(EXTRA_CRASH_PROCESS) ?: "unknown"
         val processVisibility = intent.getStringExtra(EXTRA_CRASH_PROCESS_VISIBILITY) ?: "unknown"
+        val remoteType = intent.getStringExtra(EXTRA_CRASH_REMOTE_TYPE) ?: ""
+        val isFatal = processVisibility == GeckoRuntime.CRASHED_PROCESS_VISIBILITY_MAIN
         val minidumpPath = intent.getStringExtra(EXTRA_MINIDUMP_PATH)
         val extrasPath = intent.getStringExtra(EXTRA_EXTRAS_PATH)
 
         val severity = if (isFatal) "FATAL" else "non-fatal"
         Log.e(
             TAG,
-            "Gecko $severity crash intercepted: processType=$processType, visibility=$processVisibility"
+            "Gecko $severity crash intercepted: processType=$processType, visibility=$processVisibility, remoteType=$remoteType"
         )
 
         val crashDetails = buildString {
-            append("processType=$processType, visibility=$processVisibility, fatal=$isFatal")
+            append("processType=$processType, visibility=$processVisibility, remoteType=$remoteType, fatal=$isFatal")
             if (!minidumpPath.isNullOrBlank()) {
                 append(", minidump=$minidumpPath")
                 Log.w(TAG, "  minidump: $minidumpPath (local only, no upload)")
@@ -146,32 +147,30 @@ class PetalCrashHandlerService : Service() {
             }
         }
 
-        // Feed PetalAppLogger's internal diagnostic crash reporting flow
+        // Write an atomic per-crash report file in filesDir/gecko_crashes instead of
+        // using MODE_PRIVATE SharedPreferences or uncoordinated last_crash.log from :gecko_crash.
         try {
-            PetalAppLogger.recordProcessCrash(
-                this,
-                TAG,
-                "GeckoRuntime $severity crash in process $processType ($processVisibility)",
-                crashDetails
-            )
+            val crashDir = java.io.File(filesDir, "gecko_crashes").apply { mkdirs() }
+            val ts = System.currentTimeMillis()
+            val outFile = java.io.File(crashDir, "crash_$ts.log")
+            val atomic = androidx.core.util.AtomicFile(outFile)
+            val stream = atomic.startWrite()
+            try {
+                stream.write(
+                    ("ts=$ts\nseverity=$severity\n$crashDetails\n").toByteArray(Charsets.UTF_8)
+                )
+                atomic.finishWrite(stream)
+            } catch (t: Throwable) {
+                atomic.failWrite(stream)
+                throw t
+            }
+            // Retain only the latest 20 crash files
+            crashDir.listFiles()?.sortedByDescending { it.lastModified() }?.drop(20)?.forEach {
+                try { it.delete() } catch (_: Throwable) {}
+            }
+            Log.i(TAG, "Recorded Gecko crash locally to ${outFile.name} (no network upload)")
         } catch (t: Throwable) {
-            Log.w(TAG, "Failed to feed PetalAppLogger: ${t.message}")
-        }
-
-        // Record crash statistics into local SharedPreferences (strictly offline, no network transmission)
-        try {
-            val prefs = getSharedPreferences("petal_crash_stats", MODE_PRIVATE)
-            val count = prefs.getInt("gecko_crash_count", 0) + 1
-            prefs.edit()
-                .putInt("gecko_crash_count", count)
-                .putBoolean("gecko_last_crash_fatal", isFatal)
-                .putString("gecko_last_crash_process", processType)
-                .putString("gecko_last_crash_visibility", processVisibility)
-                .putLong("gecko_last_crash_ts", System.currentTimeMillis())
-                .apply()
-            Log.i(TAG, "Recorded Gecko crash #$count locally (no network upload)")
-        } catch (t: Throwable) {
-            Log.w(TAG, "Failed to persist local crash stats: ${t.message}")
+            Log.w(TAG, "Failed to persist local crash report: ${t.message}")
         }
     }
 }

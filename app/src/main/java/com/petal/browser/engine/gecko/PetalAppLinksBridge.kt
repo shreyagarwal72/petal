@@ -78,20 +78,29 @@ object PetalAppLinksBridge {
         isDirectNavigation: Boolean,
         onLoadFallbackUrl: ((String) -> Unit)? = null
     ): Boolean {
-        if (uri.isBlank() || isInternalScheme(uri)) {
+        if (uri.isBlank()) return false
+        val trimmedLower = uri.trim().lowercase(Locale.ROOT)
+        val isHttpOrHttps = trimmedLower.startsWith("http://") || trimmedLower.startsWith("https://")
+        if (isInternalScheme(uri) && !isHttpOrHttps) {
+            return false
+        }
+
+        val appContext = activity.applicationContext
+        val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
+        val autoOpenApps = sp.getBoolean("sp_auto_open_apps", false)
+        if (isHttpOrHttps && !autoOpenApps) {
             return false
         }
 
         // Firefox security semantics: never launch an external app without a direct user gesture.
         // Scripted background redirects, iframe navigations, and automated calls without user input are blocked from opening apps.
         if (!hasUserGesture && !isDirectNavigation) {
-            Log.w(TAG, "Blocked unsolicited external launch without user gesture: $uri")
-            return true
+            if (!isHttpOrHttps) {
+                Log.w(TAG, "Blocked unsolicited external launch without user gesture: $uri")
+                return true
+            }
+            return false
         }
-
-        val appContext = activity.applicationContext
-        val sp = PreferenceManager.getDefaultSharedPreferences(appContext)
-        val autoOpenApps = sp.getBoolean("sp_auto_open_apps", false)
 
         val useCases = AppLinksUseCases(
             context = appContext,
@@ -123,6 +132,10 @@ object PetalAppLinksBridge {
                 }
             )
             return true
+        }
+
+        if (isHttpOrHttps) {
+            return false
         }
 
         // Fallback URL handling for intent:// links

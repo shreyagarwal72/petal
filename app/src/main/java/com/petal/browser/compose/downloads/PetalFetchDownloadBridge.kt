@@ -411,7 +411,7 @@ object PetalFetchDownloadBridge {
                 downloadId = id,
                 isPrivate = isPrivate
             )
-            publish()
+            publishNow()
             StartResult(id, null)
         } catch (t: Throwable) {
             android.util.Log.e(TAG, "Mozilla download start failed: ${t.message}", t)

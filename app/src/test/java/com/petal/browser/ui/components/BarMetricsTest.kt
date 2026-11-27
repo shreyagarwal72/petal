@@ -42,4 +42,40 @@ class BarMetricsTest {
     @Test fun stackedMergeBarIsJustALargerMeasuredHeight() {
         assertEquals(420, pad(false, top = 420).top)
     }
+
+    @Test fun bottomBar_floatingAddressWithDockedNav_stillReservesNavHeight() {
+        val p = BarMetrics.pagePadding(
+            isBottomAddressBar = true,
+            measuredTop = 0,
+            estimatedTop = 200,
+            measuredBottomAddress = 160,
+            estimatedBottomAddress = 150,
+            measuredBottomNav = 210,
+            estimatedBottomNav = 180,
+            navVisible = true,
+            topOverlayPx = 100,
+            navBarInset = 40,
+            isFloatingNav = false,
+            isFloatingBottomAddress = true
+        )
+        assertEquals(210, p.bottom)
+    }
+
+    @Test fun bottomBar_bothFloating_reservesZero() {
+        val p = BarMetrics.pagePadding(
+            isBottomAddressBar = true,
+            measuredTop = 0,
+            estimatedTop = 200,
+            measuredBottomAddress = 160,
+            estimatedBottomAddress = 150,
+            measuredBottomNav = 210,
+            estimatedBottomNav = 180,
+            navVisible = true,
+            topOverlayPx = 100,
+            navBarInset = 40,
+            isFloatingNav = true,
+            isFloatingBottomAddress = true
+        )
+        assertEquals(0, p.bottom)
+    }
 }

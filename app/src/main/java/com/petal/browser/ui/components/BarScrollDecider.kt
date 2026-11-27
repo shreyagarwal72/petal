@@ -42,9 +42,10 @@ class BarScrollDecider(
 
     @Volatile private var touching = false
     @Volatile private var lastTouchEndMs = 0L
+    @Volatile private var scrolledWhileTouching = false
 
     fun isFlingCandidate(): Boolean =
-        touchTrackingAvailable && !touching && lastTouchEndMs > 0L && (nowMs() - lastTouchEndMs) < FLING_WINDOW_MS
+        touchTrackingAvailable && !touching && scrolledWhileTouching && lastTouchEndMs > 0L && (nowMs() - lastTouchEndMs) < FLING_WINDOW_MS
 
     /** Set once a touch listener is installed. Without one every offset change is trusted. */
     @Volatile var touchTrackingAvailable = false
@@ -59,7 +60,11 @@ class BarScrollDecider(
 
     fun onTouch(down: Boolean) {
         touching = down
-        if (!down) lastTouchEndMs = nowMs()
+        if (down) {
+            scrolledWhileTouching = false
+        } else {
+            lastTouchEndMs = nowMs()
+        }
     }
 
     fun isTouching(): Boolean = touching
@@ -91,6 +96,7 @@ class BarScrollDecider(
 
         val delta = scrollY - lastY
         lastY = scrollY
+        if (touching && delta != 0) scrolledWhileTouching = true
 
         // Gecko is absorbing a real viewport resize: the offset is not the user's. Rebase on it.
         if (isSettling()) {

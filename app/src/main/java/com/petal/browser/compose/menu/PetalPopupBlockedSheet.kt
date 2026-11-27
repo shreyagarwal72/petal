@@ -263,15 +263,27 @@ private fun PopupBlockedRow(
 
 object PetalPopupBlockedBridge {
     @JvmStatic
+    @JvmOverloads
     fun show(
         activity: ComponentActivity,
         targetUrl: String,
         isIncognito: Boolean,
         onAllowOnce: () -> Unit,
         onAlwaysAllow: () -> Unit,
+        onDismiss: () -> Unit = {},
     ) {
         try { com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.POPUP_BLOCKED, "popup", "Pop-up blocked", targetUrl.take(60)) } catch (_: Throwable) {}
+        val resolved = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun completeOnce(block: () -> Unit) {
+            if (resolved.compareAndSet(false, true)) {
+                block()
+            }
+        }
         activity.runOnUiThread {
+            if (activity.isFinishing || activity.isDestroyed) {
+                completeOnce(onDismiss)
+                return@runOnUiThread
+            }
             try {
                 val dialog = Dialog(activity, R.style.PetalContextMenuDialogTheme)
                 val composeView = ComposeView(activity).apply {
@@ -312,13 +324,18 @@ object PetalPopupBlockedBridge {
                                     PetalPopupBlockedSheet(
                                         targetUrl = targetUrl,
                                         isIncognito = isIncognito,
-                                        onDismiss = { dialog.dismiss() },
-                                        onAllowOnce = onAllowOnce,
-                                        onAlwaysAllow = onAlwaysAllow,
+                                        onDismiss = {
+                                            dialog.dismiss()
+                                            completeOnce(onDismiss)
+                                        },
+                                        onAllowOnce = { completeOnce(onAllowOnce) },
+                                        onAlwaysAllow = { completeOnce(onAlwaysAllow) },
                                         onOpenInBackground = {
+                                            completeOnce(onDismiss)
                                             (activity as? com.petal.browser.activity.MainActivity)?.addAlbum(null, targetUrl, false, isIncognito)
                                         },
                                         onOpenInIncognito = {
+                                            completeOnce(onDismiss)
                                             (activity as? com.petal.browser.activity.MainActivity)?.addAlbum(null, targetUrl, true, true)
                                         }
                                     )
@@ -339,9 +356,12 @@ object PetalPopupBlockedBridge {
                     window.setDimAmount(0.55f)
                 }
                 dialog.setCanceledOnTouchOutside(true)
+                dialog.setOnCancelListener { completeOnce(onDismiss) }
+                dialog.setOnDismissListener { completeOnce(onDismiss) }
                 dialog.show()
             } catch (e: Exception) {
                 e.printStackTrace()
+                completeOnce(onDismiss)
             }
         }
     }

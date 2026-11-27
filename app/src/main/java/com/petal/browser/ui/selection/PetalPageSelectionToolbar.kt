@@ -107,6 +107,17 @@ object PetalPageSelectionToolbar {
             ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         )
         holders[activity] = state
+        (activity as? LifecycleOwner)?.lifecycle?.addObserver(
+            object : androidx.lifecycle.LifecycleEventObserver {
+                override fun onStateChanged(source: LifecycleOwner, event: androidx.lifecycle.Lifecycle.Event) {
+                    if (event == androidx.lifecycle.Lifecycle.Event.ON_DESTROY) {
+                        holders.remove(activity)
+                        (view.parent as? ViewGroup)?.removeView(view)
+                        source.lifecycle.removeObserver(this)
+                    }
+                }
+            }
+        )
         return state
     }
 

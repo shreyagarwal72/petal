@@ -137,15 +137,20 @@ object PetalAdBlockEngine {
         setAdBlockMode(context, targetMode)
     }
 
+    private fun domainMatchesEntry(cleanDomain: String, entry: String): Boolean {
+        val cleanEntry = entry.lowercase(Locale.US).removePrefix("www.")
+        return cleanEntry.isNotEmpty() && (cleanDomain == cleanEntry || cleanDomain.endsWith(".$cleanEntry"))
+    }
+
     @JvmStatic
     @JvmOverloads
     fun isDomainWhitelisted(domain: String, isPrivate: Boolean = false): Boolean {
         if (domain.isBlank()) return false
         val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
         return if (isPrivate) {
-            privateWhitelistedDomains.any { cleanDomain.endsWith(it) }
+            privateWhitelistedDomains.any { domainMatchesEntry(cleanDomain, it) }
         } else {
-            whitelistedDomains.any { cleanDomain.endsWith(it) }
+            whitelistedDomains.any { domainMatchesEntry(cleanDomain, it) }
         }
     }
 

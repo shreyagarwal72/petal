@@ -47,12 +47,21 @@ class PetalBrowserPromptBridge(
     fun start() {
         if (collectionJob?.isActive == true) return
         collectionJob = scope.launch {
+            var lastTabId: String? = null
             store.stateFlow
                 .map { state -> state.selectedTab?.let { tab -> tab.id to tab.content.promptRequests } }
                 .distinctUntilChanged()
                 .collect { pair ->
-                    if (pair == null) return@collect
+                    if (pair == null) {
+                        handledPromptUids.clear()
+                        lastTabId = null
+                        return@collect
+                    }
                     val (tabId, requests) = pair
+                    if (lastTabId != tabId) {
+                        handledPromptUids.clear()
+                        lastTabId = tabId
+                    }
                     val nextRequest = requests.firstOrNull() ?: return@collect
                     if (handledPromptUids.add(nextRequest.uid)) {
                         presentPrompt(tabId, nextRequest)
@@ -73,7 +82,10 @@ class PetalBrowserPromptBridge(
     }
 
     private fun presentPrompt(tabId: String, request: PromptRequest) {
-        if (activity.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && activity.isDestroyed)) return
+        if (activity.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && activity.isDestroyed)) {
+            handledPromptUids.remove(request.uid)
+            return
+        }
 
         when (request) {
             is PromptRequest.Alert -> {
@@ -311,11 +323,15 @@ class PetalBrowserPromptBridge(
                                 consume(tabId, request)
                             },
                             onAlwaysAllow = {
-                                if (host != null) {
+                                if (host != null && !isIncognito) {
                                     val updated = (sp.getStringSet("sp_popup_allowed_domains", emptySet()) ?: emptySet()) + host
                                     sp.edit().putStringSet("sp_popup_allowed_domains", updated).apply()
                                 }
                                 request.onAllow()
+                                consume(tabId, request)
+                            },
+                            onDismiss = {
+                                request.onDeny()
                                 consume(tabId, request)
                             }
                         )

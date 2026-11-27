@@ -395,30 +395,40 @@ object PetalCredentialVault {
     @Synchronized
     fun save(credential: PetalCredential) {
         val sanitized = sanitizeCredential(credential)
-        val index = credentials.indexOfFirst { it.id == sanitized.id }
-        if (index >= 0) {
-            credentials[index] = sanitized
-        } else {
-            // Check if exact same domain and username already exists, update without losing metadata
-            val existingIndex = credentials.indexOfFirst {
-                cleanDomain(it.domain).equals(cleanDomain(sanitized.domain), ignoreCase = true) &&
-                it.username.equals(sanitized.username, ignoreCase = true)
-            }
-            if (existingIndex >= 0) {
-                val existing = credentials[existingIndex]
-                credentials[existingIndex] = sanitized.copy(
-                    id = existing.id,
-                    createdAt = existing.createdAt,
-                    isFavorite = existing.isFavorite,
-                    notes = if (sanitized.notes.isNotBlank()) sanitized.notes else existing.notes,
-                    updatedAt = System.currentTimeMillis()
-                )
+        val targetId = synchronized(this) {
+            val idx = credentials.indexOfFirst { it.id == sanitized.id }
+            if (idx >= 0) {
+                credentials[idx] = sanitized
+                sanitized.id
             } else {
-                credentials.add(0, sanitized)
+                val existingIndex = credentials.indexOfFirst {
+                    cleanDomain(it.domain).equals(cleanDomain(sanitized.domain), ignoreCase = true) &&
+                    it.username.equals(sanitized.username, ignoreCase = true)
+                }
+                if (existingIndex >= 0) {
+                    val existing = credentials[existingIndex]
+                    credentials[existingIndex] = sanitized.copy(
+                        id = existing.id,
+                        createdAt = existing.createdAt,
+                        isFavorite = existing.isFavorite,
+                        notes = if (sanitized.notes.isNotBlank()) sanitized.notes else existing.notes,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    existing.id
+                } else {
+                    credentials.add(0, sanitized)
+                    sanitized.id
+                }
+            }
+        }
+        val persistedGuid = appContext?.let { PetalLoginsProvider.save(it, sanitized.copy(id = targetId)) }
+        if (!persistedGuid.isNullOrBlank() && persistedGuid != targetId) {
+            val idx = credentials.indexOfFirst { it.id == targetId }
+            if (idx >= 0) {
+                credentials[idx] = credentials[idx].copy(id = persistedGuid)
             }
         }
         persistVault()
-        appContext?.let { PetalLoginsProvider.save(it, sanitized) }
     }
 
     @Synchronized

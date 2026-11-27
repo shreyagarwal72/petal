@@ -94,14 +94,50 @@ class PetalPwaActivity : AppCompatActivity() {
         setupFabMenu()
     }
 
+    private fun sanitizePwaUrl(raw: String?): String {
+        val candidate = raw?.trim().orEmpty()
+        if (candidate.isEmpty()) return "about:blank"
+        val scheme = runCatching { Uri.parse(candidate).scheme?.lowercase() }.getOrNull()
+        return if (scheme == "http" || scheme == "https") candidate else "about:blank"
+    }
+
+    private fun resolveValidatedArchiveFile(path: String?): File? {
+        if (path.isNullOrBlank()) return null
+        return try {
+            val archiveRoot = File(filesDir, "offline_web_archives").canonicalFile
+            val candidate = File(path).canonicalFile
+            val rootPath = archiveRoot.path + File.separator
+            if (candidate.path.startsWith(rootPath) && candidate.isFile && candidate.exists()) {
+                candidate
+            } else {
+                null
+            }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun resolveEffectiveUrl(): String {
+        val archive = if (!PetalAndroidUtils.isNetworkAvailable(this)) {
+            resolveValidatedArchiveFile(offlineArchivePath)
+        } else {
+            null
+        }
+        if (archive != null) {
+            return "file://" + archive.absolutePath
+        }
+        return sanitizePwaUrl(pwaUrl)
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIntent(intent)
         applyWindowConfiguration()
         pwaRoot?.let { ViewCompat.requestApplyInsets(it) }
-        if (geckoView != null && pwaUrl.isNotEmpty() && !"about:blank".equals(pwaUrl, ignoreCase = true)) {
-            geckoView?.loadUrl(pwaUrl)
+        val effective = resolveEffectiveUrl()
+        if (geckoView != null && !"about:blank".equals(effective, ignoreCase = true)) {
+            geckoView?.loadUrl(effective)
         }
     }
 
@@ -109,26 +145,36 @@ class PetalPwaActivity : AppCompatActivity() {
         if (intent == null) return
 
         val dataUri: Uri? = intent.data
-        if (dataUri != null) {
-            pwaUrl = dataUri.toString()
-        } else if (intent.hasExtra(EXTRA_URL)) {
-            pwaUrl = intent.getStringExtra(EXTRA_URL) ?: "about:blank"
-        } else if (intent.hasExtra("url")) {
-            pwaUrl = intent.getStringExtra("url") ?: "about:blank"
+        pwaUrl = when {
+            dataUri != null -> sanitizePwaUrl(dataUri.toString())
+            intent.hasExtra(EXTRA_URL) -> sanitizePwaUrl(intent.getStringExtra(EXTRA_URL))
+            intent.hasExtra("url") -> sanitizePwaUrl(intent.getStringExtra("url"))
+            else -> pwaUrl
         }
 
-        if (intent.hasExtra(EXTRA_TITLE)) {
-            pwaTitle = intent.getStringExtra(EXTRA_TITLE) ?: "Web App"
-            title = pwaTitle
+        pwaTitle = if (intent.hasExtra(EXTRA_TITLE)) {
+            intent.getStringExtra(EXTRA_TITLE) ?: "Web App"
+        } else if (intent.action == Intent.ACTION_VIEW) {
+            "Web App"
+        } else {
+            pwaTitle
         }
-        if (intent.hasExtra(EXTRA_THEME_COLOR)) {
-            themeColorHex = intent.getStringExtra(EXTRA_THEME_COLOR) ?: "#FFFFFF"
+        title = pwaTitle
+
+        themeColorHex = if (intent.hasExtra(EXTRA_THEME_COLOR)) {
+            intent.getStringExtra(EXTRA_THEME_COLOR) ?: "#FFFFFF"
+        } else {
+            "#FFFFFF"
         }
-        if (intent.hasExtra(EXTRA_DISPLAY)) {
-            displayMode = intent.getStringExtra(EXTRA_DISPLAY) ?: "standalone"
+        displayMode = if (intent.hasExtra(EXTRA_DISPLAY)) {
+            intent.getStringExtra(EXTRA_DISPLAY) ?: "standalone"
+        } else {
+            "standalone"
         }
-        if (intent.hasExtra(EXTRA_OFFLINE_ARCHIVE)) {
-            offlineArchivePath = intent.getStringExtra(EXTRA_OFFLINE_ARCHIVE)
+        offlineArchivePath = if (intent.hasExtra(EXTRA_OFFLINE_ARCHIVE)) {
+            intent.getStringExtra(EXTRA_OFFLINE_ARCHIVE)
+        } else {
+            null
         }
     }
 
@@ -211,6 +257,7 @@ class PetalPwaActivity : AppCompatActivity() {
                 )
             }
             fabBubbleView?.let { fab ->
+                fab.animate().cancel()
                 if (isFullscreen) {
                     if (isBarsVisible) {
                         fab.visibility = View.VISIBLE
@@ -241,19 +288,7 @@ class PetalPwaActivity : AppCompatActivity() {
     private fun setupGeckoView() {
         val frame = contentFrame ?: return
 
-        var targetUrl = pwaUrl
-        if (offlineArchivePath != null && !PetalAndroidUtils.isNetworkAvailable(this)) {
-            val archive = File(offlineArchivePath!!)
-            if (archive.exists()) {
-                targetUrl = "file://" + archive.absolutePath
-            }
-        }
-
-        val effectiveUrl = if (targetUrl.isNotEmpty() && !"about:blank".equals(targetUrl, ignoreCase = true)) {
-            targetUrl
-        } else {
-            "about:blank"
-        }
+        val effectiveUrl = resolveEffectiveUrl()
         pwaTabId = "pwa_" + System.currentTimeMillis()
         val sessionPair = PetalEngineStore.createTabSession(
             this,
@@ -261,7 +296,7 @@ class PetalPwaActivity : AppCompatActivity() {
             effectiveUrl,
             pwaTitle,
             false,
-            true
+            false
         )
 
         val gv = PetalTabViewController(this).apply {
@@ -286,8 +321,13 @@ class PetalPwaActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 val gv = geckoView
-                if (gv != null && gv.canGoBack()) {
-                    gv.goBack(true)
+                if (gv != null) {
+                    gv.processBackPressed {
+                        runOnUiThread {
+                            isEnabled = false
+                            onBackPressedDispatcher.onBackPressed()
+                        }
+                    }
                 } else {
                     isEnabled = false
                     onBackPressedDispatcher.onBackPressed()

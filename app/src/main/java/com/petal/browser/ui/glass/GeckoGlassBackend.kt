@@ -53,6 +53,9 @@ object GeckoGlassBackend {
     @Volatile
     var onScrollIdleCallback: (() -> Unit)? = null
 
+    @Volatile
+    var onBackendSwitchedCallback: ((GeckoView) -> Unit)? = null
+
     private val scrollIdleRunnable = object : Runnable {
         override fun run() {
             val now = SystemClock.uptimeMillis()
@@ -74,7 +77,6 @@ object GeckoGlassBackend {
     fun notifyScrollActivity(flinging: Boolean = false) {
         lastScrollUptimeMs = SystemClock.uptimeMillis()
         if (flinging) isFlinging = true
-        if (isScrollingVolatile && idleCheckScheduled) return
         isScrollingVolatile = true
         val activateOnMain = Runnable {
             isScrolling = true
@@ -181,6 +183,7 @@ object GeckoGlassBackend {
             if (released != null) {
                 try { geckoView.setSession(released) } catch (_: Throwable) {}
             }
+            onBackendSwitchedCallback?.invoke(geckoView)
         }
     }
 

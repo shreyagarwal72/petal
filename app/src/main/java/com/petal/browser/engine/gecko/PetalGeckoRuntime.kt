@@ -325,10 +325,37 @@ object PetalGeckoRuntime {
 
     @JvmStatic
     fun clearData(context: Context, flags: Long = org.mozilla.geckoview.StorageController.ClearFlags.ALL) {
-        try {
-            getOrCreate(context).storageController.clearData(flags)
-        } catch (e: Exception) {
-            Log.w(TAG, "Error clearing Gecko data: ${e.message}")
+        clearDataAsync(context, flags, null)
+    }
+
+    @JvmStatic
+    fun clearDataAsync(
+        context: Context,
+        flags: Long = org.mozilla.geckoview.StorageController.ClearFlags.ALL,
+        onComplete: ((Boolean) -> Unit)? = null
+    ) {
+        val appContext = context.applicationContext ?: context
+        val runOnUi = Runnable {
+            try {
+                val result = getOrCreate(appContext).storageController.clearData(flags)
+                if (onComplete != null) {
+                    result.accept(
+                        { onComplete(true) },
+                        { err ->
+                            Log.w(TAG, "Error clearing Gecko data: ${err?.message}")
+                            onComplete(false)
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Error clearing Gecko data: ${e.message}")
+                onComplete?.invoke(false)
+            }
+        }
+        if (android.os.Looper.myLooper() == android.os.Looper.getMainLooper()) {
+            runOnUi.run()
+        } else {
+            android.os.Handler(android.os.Looper.getMainLooper()).post(runOnUi)
         }
     }
 
@@ -469,8 +496,13 @@ object PetalGeckoRuntime {
                 // GeckoPreferenceController.setGeckoPref stores float/string prefs via String overloads.
                 else -> String::class.java to value.toString()
             }
+            val branchUser = try {
+                cls.getField("PREF_BRANCH_USER").getInt(null)
+            } catch (_: Throwable) {
+                0
+            }
             val m = cls.getMethod("setGeckoPref", String::class.java, valueType, Int::class.javaPrimitiveType)
-            m.invoke(null, name, coercedValue, 1 /* PREF_BRANCH_USER */)
+            m.invoke(null, name, coercedValue, branchUser)
         } catch (t: Throwable) {
             Log.d(TAG, "setGeckoPref($name) unavailable: ${t.message}")
         }
@@ -520,16 +552,15 @@ object PetalGeckoRuntime {
             rtSettingsGpc(dnt)
         } catch (_: Throwable) {}
 
-        val fp = sp.getBoolean("sp_fingerprint_protection", false)
+        val fp = com.petal.browser.privacy.PetalPrivacyHardening.isFingerprintingProtectionEnabled(sp)
         setGeckoPref("privacy.fingerprintingProtection", fp)
 
-        val profile = com.petal.browser.privacy.PetalPrivacyHardening.getPrivacyProfile(sp)
         val webrtcProtect = com.petal.browser.privacy.PetalPrivacyHardening.isWebRtcLeakProtectionEnabled(sp)
         setGeckoPref("media.peerconnection.ice.default_address_only", webrtcProtect)
         setGeckoPref("media.peerconnection.ice.proxy_only_if_behind_proxy", webrtcProtect)
         setGeckoPref(
             "media.peerconnection.ice.no_host",
-            webrtcProtect && profile == com.petal.browser.privacy.PetalPrivacyHardening.PrivacyProfile.STRICT
+            com.petal.browser.privacy.PetalPrivacyHardening.isWebRtcNoHostEnabled(sp)
         )
 
         val canvasLetterboxing = com.petal.browser.privacy.PetalPrivacyHardening.isLetterboxingEnabled(sp)

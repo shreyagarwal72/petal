@@ -80,13 +80,22 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
 
     override fun attachBaseContext(base: Context) {
         try {
-            com.petal.browser.logger.PetalAppLogger.init(base)
+            if (isMainProcess(base)) {
+                com.petal.browser.logger.PetalAppLogger.init(base)
+            }
         } catch (_: Throwable) {}
         super.attachBaseContext(PetalAndroidUtils.applyLanguage(base))
     }
 
     override fun onCreate() {
         super.onCreate()
+        // GeckoView starts helper processes for GPU, content tabs and crash
+        // handling. Android creates our Application in each of them too. Only the
+        // main browser process should run app/logger/pref/GeckoRuntime initialization.
+        if (!isMainProcess()) {
+            Log.i(TAG, "Skipping browser initialization in helper process")
+            return
+        }
         com.petal.browser.download.PetalDownloadResumer.install(this)
         instance = this
         // Initializes default user preferences and settings.
@@ -103,15 +112,6 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
                 defaultSp.edit().remove("sp_snap_photo_provider").apply()
             }
         } catch (_: Throwable) {}
-        // GeckoView starts helper processes for GPU, content tabs and crash
-        // handling. Android creates our Application in each of them too. A
-        // GeckoRuntime must only ever be created by the browser process: doing
-        // so in CrashHelper starts another Gecko instance there, after which
-        // Gecko terminates the browser process a few seconds after launch.
-        if (!isMainProcess()) {
-            Log.i(TAG, "Skipping browser initialization in helper process")
-            return
-        }
 
         try {
             com.petal.browser.logger.PetalAppLogger.init(this)
@@ -194,6 +194,9 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
         registerActivityLifecycleCallbacks(object : ActivityLifecycleCallbacks {
             override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
             override fun onActivityStarted(activity: Activity) {
+                if (startedActivityCount == 0) {
+                    PetalBrowserUtils.resetClearOnExitState()
+                }
                 startedActivityCount++
                 lastActivityRef = java.lang.ref.WeakReference(activity)
             }
@@ -217,7 +220,7 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
             }
             override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
             override fun onActivityDestroyed(activity: Activity) {
-                if (activity.isFinishing) {
+                if (startedActivityCount == 0 && activity.isFinishing) {
                     com.petal.browser.logger.PetalAppLogger.markCleanExit(this@PetalApplication)
                     val sp = PreferenceManager.getDefaultSharedPreferences(this@PetalApplication)
                     if (sp.getBoolean("sp_clear_quit", false) || sp.getBoolean("sp_clear_on_exit", false)) {
@@ -307,16 +310,16 @@ class PetalApplication : Application(), androidx.work.Configuration.Provider {
         }
     }
 
-    private fun isMainProcess(): Boolean {
+    private fun isMainProcess(context: Context = this): Boolean {
         val processName = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
             Application.getProcessName()
         } else {
-            val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
             activityManager?.runningAppProcesses
                 ?.firstOrNull { it.pid == Process.myPid() }
                 ?.processName
         }
-        return processName == packageName
+        return processName == context.packageName
     }
 
     companion object {

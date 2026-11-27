@@ -227,7 +227,8 @@ object PetalSitePermissionsBridge {
         val storage = getStorage(context)
 
         scope.launch {
-            val sitePerms = storage.findSitePermissionsBy(origin, isPrivate, false)
+            try {
+            val sitePerms = storage.findSitePermissionsBy(origin = origin, includeTemporary = false, private = isPrivate)
             val sessionCam = sessionGrants["$isPrivate#$origin#camera"]
             val sessionMic = sessionGrants["$isPrivate#$origin#microphone"]
 
@@ -255,7 +256,7 @@ object PetalSitePermissionsBridge {
                         onAllow = { remember ->
                             if (remember && !isPrivate) {
                                 scope.launch {
-                                    val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
+                                    val current = storage.findSitePermissionsBy(origin = origin, includeTemporary = false, private = false) ?: SitePermissions(origin)
                                     storage.update(current.copy(camera = SitePermissions.Status.ALLOWED, microphone = SitePermissions.Status.ALLOWED), false)
                                 }
                             } else {
@@ -267,14 +268,20 @@ object PetalSitePermissionsBridge {
                             act.runOnUiThread { callback.grant(video?.firstOrNull(), audio?.firstOrNull()) }
                         },
                         onDeny = { remember ->
+                            val newCam = if (camStatus == SitePermissions.Status.ALLOWED) SitePermissions.Status.ALLOWED else SitePermissions.Status.BLOCKED
+                            val newMic = if (micStatus == SitePermissions.Status.ALLOWED) SitePermissions.Status.ALLOWED else SitePermissions.Status.BLOCKED
                             if (remember && !isPrivate) {
                                 scope.launch {
-                                    val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
-                                    storage.update(current.copy(camera = SitePermissions.Status.BLOCKED, microphone = SitePermissions.Status.BLOCKED), false)
+                                    val current = storage.findSitePermissionsBy(origin = origin, includeTemporary = false, private = false) ?: SitePermissions(origin)
+                                    storage.update(current.copy(camera = newCam, microphone = newMic), false)
                                 }
                             } else {
-                                sessionGrants["$isPrivate#$origin#camera"] = SitePermissions.Status.BLOCKED
-                                sessionGrants["$isPrivate#$origin#microphone"] = SitePermissions.Status.BLOCKED
+                                if (camStatus != SitePermissions.Status.ALLOWED) {
+                                    sessionGrants["$isPrivate#$origin#camera"] = SitePermissions.Status.BLOCKED
+                                }
+                                if (micStatus != SitePermissions.Status.ALLOWED) {
+                                    sessionGrants["$isPrivate#$origin#microphone"] = SitePermissions.Status.BLOCKED
+                                }
                             }
                             PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.CAMERA, false)
                             PetalActiveMediaSensors.setRecording(origin, PetalPermissionType.MICROPHONE, false)
@@ -331,6 +338,10 @@ object PetalSitePermissionsBridge {
                         act.runOnUiThread { callback.reject() }
                     }
                 )
+            }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Media permission lookup failed: ${t.message}")
+                act.runOnUiThread { callback.reject() }
             }
         }
     }
@@ -393,7 +404,8 @@ object PetalSitePermissionsBridge {
         val sessionStatus = sessionGrants["$isPrivate#$origin#$permKey"]
 
         scope.launch {
-            val sitePerms = storage.findSitePermissionsBy(origin, isPrivate, false)
+            try {
+            val sitePerms = storage.findSitePermissionsBy(origin = origin, includeTemporary = false, private = isPrivate)
             val storedStatus = acPermission?.let { sitePerms?.get(it) } ?: SitePermissions.Status.NO_DECISION
             val effectiveStatus = sessionStatus ?: storedStatus
 
@@ -413,7 +425,7 @@ object PetalSitePermissionsBridge {
                     onAllow = { remember ->
                         if (remember && !isPrivate && acPermission != null) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
+                                val current = storage.findSitePermissionsBy(origin = origin, includeTemporary = false, private = false) ?: SitePermissions(origin)
                                 val updated = when (acPermission) {
                                     Permission.LOCATION -> current.copy(location = SitePermissions.Status.ALLOWED)
                                     Permission.NOTIFICATION -> current.copy(notification = SitePermissions.Status.ALLOWED)
@@ -433,7 +445,7 @@ object PetalSitePermissionsBridge {
                     onDeny = { remember ->
                         if (remember && !isPrivate && acPermission != null) {
                             scope.launch {
-                                val current = storage.findSitePermissionsBy(origin, false, false) ?: SitePermissions(origin)
+                                val current = storage.findSitePermissionsBy(origin = origin, includeTemporary = false, private = false) ?: SitePermissions(origin)
                                 val updated = when (acPermission) {
                                     Permission.LOCATION -> current.copy(location = SitePermissions.Status.BLOCKED)
                                     Permission.NOTIFICATION -> current.copy(notification = SitePermissions.Status.BLOCKED)
@@ -451,6 +463,10 @@ object PetalSitePermissionsBridge {
                         act.runOnUiThread { result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY) }
                     }
                 )
+            }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Content permission lookup failed: ${t.message}")
+                act.runOnUiThread { result.complete(GeckoSession.PermissionDelegate.ContentPermission.VALUE_DENY) }
             }
         }
 

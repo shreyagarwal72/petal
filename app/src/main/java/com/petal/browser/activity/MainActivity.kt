@@ -84,10 +84,9 @@ class MainActivity : FragmentActivity(), BrowserController {
     var isDecorOverlayShowing: Boolean = false
     var isPetalHomeSurfaceShowing: Boolean = false
     private var pillMorphAnimator: android.animation.ValueAnimator? = null
-    private var isAddressBarCollapsedState = false
 
     fun isBarAnimationRunning(): Boolean = pillMorphAnimator?.isStarted == true
-    fun isAddressBarCollapsed(): Boolean = isAddressBarCollapsedState
+    fun isAddressBarCollapsed(): Boolean = com.petal.browser.ui.components.BarCollapseState.isCollapsed
     var pendingOverlayBackAction: Runnable? = null
     var mediaService: PetalMediaSessionService? = null
     val activeMediaBridge: PetalMediaBridge? = null
@@ -224,7 +223,14 @@ class MainActivity : FragmentActivity(), BrowserController {
                 val action = intent?.action
                 val willOpenTab = action == com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_NEW_TAB ||
                     action == com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO
-                if (!willOpenTab) {
+                if (willOpenTab) {
+                    viewModel.openNewTab(
+                        "about:home",
+                        selectTab = true,
+                        private = action == com.petal.browser.widget.PetalSearchWidgetProvider.ACTION_OPEN_INCOGNITO
+                    )
+                    intent?.action = Intent.ACTION_MAIN
+                } else {
                     viewModel.openNewTab("about:home", selectTab = true)
                 }
             }
@@ -255,13 +261,17 @@ class MainActivity : FragmentActivity(), BrowserController {
 
         // Allow the first browser frame to render before attaching optional engine features.
         // These initializers can trigger Gecko extension scans and service/store setup.
+        val launchIntent = intent
+        val launchHandled = newIntentReceived
         window.decorView.postDelayed({
             if (isFinishing || isDestroyed) return@postDelayed
             PetalExtensionManager.attach(applicationContext)
             PetalBuiltInExtensionManager.installAll(applicationContext)
             PetalFolderSync.onAppStart(this)
             browserFeatures = PetalBrowserFeatures(this).also { it.start() }
-            handleIncomingIntent(intent)
+            if (!newIntentReceived && !launchHandled) {
+                handleIncomingIntent(launchIntent)
+            }
             com.petal.browser.unit.PetalUpdateUtils.checkForUpdates(this, isLaunchCheck = true)
         }, 250L)
 
@@ -290,6 +300,7 @@ class MainActivity : FragmentActivity(), BrowserController {
             // Drop sidecar metadata of tabs that are gone (keeping recently-closed ids for undo).
             val st = com.petal.browser.engine.gecko.PetalEngineStore.getStore(this).state
             if (st.restoreComplete) {
+                com.petal.browser.unit.PetalRecentlyClosedManager.init(applicationContext)
                 com.petal.browser.browser.PetalTabMetadataStore.pruneKeeping(
                     applicationContext, st.tabs.map { it.id },
                     com.petal.browser.unit.PetalRecentlyClosedManager.getRecentlyClosedTabs().map { it.id }
@@ -310,6 +321,11 @@ class MainActivity : FragmentActivity(), BrowserController {
         super.onDestroy()
         sp.unregisterOnSharedPreferenceChangeListener(prefChangeListener)
         com.petal.browser.engine.gecko.PetalFileUploadMiddleware.detachActivity(this)
+        BrowserMediaDelegate.unregisterPipReceiver(this)
+        try {
+            singleTabViewController?.release()
+        } catch (_: Throwable) {}
+        singleTabViewController = null
         browserFeatures?.stop()
         browserFeatures = null
     }
@@ -370,8 +386,11 @@ class MainActivity : FragmentActivity(), BrowserController {
         browserFeatures?.onPictureInPictureModeChanged(isInPictureInPictureMode)
     }
 
+    private var newIntentReceived = false
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        newIntentReceived = true
         setIntent(intent)
         handleIncomingIntent(intent)
     }
@@ -400,9 +419,17 @@ class MainActivity : FragmentActivity(), BrowserController {
         if (incognito) com.petal.browser.live.PetalLiveActionBus.postSimple(com.petal.browser.live.LiveEventKind.INCOGNITO_STATE, "incognito", "Private tab", "History and cookies won't be saved")
     }
 
-    fun addAlbumInGroup(title: String?, url: String?, foreground: Boolean, groupId: String?, groupTitle: String?) {
+    @JvmOverloads
+    fun addAlbumInGroup(
+        title: String?,
+        url: String?,
+        foreground: Boolean,
+        groupId: String?,
+        groupTitle: String?,
+        incognito: Boolean = false
+    ) {
         val effectiveUrl = if (url.isNullOrBlank()) "about:home" else url
-        viewModel.openNewTab(effectiveUrl, selectTab = foreground, private = false, groupId = groupId, groupTitle = groupTitle)
+        viewModel.openNewTab(effectiveUrl, selectTab = foreground, private = incognito, groupId = groupId, groupTitle = groupTitle)
     }
 
     fun selectTab(controller: AlbumController?) {
@@ -572,36 +599,90 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun maybePromptDefaultBrowser() {
         com.petal.browser.ui.components.PetalBrowserPermissionDialog.maybePromptDefaultBrowser(this, false)
     }
-    fun savePageOffline() {
+    private fun resolveActiveGeckoSessionForPrint(): Pair<org.mozilla.geckoview.GeckoSession?, Pair<String, String>> {
+        val tab = viewModel.activeTab.value
+        val gsFromStore = tab?.engineState?.engineSession?.let {
+            com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(it)
+        }
+        if (gsFromStore != null) {
+            return gsFromStore to (tab.content.url to tab.content.title)
+        }
         val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
-        if (controller != null) {
-            val curUrl = controller.url.orEmpty()
-            if (curUrl.isNotBlank() && !curUrl.startsWith("about:")) {
-                try {
-                    val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
-                    val titleSafe = (controller.title.ifBlank { "Page" }).replace(Regex("[^a-zA-Z0-9.-]"), "_")
-                    val targetPdf = java.io.File(downloadsDir, "$titleSafe.pdf")
-                    java.io.FileOutputStream(targetPdf).use { fos ->
-                        controller.printToPdf(fos) { success ->
-                            if (success) {
-                                com.petal.browser.view.PetalToast.show(this, "Saved to Downloads: ${targetPdf.name}")
-                            }
+        return controller?.getGeckoSession() to ((controller?.url ?: "") to (controller?.title ?: ""))
+    }
+
+    private fun saveGeckoSessionAsPdf(
+        gs: org.mozilla.geckoview.GeckoSession,
+        outputStream: java.io.OutputStream,
+        callback: (Boolean) -> Unit
+    ) {
+        try {
+            val result = gs.saveAsPdf()
+            if (result == null) {
+                try { outputStream.close() } catch (_: Throwable) {}
+                callback(false)
+                return
+            }
+            result.accept(
+                { pdfStream ->
+                    val ok = try {
+                        if (pdfStream == null) {
+                            try { outputStream.close() } catch (_: Throwable) {}
+                            false
+                        } else {
+                            pdfStream.use { input -> outputStream.use { out -> input.copyTo(out) } }
+                            true
+                        }
+                    } catch (_: Throwable) {
+                        false
+                    }
+                    callback(ok)
+                },
+                { _ ->
+                    try { outputStream.close() } catch (_: Throwable) {}
+                    callback(false)
+                }
+            )
+        } catch (_: Throwable) {
+            try { outputStream.close() } catch (_: Throwable) {}
+            callback(false)
+        }
+    }
+
+    fun savePageOffline() {
+        val (gs, meta) = resolveActiveGeckoSessionForPrint()
+        val (curUrl, curTitle) = meta
+        if (gs != null && curUrl.isNotBlank() && !curUrl.startsWith("about:")) {
+            try {
+                val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                val titleSafe = (curTitle.ifBlank { "Page" }).replace(Regex("[^a-zA-Z0-9.-]"), "_")
+                val targetPdf = java.io.File(downloadsDir, "$titleSafe.pdf")
+                val fos = java.io.FileOutputStream(targetPdf)
+                saveGeckoSessionAsPdf(gs, fos) { success ->
+                    runOnUiThread {
+                        if (success) {
+                            com.petal.browser.view.PetalToast.show(this, "Saved to Downloads: ${targetPdf.name}")
+                        } else {
+                            try { targetPdf.delete() } catch (_: Throwable) {}
+                            com.petal.browser.view.PetalToast.show(this, "Failed to save offline page")
                         }
                     }
-                } catch (_: Throwable) {
-                    com.petal.browser.view.PetalToast.show(this, "Failed to save offline page")
                 }
+            } catch (_: Throwable) {
+                com.petal.browser.view.PetalToast.show(this, "Failed to save offline page")
             }
         }
     }
+
     fun createWebPrintJob(webView: Any?) {
-        val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
+        val (gs, meta) = resolveActiveGeckoSessionForPrint()
+        val (_, curTitle) = meta
         val printManager = getSystemService(Context.PRINT_SERVICE) as? android.print.PrintManager
-        if (printManager == null || controller == null) {
+        if (printManager == null || gs == null) {
             savePageOffline()
             return
         }
-        val jobName = "${controller.title.ifBlank { "Petal Web Document" }} Document"
+        val jobName = "${curTitle.ifBlank { "Petal Web Document" }} Document"
         val adapter = object : android.print.PrintDocumentAdapter() {
             override fun onLayout(
                 oldAttributes: android.print.PrintAttributes?,
@@ -631,7 +712,7 @@ class MainActivity : FragmentActivity(), BrowserController {
                     return
                 }
                 val fos = java.io.FileOutputStream(destination.fileDescriptor)
-                controller.printToPdf(fos) { success ->
+                saveGeckoSessionAsPdf(gs, fos) { success ->
                     if (success) {
                         callback?.onWriteFinished(arrayOf(android.print.PageRange.ALL_PAGES))
                     } else {
@@ -666,15 +747,20 @@ class MainActivity : FragmentActivity(), BrowserController {
 
     fun animateAddressBarCollapse(collapse: Boolean) {
         if (!sp.getBoolean("sp_hide_bars_on_scroll", true)) {
-            if (isAddressBarCollapsedState) {
-                isAddressBarCollapsedState = false
+            if (com.petal.browser.ui.components.BarCollapseState.collapsedFraction > 0f ||
+                com.petal.browser.ui.components.BarCollapseState.isCollapsed
+            ) {
                 settlePillFraction(0f)
             }
             return
         }
-        if (isAddressBarCollapsedState == collapse) return
-        isAddressBarCollapsedState = collapse
-        settlePillFraction(if (collapse) 1f else 0f)
+        val target = if (collapse) 1f else 0f
+        if (com.petal.browser.ui.components.BarCollapseState.isCollapsed == collapse &&
+            kotlin.math.abs(com.petal.browser.ui.components.BarCollapseState.collapsedFraction - target) < 0.001f
+        ) {
+            return
+        }
+        settlePillFraction(target)
     }
 
     fun updateVideoDimensions(width: Int, height: Int) {

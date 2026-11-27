@@ -31,6 +31,7 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
         const val ACTION_DISMISS = "com.petal.browser.action.WEB_NOTIFICATION_DISMISS"
         const val ACTION_BUTTON_CLICK = "com.petal.browser.action.WEB_NOTIFICATION_BUTTON_CLICK"
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
+        const val EXTRA_NOTIFICATION_TAG = "extra_notification_tag"
         const val EXTRA_ACTION_NAME = "extra_action_name"
         const val EXTRA_WEB_NOTIFICATION_CLICK_ID = "com.petal.browser.extra.WEB_NOTIFICATION_CLICK_ID"
 
@@ -107,8 +108,8 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
             }
 
             val tag = notification.tag
-            val id = tag?.hashCode() ?: notification.hashCode()
-            activeNotifications[id] = notification
+            val rawId = tag?.hashCode() ?: notification.hashCode()
+            val id = if (rawId == 0) 1 else rawId
 
             val clickIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
@@ -124,6 +125,7 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
             val dismissIntent = Intent(context, WebNotificationActionReceiver::class.java).apply {
                 action = ACTION_DISMISS
                 putExtra(EXTRA_NOTIFICATION_ID, id)
+                if (tag != null) putExtra(EXTRA_NOTIFICATION_TAG, tag)
             }
             val dismissPending = PendingIntent.getBroadcast(
                 context,
@@ -175,6 +177,7 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
                     val buttonIntent = Intent(context, WebNotificationActionReceiver::class.java).apply {
                         action = ACTION_BUTTON_CLICK
                         putExtra(EXTRA_NOTIFICATION_ID, id)
+                        if (tag != null) putExtra(EXTRA_NOTIFICATION_TAG, tag)
                         putExtra(EXTRA_ACTION_NAME, actionName)
                     }
                     val buttonPending = PendingIntent.getBroadcast(
@@ -188,6 +191,7 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
             }
 
             nm.notify(tag, id, builder.build())
+            activeNotifications[id] = notification
             Log.i(TAG, "Displayed web notification: $displayTitle (id=$id)")
         } catch (t: Throwable) {
             Log.e(TAG, "Error displaying web notification: ${t.message}", t)
@@ -197,7 +201,8 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
     override fun onCloseNotification(notification: WebNotification) {
         try {
             val tag = notification.tag
-            val id = tag?.hashCode() ?: notification.hashCode()
+            val rawId = tag?.hashCode() ?: notification.hashCode()
+            val id = if (rawId == 0) 1 else rawId
             activeNotifications.remove(id)
             val nm = NotificationManagerCompat.from(context)
             if (tag != null) {
@@ -215,6 +220,7 @@ class PetalWebNotificationDelegate(private val context: Context) : WebNotificati
 class WebNotificationActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getIntExtra(PetalWebNotificationDelegate.EXTRA_NOTIFICATION_ID, 0)
+        val tag = intent.getStringExtra(PetalWebNotificationDelegate.EXTRA_NOTIFICATION_TAG)
         when (intent.action) {
             PetalWebNotificationDelegate.ACTION_CLICK -> {
                 PetalWebNotificationDelegate.handleClick(id)
@@ -226,7 +232,11 @@ class WebNotificationActionReceiver : BroadcastReceiver() {
                 val actionName = intent.getStringExtra(PetalWebNotificationDelegate.EXTRA_ACTION_NAME) ?: ""
                 PetalWebNotificationDelegate.handleActionClick(id, actionName)
                 val nm = NotificationManagerCompat.from(context)
-                nm.cancel(id)
+                if (tag != null) {
+                    nm.cancel(tag, id)
+                } else {
+                    nm.cancel(id)
+                }
             }
         }
     }

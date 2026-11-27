@@ -64,8 +64,22 @@ object PetalPrivacyHardening {
 
     @JvmStatic
     fun isWebRtcLeakProtectionEnabled(sp: SharedPreferences): Boolean {
-        val profile = getPrivacyProfile(sp)
         return sp.getBoolean(PREF_WEBRTC_LEAK_PROTECT, true)
+    }
+
+    @JvmStatic
+    fun isFingerprintingProtectionEnabled(sp: SharedPreferences): Boolean {
+        val profile = getPrivacyProfile(sp)
+        return sp.getBoolean("sp_fingerprint_protection", profile != PrivacyProfile.STANDARD)
+    }
+
+    @JvmStatic
+    fun isWebRtcNoHostEnabled(sp: SharedPreferences): Boolean {
+        val profile = getPrivacyProfile(sp)
+        val webrtcProtect = isWebRtcLeakProtectionEnabled(sp)
+        if (!webrtcProtect) return false
+        val explicitWebrtc = sp.contains(PREF_WEBRTC_LEAK_PROTECT) && sp.getBoolean(PREF_WEBRTC_LEAK_PROTECT, false)
+        return profile == PrivacyProfile.STRICT || (profile == PrivacyProfile.HARDENED && explicitWebrtc)
     }
 
     @JvmStatic
@@ -184,6 +198,7 @@ object PetalPrivacyHardening {
             SecurityLevel.SAFEST -> {
                 sb.appendLine("""
                     // Security Level: SAFEST (JS globally blocked, WebGL disabled, fonts disabled)
+                    user_pref("javascript.enabled", false);
                     user_pref("gfx.downloadable_fonts.enabled", false);
                     user_pref("mathml.disabled", true);
                     user_pref("media.autoplay.default", 5);
@@ -204,11 +219,12 @@ object PetalPrivacyHardening {
             user_pref("cookiebanners.bannerClicking.enabled", ${if (cookieBannerAutoReject) "true" else "false"});
         """.trimIndent())
 
-        // 9. Explicit user toggles from Settings → Privacy (these win over profile baselines above)
+        // 9. Explicit user toggles from Settings → Privacy (respecting profile baselines when unset)
         val trimRef = sp.getBoolean("sp_trim_referrers", true)
         val webauthn = sp.getBoolean("sp_webauthn_enabled", true)
         val dntGpc = sp.getBoolean("sp_dnt_gpc", true)
-        val fpProtect = sp.getBoolean("sp_fingerprint_protection", false)
+        val fpProtect = isFingerprintingProtectionEnabled(sp)
+        val webrtcNoHost = isWebRtcNoHostEnabled(sp)
         val canvasLetterboxing = isLetterboxingEnabled(sp)
         val bounceTracking = sp.getBoolean("sp_bounce_tracking", false)
         sb.appendLine("""
@@ -221,7 +237,7 @@ object PetalPrivacyHardening {
             user_pref("privacy.fingerprintingProtection", $fpProtect);
             user_pref("media.peerconnection.ice.default_address_only", $webrtcProtect);
             user_pref("media.peerconnection.ice.proxy_only_if_behind_proxy", $webrtcProtect);
-            user_pref("media.peerconnection.ice.no_host", ${webrtcProtect && profile == PrivacyProfile.STRICT});
+            user_pref("media.peerconnection.ice.no_host", $webrtcNoHost);
             user_pref("privacy.resistFingerprinting.letterboxing", $canvasLetterboxing);
             user_pref("privacy.bounceTrackingProtection.mode", ${if (bounceTracking) 1 else 0});
         """.trimIndent())
@@ -251,11 +267,9 @@ object PetalPrivacyHardening {
         val appContext = context.applicationContext
         try {
             Log.i(TAG, "Executing Tor-style New Identity flush...")
-            // 1. Wipe all Gecko storage
-            PetalGeckoRuntime.clearData(
-                appContext,
-                StorageController.ClearFlags.ALL
-            )
+            // 1. Flush in-memory incognito/cookie/media bridges immediately
+            try { com.petal.browser.compose.incognito.PetalIncognitoSessionManager.flushSessionData(appContext) } catch (_: Throwable) {}
+            try { com.petal.browser.download.PetalGeckoCookieBridge.clearAllCookies() } catch (_: Throwable) {}
 
             // 2. Clear clipboard if it was used for URL copying
             try {
@@ -270,8 +284,14 @@ object PetalPrivacyHardening {
                 PetalTorManager.startTorSession(appContext)
             }
 
-            Log.i(TAG, "New Identity flush complete")
-            onComplete?.invoke()
+            // 4. Wipe all Gecko storage and invoke onComplete once StorageController finishes
+            PetalGeckoRuntime.clearDataAsync(
+                appContext,
+                StorageController.ClearFlags.ALL
+            ) {
+                Log.i(TAG, "New Identity flush complete")
+                onComplete?.invoke()
+            }
         } catch (t: Throwable) {
             Log.e(TAG, "Failed New Identity wipe: ${t.message}", t)
             onComplete?.invoke()

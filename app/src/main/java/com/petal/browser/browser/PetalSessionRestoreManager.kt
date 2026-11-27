@@ -385,9 +385,9 @@ object PetalSessionRestoreManager {
                 // exist (closed while the process was dead, crashes). Safe here: no tab has produced
                 // a new thumbnail yet, and the keep-list is the restored tab list.
                 try {
-                    com.petal.browser.unit.TabThumbnailCache.retainOnly(
-                        store.state.tabs.filter { !it.content.private }.map { it.id }
-                    )
+                    val retainIds = (preExistingTabs.filter { !it.content.private }.map { it.id } +
+                        toRestore.filter { !it.state.private }.map { it.state.id }).distinct()
+                    com.petal.browser.unit.TabThumbnailCache.retainOnly(retainIds)
                 } catch (_: Throwable) {}
                 true
             } else {
@@ -477,6 +477,7 @@ object PetalSessionRestoreManager {
                 }
             }
 
+            PetalEngineStore.blockWritesUntilRestart = true
             PreferenceManager.getDefaultSharedPreferences(context).edit()
                 .putBoolean(PREF_RESTORE_ON_RESTART, true)
                 .apply()
@@ -492,8 +493,7 @@ object PetalSessionRestoreManager {
     fun clearSession(context: Context?) {
         if (context == null) return
         try {
-            val storage = PetalEngineStore.getSessionStorage(context)
-            storage.save(BrowserState())
+            PetalEngineStore.blockWritesUntilRestart = true
             PetalTabMetadataStore.clear(context)
             PetalEngineStore.deleteSessionFiles(context)
             // Closed-tab titles/URLs and page screenshots are history too: a cleared session must not

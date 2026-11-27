@@ -925,7 +925,12 @@ object PetalExtensionManager {
         val ctx = appContext ?: return null
         takePendingPopup()?.let { releasePopup(it) }
         val sourceTab = PetalEngineStore.getStore(ctx).state.selectedTab
-        val isPrivate = (sourceTab?.content?.private ?: false) && allowedInPrivate
+        val sourceIsPrivate = sourceTab?.content?.private ?: false
+        if (sourceIsPrivate && !allowedInPrivate) {
+            Log.i(TAG, "Extension $extensionId is not allowed in private browsing")
+            return null
+        }
+        val isPrivate = sourceIsPrivate && allowedInPrivate
         val engineSession = try {
             PetalEngineStore.getEngine(ctx).createSession(private = isPrivate)
         } catch (t: Throwable) {
@@ -947,9 +952,23 @@ object PetalExtensionManager {
             return null
         }
         // Many popups (uBlock Origin, Bitwarden, AdGuard) render at desktop width unless fixed on load.
+        val existingProgress = popupGecko.progressDelegate
         popupGecko.progressDelegate = object : GeckoSession.ProgressDelegate {
+            override fun onPageStart(session: GeckoSession, url: String) {
+                try { existingProgress?.onPageStart(session, url) } catch (_: Throwable) {}
+            }
             override fun onPageStop(session: GeckoSession, success: Boolean) {
+                try { existingProgress?.onPageStop(session, success) } catch (_: Throwable) {}
                 injectExtensionPopupResponsiveFix(session)
+            }
+            override fun onProgressChange(session: GeckoSession, progress: Int) {
+                try { existingProgress?.onProgressChange(session, progress) } catch (_: Throwable) {}
+            }
+            override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {
+                try { existingProgress?.onSecurityChange(session, securityInfo) } catch (_: Throwable) {}
+            }
+            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
+                try { existingProgress?.onSessionStateChange(session, sessionState) } catch (_: Throwable) {}
             }
         }
         popupGecko.promptDelegate = popupPromptDelegate()

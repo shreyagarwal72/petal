@@ -77,7 +77,9 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
     private var quickScaleEvents = QuickScaleEvents()
     private var previousX = 0f
     private var previousY = 0f
+    private var initialDownX = 0f
     private var initialDownY = 0f
+    private var wasChildScrolledUp = false
     private val doubleTapTimeout = ViewConfiguration.getDoubleTapTimeout()
     private val doubleTapSlop = ViewConfiguration.get(context).scaledDoubleTapSlop
     private val doubleTapSlopSquare = doubleTapSlop * doubleTapSlop
@@ -283,7 +285,8 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
     /** A new touch while a finished/never-started reload still holds the spinner: release it now. */
     private fun healStuckRefresh() {
         if (!isRefreshing) return
-        if (isPageLoading?.invoke() == false) {
+        val elapsed = SystemClock.uptimeMillis() - refreshCommittedAt
+        if (elapsed >= REFRESH_FINISH_GRACE_MS && isPageLoading?.invoke() == false) {
             forceStopRefresh()
         }
     }
@@ -296,7 +299,9 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
             disallowInterceptTouchEvent = false
             activeFingerDown = true
             pulledPastSlop = false
+            initialDownX = ev.x
             initialDownY = ev.y
+            wasChildScrolledUp = false
             healStuckRefresh()
             syncStyleNow()
             if (offsetDirty && !isRefreshing) applyNativeOffset()
@@ -331,10 +336,15 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
         // treated as a scale gesture and never refreshes.
         if (event.pointerCount > 1 || hadMultiTouch) {
             hadMultiTouch = true
+            if (event.actionMasked == MotionEvent.ACTION_UP || event.actionMasked == MotionEvent.ACTION_CANCEL) {
+                forgetQuickScaleEvents()
+                initialDownY = 0f
+                onPullProgress?.invoke(0f)
+            }
             return false
         }
 
-        val eventAction = event.action
+        val eventAction = event.actionMasked
 
         // Gesture aborted, or a quick-scale just ended: clean up.
         if (MotionEvent.ACTION_CANCEL == eventAction ||
@@ -360,27 +370,38 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
             pulledPastSlop = false
             previousX = event.x
             previousY = event.y
+            initialDownX = event.x
             initialDownY = event.y
+            wasChildScrolledUp = canChildScrollUp()
         } else if (MotionEvent.ACTION_MOVE == eventAction) {
             if (!activeFingerDown || com.petal.browser.ui.glass.GeckoGlassBackend.isFlinging) {
                 pulledPastSlop = false
                 onPullProgress?.invoke(0f)
                 return false
             }
-            val xDistance = abs(event.x - previousX)
-            val yDistance = abs(event.y - previousY)
+            val cumulativeDx = abs(event.x - initialDownX)
+            val cumulativeDy = abs(event.y - initialDownY)
             previousX = event.x
             previousY = event.y
-            if (xDistance > yDistance) {
+            if (cumulativeDx > touchSlop && cumulativeDx > cumulativeDy) {
                 return false
             }
             if (canChildScrollUp()) {
                 // Re-anchor while the page itself is still scrolling toward the top so prior drag
                 // distance cannot spill over into an accidental pull-to-refresh once it hits top.
+                initialDownX = event.x
                 initialDownY = event.y
+                wasChildScrolledUp = true
                 pulledPastSlop = false
                 if (!isRefreshing) onPullProgress?.invoke(0f)
                 return false
+            }
+            if (wasChildScrolledUp) {
+                wasChildScrolledUp = false
+                // Re-seed SwipeRefreshLayout's internal mInitialDownY at the transition point so
+                // super.onInterceptTouchEvent and onPullProgress measure from the same anchor.
+                val synthDown = MotionEvent.obtain(event).apply { action = MotionEvent.ACTION_DOWN }
+                try { super.onInterceptTouchEvent(synthDown) } finally { synthDown.recycle() }
             }
             val totalDy = event.y - initialDownY
             if (totalDy <= touchSlop) {
@@ -490,7 +511,14 @@ open class PetalVerticalSwipeRefreshLayout @JvmOverloads constructor(
                 quickScaleEvents.firstDownEvent = MotionEvent.obtain(event)
             }
         } else if (MotionEvent.ACTION_UP == currentEventAction && quickScaleEvents.firstDownEvent != null) {
-            quickScaleEvents.upEvent = MotionEvent.obtain(event)
+            val firstDown = quickScaleEvents.firstDownEvent!!
+            val dx = event.x - firstDown.x
+            val dy = event.y - firstDown.y
+            if (dx * dx + dy * dy <= doubleTapSlopSquare) {
+                quickScaleEvents.upEvent = MotionEvent.obtain(event)
+            } else {
+                forgetQuickScaleEvents()
+            }
         }
     }
 

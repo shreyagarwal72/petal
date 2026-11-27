@@ -288,16 +288,32 @@ class PetalBrowserViewModel @Inject constructor(
         }
 
         // Automatic Popup Window Adoption & Window Closure (window.open / target="_blank" / window.close)
+        val handledWindowRequests = java.util.Collections.newSetFromMap(
+            java.util.WeakHashMap<mozilla.components.concept.engine.window.WindowRequest, Boolean>()
+        )
         viewModelScope.launch {
             browserState.collect { state ->
                 for (tab in state.tabs) {
+                    if (PetalEngineStore.isEphemeralTabId(tab.id)) continue
                     val req = tab.content.windowRequest ?: continue
+                    if (!handledWindowRequests.add(req)) continue
                     try {
                         if (req.type == mozilla.components.concept.engine.window.WindowRequest.Type.OPEN) {
                             val engineSession = req.prepare()
                             val newTabId = "tab_" + System.currentTimeMillis() + "_" + Math.abs(java.util.UUID.randomUUID().hashCode())
                             val isIncognito = tab.content.private
                             val targetUrl = req.url?.takeIf { it.isNotBlank() } ?: "about:blank"
+                            val parentMeta = PetalTabMetadataStore.get(context, tab.id)
+                            PetalTabMetadataStore.put(
+                                context,
+                                com.petal.browser.browser.PetalTabMetadata(
+                                    tabId = newTabId,
+                                    parentId = tab.id,
+                                    tabGroupId = parentMeta?.tabGroupId,
+                                    tabGroupTitle = parentMeta?.tabGroupTitle,
+                                    tabGroupColorHex = parentMeta?.tabGroupColorHex
+                                )
+                            )
                             PetalEngineStore.adoptPreparedSession(
                                 context = context,
                                 tabId = newTabId,
@@ -345,8 +361,9 @@ class PetalBrowserViewModel @Inject constructor(
                 )
                 pair.second
             }
+            val engineTargetUrl = if (PetalBrowserUtils.isHomePage(formattedUrl)) "about:blank" else formattedUrl
             browserStore.dispatch(ContentAction.UpdateUrlAction(targetTab.id, formattedUrl))
-            session.loadUrl(formattedUrl)
+            session.loadUrl(engineTargetUrl)
         } else {
             openNewTab(formattedUrl, selectTab = true)
         }
@@ -537,11 +554,12 @@ class PetalBrowserViewModel @Inject constructor(
         }
         tabsUseCases.removeTab(tabId)
         PetalTabMetadataStore.remove(context, tabId)
+        com.petal.browser.engine.gecko.PetalTranslationsManager.remove(tabId)
         aiConversationManager.dropConversation(tabId)
         if (isPrivate) {
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
-        if (browserStore.state.tabs.isEmpty()) {
+        if (browserStore.state.tabs.none { it.id != tabId && !PetalEngineStore.isEphemeralTabId(it.id) }) {
             openPlaceholderHomeTab()
         }
     }
@@ -589,13 +607,15 @@ class PetalBrowserViewModel @Inject constructor(
                 }
             }
             PetalTabMetadataStore.remove(context, id)
+            com.petal.browser.engine.gecko.PetalTranslationsManager.remove(id)
             aiConversationManager.dropConversation(id)
         }
         browserStore.dispatch(TabListAction.RemoveTabsAction(tabIds.toList()))
         if (hadPrivate) {
             PetalIncognitoSessionManager.syncIncognitoState(context)
         }
-        if (browserStore.state.tabs.isEmpty()) {
+        val closedSet = tabIds.toSet()
+        if (browserStore.state.tabs.none { it.id !in closedSet && !PetalEngineStore.isEphemeralTabId(it.id) }) {
             openPlaceholderHomeTab()
         }
     }
@@ -766,23 +786,39 @@ class PetalBrowserViewModel @Inject constructor(
         activeTab.value?.let { sessionUseCases.stopLoading(it.id) }
     }
 
+    fun exitFullscreen() {
+        activeTab.value?.let { tab ->
+            if (tab.content.fullScreen) {
+                sessionUseCases.exitFullscreen(tab.id)
+            }
+        }
+    }
+
     fun goBack(): Boolean {
-        // Priority 1: If any overlay / sheet is open, close it first
+        // Priority 1: Exit fullscreen web content before closing overlays or navigating
+        val currentTab = activeTab.value
+        if (currentTab?.content?.fullScreen == true) {
+            sessionUseCases.exitFullscreen(currentTab.id)
+            return true
+        }
+
+        // Priority 2: If any overlay / sheet is open, close it first
         if (dismissTopOverlay()) {
             return true
         }
 
-        val tab = activeTab.value ?: return false
+        val tab = currentTab ?: return false
         val currentUrl = tab.content.url
         val effectiveHome = if (tab.content.private) "about:home" else PetalBrowserUtils.getEffectiveHomepageUrl(context)
         val isAlreadyHome = PetalBrowserUtils.isHomePage(currentUrl) ||
                 currentUrl.trim().trimEnd('/').equals(effectiveHome.trim().trimEnd('/'), ignoreCase = true)
         val meta = PetalTabMetadataStore.get(context, tab.id)
-        val totalTabs = browserStore.state.tabs.size
+        val nonEphemeralTabs = browserStore.state.tabs.filterNot { PetalEngineStore.isEphemeralTabId(it.id) }
+        val totalTabs = nonEphemeralTabs.size
 
         val target = com.petal.browser.browser.rules.PetalRootTabBackRules.decide(
             isOverlayShowing = false,
-            isFullscreen = false,
+            isFullscreen = tab.content.fullScreen,
             hasDialog = false,
             canGoBack = tab.content.canGoBack,
             isHomePage = isAlreadyHome,
@@ -793,6 +829,10 @@ class PetalBrowserViewModel @Inject constructor(
         )
 
         return when (target) {
+            com.petal.browser.browser.rules.PetalBackTarget.FULLSCREEN_VIDEO -> {
+                sessionUseCases.exitFullscreen(tab.id)
+                true
+            }
             com.petal.browser.browser.rules.PetalBackTarget.WEB_HISTORY -> {
                 sessionUseCases.goBack(tab.id)
                 true
@@ -802,7 +842,13 @@ class PetalBrowserViewModel @Inject constructor(
                 true
             }
             com.petal.browser.browser.rules.PetalBackTarget.RETURN_TO_OPENER -> {
-                meta?.parentId?.let { selectTab(it); true } ?: false
+                val parentId = meta?.parentId
+                if (!parentId.isNullOrBlank() && browserStore.state.tabs.any { it.id == parentId }) {
+                    selectTab(parentId)
+                    true
+                } else {
+                    false
+                }
             }
             com.petal.browser.browser.rules.PetalBackTarget.CLOSE_AND_RETURN_TO_OPENER,
             com.petal.browser.browser.rules.PetalBackTarget.CLOSE_TAB_AND_PREVIOUS -> {
@@ -811,7 +857,6 @@ class PetalBrowserViewModel @Inject constructor(
             }
             com.petal.browser.browser.rules.PetalBackTarget.CONFIRM_EXIT_DIALOG,
             com.petal.browser.browser.rules.PetalBackTarget.DELEGATE_TO_SYSTEM -> false
-            else -> false
         }
     }
 
@@ -834,7 +879,7 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun switchToNextTab() {
         val state = browserStore.state
-        val tabs = state.tabs
+        val tabs = state.tabs.filterNot { PetalEngineStore.isEphemeralTabId(it.id) }
         if (tabs.size <= 1) return
         val currentIndex = tabs.indexOfFirst { it.id == state.selectedTabId }
         val nextIndex = if (currentIndex != -1) (currentIndex + 1) % tabs.size else 0
@@ -843,7 +888,7 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun switchToPreviousTab() {
         val state = browserStore.state
-        val tabs = state.tabs
+        val tabs = state.tabs.filterNot { PetalEngineStore.isEphemeralTabId(it.id) }
         if (tabs.size <= 1) return
         val currentIndex = tabs.indexOfFirst { it.id == state.selectedTabId }
         val prevIndex = if (currentIndex > 0) currentIndex - 1 else tabs.size - 1

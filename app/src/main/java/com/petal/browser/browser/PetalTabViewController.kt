@@ -686,6 +686,8 @@ class PetalTabViewController private constructor(
                 if (!staleBlank && newUrl.isNotBlank() && !newUrl.equals(pageUrl, ignoreCase = true)) {
                     previewRevision++
                     previewRetryCount = 0
+                    currentScrollX = 0
+                    currentScrollY = 0
                     pageUrl = newUrl
                     tab?.let { com.petal.browser.engine.gecko.PetalTranslationsManager.reset(it.id) }
                     applyPageSettings(newUrl)
@@ -825,14 +827,18 @@ class PetalTabViewController private constructor(
             }
 
             // GeckoSession ScrollDelegate for Tactile Haptics and Address Bar Collapsing on scroll
-            // Keep Mozilla's engine delegates alive (captured once, never our own wrapper) so the
-            // BrowserStore still receives scroll / history / content-blocking events.
-            gs.scrollDelegate?.takeIf { it !is PetalOwnedDelegate }?.let { engineScrollDelegate = it }
-            gs.historyDelegate?.takeIf { it !is PetalOwnedDelegate }?.let { engineHistoryDelegate = it }
-            gs.contentBlockingDelegate?.takeIf { it !is PetalOwnedDelegate }?.let { engineContentBlockingDelegate = it }
-            gs.scrollDelegate = object : org.mozilla.geckoview.GeckoSession.ScrollDelegate, PetalOwnedDelegate {
-                override fun onScrollChanged(session: org.mozilla.geckoview.GeckoSession, scrollX: Int, scrollY: Int) {
-                    try { engineScrollDelegate?.onScrollChanged(session, scrollX, scrollY) } catch (_: Throwable) {}
+            // Keep Mozilla's engine delegates alive (rebind existing wrappers on re-attach so
+            // BrowserStore never loses scroll / history / content-blocking events).
+            val existingScroll = gs.scrollDelegate
+            if (existingScroll is PetalScrollDelegateWrapper) {
+                existingScroll.onScrolled = { scrollX, scrollY ->
+                    currentScrollX = scrollX
+                    currentScrollY = scrollY
+                    lastScrollTime = android.os.SystemClock.uptimeMillis()
+                }
+            } else {
+                engineScrollDelegate = existingScroll?.takeIf { it !is PetalOwnedDelegate }
+                gs.scrollDelegate = PetalScrollDelegateWrapper(engineScrollDelegate) { scrollX, scrollY ->
                     currentScrollX = scrollX
                     currentScrollY = scrollY
                     lastScrollTime = android.os.SystemClock.uptimeMillis()
@@ -855,120 +861,109 @@ class PetalTabViewController private constructor(
             }
 
             // Official Mozilla Firefox ContentBlocking Delegate (Enhanced Tracking Protection & AdBlock telemetry)
-            gs.contentBlockingDelegate = object : org.mozilla.geckoview.ContentBlocking.Delegate, PetalOwnedDelegate {
-                override fun onContentBlocked(
-                    session: org.mozilla.geckoview.GeckoSession,
-                    event: org.mozilla.geckoview.ContentBlocking.BlockEvent
-                ) {
-                    try { engineContentBlockingDelegate?.onContentBlocked(session, event) } catch (_: Throwable) {}
-                    val atCat = try { event.antiTrackingCategory } catch (_: Throwable) { 0 }
-                    val cookieCat = try { event.cookieBehaviorCategory } catch (_: Throwable) { 0 }
-                    com.petal.browser.browser.PetalAdBlockEngine.recordBlockWithCategories(
-                        pageUrl,
-                        atCat,
-                        cookieCat,
-                        isPrivate = isIncognito()
-                    )
-                }
-
-                override fun onContentLoaded(
-                    session: org.mozilla.geckoview.GeckoSession,
-                    event: org.mozilla.geckoview.ContentBlocking.BlockEvent
-                ) {
-                    try { engineContentBlockingDelegate?.onContentLoaded(session, event) } catch (_: Throwable) {}
-                }
+            val existingBlocking = gs.contentBlockingDelegate
+            if (existingBlocking is PetalContentBlockingDelegateWrapper) {
+                existingBlocking.rebind({ pageUrl }, { isIncognito() })
+            } else {
+                engineContentBlockingDelegate = existingBlocking?.takeIf { it !is PetalOwnedDelegate }
+                gs.contentBlockingDelegate = PetalContentBlockingDelegateWrapper(
+                    engineContentBlockingDelegate,
+                    { pageUrl },
+                    { isIncognito() }
+                )
             }
 
             // GeckoSession HistoryDelegate to record top-level page visits into Petal history
-            gs.historyDelegate = object : org.mozilla.geckoview.GeckoSession.HistoryDelegate, PetalOwnedDelegate {
-                override fun onHistoryStateChange(
-                    session: org.mozilla.geckoview.GeckoSession,
-                    historyList: org.mozilla.geckoview.GeckoSession.HistoryDelegate.HistoryList
-                ) {
-                    try { engineHistoryDelegate?.onHistoryStateChange(session, historyList) } catch (_: Throwable) {}
-                    // Publish this tab's back/forward list for the history popup (long-press Back).
-                    tab?.id?.let { id ->
-                        try { PetalTabHistoryState.update(id, historyList) } catch (_: Throwable) {}
-                    }
-                    val currentIndex = historyList.currentIndex
-                    val size = historyList.size
-                    backAvailable = currentIndex > 0
-                    forwardAvailable = currentIndex < size - 1
-                    tab?.let {
-                        PetalEngineStore.updateNavigationState(
-                            appContext,
-                            it.id,
-                            backAvailable,
-                            forwardAvailable
-                        )
-                    }
-                    val act = resolveActivity(context)
-                    if (act is com.petal.browser.activity.MainActivity) {
-                        act.runOnUiThread {
-                            act.updateBackCallbackState()
-                            act.updateOmniBox()
+            val existingHistory = gs.historyDelegate
+            if (existingHistory !is PetalOwnedDelegate) {
+                engineHistoryDelegate = existingHistory
+                gs.historyDelegate = object : org.mozilla.geckoview.GeckoSession.HistoryDelegate, PetalOwnedDelegate {
+                    override fun onHistoryStateChange(
+                        session: org.mozilla.geckoview.GeckoSession,
+                        historyList: org.mozilla.geckoview.GeckoSession.HistoryDelegate.HistoryList
+                    ) {
+                        try { engineHistoryDelegate?.onHistoryStateChange(session, historyList) } catch (_: Throwable) {}
+                        // Publish this tab's back/forward list for the history popup (long-press Back).
+                        tab?.id?.let { id ->
+                            try { PetalTabHistoryState.update(id, historyList) } catch (_: Throwable) {}
                         }
-                    }
-                }
-
-                override fun onVisited(
-                    session: org.mozilla.geckoview.GeckoSession,
-                    url: String,
-                    lastVisitedURL: String?,
-                    flags: Int
-                ): org.mozilla.geckoview.GeckoResult<Boolean> {
-                    val isTopLevel = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_TOP_LEVEL) != 0
-                    val isError = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_UNRECOVERABLE_ERROR) != 0
-                    val isRedirect = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE) != 0 ||
-                                     (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT) != 0
-
-                    if (isIncognito()) {
-                        return org.mozilla.geckoview.GeckoResult.fromValue(false)
-                    }
-                    if (isTopLevel && !isError && !isRedirect) {
-                        com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(url)
-                    }
-                    // Mozilla's HistoryDelegate (set in PetalEngineStore) records the visit with the
-                    // right visit type and redirect source. Only fall back to Petal's own writer if
-                    // the engine delegate is missing.
-                    val engineDelegate = engineHistoryDelegate
-                    if (engineDelegate != null) {
-                        return try {
-                            engineDelegate.onVisited(session, url, lastVisitedURL, flags)
-                                ?: org.mozilla.geckoview.GeckoResult.fromValue(true)
-                        } catch (_: Throwable) {
-                            org.mozilla.geckoview.GeckoResult.fromValue(true)
+                        val currentIndex = historyList.currentIndex
+                        val size = historyList.size
+                        backAvailable = currentIndex > 0
+                        forwardAvailable = currentIndex < size - 1
+                        tab?.let {
+                            PetalEngineStore.updateNavigationState(
+                                appContext,
+                                it.id,
+                                backAvailable,
+                                forwardAvailable
+                            )
                         }
-                    }
-                    if (isTopLevel && !isError && !isRedirect) {
-                        recordHistoryVisit(url, pageTitle, force = true)
-                    }
-                    return org.mozilla.geckoview.GeckoResult.fromValue(true)
-                }
-
-                override fun getVisited(
-                    session: org.mozilla.geckoview.GeckoSession,
-                    urls: Array<out String>
-                ): org.mozilla.geckoview.GeckoResult<BooleanArray>? {
-                    engineHistoryDelegate?.let { d ->
-                        try { d.getVisited(session, urls)?.let { return it } } catch (_: Throwable) {}
-                    }
-                    val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
-                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
-                        try {
-                            val filterUrls = urls.map { it.trim() }
-                            val visitedList = com.petal.browser.database.PetalPlacesProvider.getVisited(context, filterUrls)
-                            val visited = BooleanArray(filterUrls.size) { i ->
-                                val u = filterUrls[i]
-                                if (u.isBlank() || u.startsWith("about:") || u.startsWith("moz-extension://")) false
-                                else visitedList.getOrElse(i) { false }
+                        val act = resolveActivity(context)
+                        if (act is com.petal.browser.activity.MainActivity) {
+                            act.runOnUiThread {
+                                act.updateBackCallbackState()
+                                act.updateOmniBox()
                             }
-                            result.complete(visited)
-                        } catch (_: Throwable) {
-                            result.complete(BooleanArray(urls.size) { false })
                         }
                     }
-                    return result
+
+                    override fun onVisited(
+                        session: org.mozilla.geckoview.GeckoSession,
+                        url: String,
+                        lastVisitedURL: String?,
+                        flags: Int
+                    ): org.mozilla.geckoview.GeckoResult<Boolean> {
+                        val isTopLevel = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_TOP_LEVEL) != 0
+                        val isError = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_UNRECOVERABLE_ERROR) != 0
+                        val isRedirect = (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE) != 0 ||
+                                         (flags and org.mozilla.geckoview.GeckoSession.HistoryDelegate.VISIT_REDIRECT_SOURCE_PERMANENT) != 0
+
+                        if (isIncognito()) {
+                            return org.mozilla.geckoview.GeckoResult.fromValue(false)
+                        }
+                        if (isTopLevel && !isError && !isRedirect) {
+                            com.petal.browser.unit.PetalSessionHistoryManager.recordSessionVisit(url)
+                        }
+                        val engineDelegate = engineHistoryDelegate
+                        if (engineDelegate != null) {
+                            return try {
+                                engineDelegate.onVisited(session, url, lastVisitedURL, flags)
+                                    ?: org.mozilla.geckoview.GeckoResult.fromValue(true)
+                            } catch (_: Throwable) {
+                                org.mozilla.geckoview.GeckoResult.fromValue(true)
+                            }
+                        }
+                        if (isTopLevel && !isError && !isRedirect) {
+                            recordHistoryVisit(url, pageTitle, force = true)
+                        }
+                        return org.mozilla.geckoview.GeckoResult.fromValue(true)
+                    }
+
+                    override fun getVisited(
+                        session: org.mozilla.geckoview.GeckoSession,
+                        urls: Array<out String>
+                    ): org.mozilla.geckoview.GeckoResult<BooleanArray>? {
+                        engineHistoryDelegate?.let { d ->
+                            try { d.getVisited(session, urls)?.let { return it } } catch (_: Throwable) {}
+                        }
+                        val result = org.mozilla.geckoview.GeckoResult<BooleanArray>()
+                        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                            try {
+                                val filterUrls = urls.map { it.trim() }
+                                val visitedList = com.petal.browser.database.PetalPlacesProvider.getVisited(context, filterUrls)
+                                val visited = BooleanArray(filterUrls.size) { i ->
+                                    val u = filterUrls[i]
+                                    if (u.isBlank() || u.startsWith("about:") || u.startsWith("moz-extension://")) false
+                                    else visitedList.getOrElse(i) { false }
+                                }
+                                result.complete(visited)
+                            } catch (_: Throwable) {
+                                result.complete(BooleanArray(urls.size) { false })
+                            }
+                        }
+                        return result
+                    }
                 }
             }
         }
@@ -2384,6 +2379,49 @@ class PetalTabViewController private constructor(
  */
 
 
+private class PetalScrollDelegateWrapper(
+    private val chained: org.mozilla.geckoview.GeckoSession.ScrollDelegate?,
+    @Volatile var onScrolled: (Int, Int) -> Unit
+) : org.mozilla.geckoview.GeckoSession.ScrollDelegate, PetalOwnedDelegate {
+    override fun onScrollChanged(session: org.mozilla.geckoview.GeckoSession, scrollX: Int, scrollY: Int) {
+        try { chained?.onScrollChanged(session, scrollX, scrollY) } catch (_: Throwable) {}
+        onScrolled(scrollX, scrollY)
+    }
+}
+
+private class PetalContentBlockingDelegateWrapper(
+    private val chained: org.mozilla.geckoview.ContentBlocking.Delegate?,
+    @Volatile private var urlProvider: () -> String,
+    @Volatile private var privateProvider: () -> Boolean
+) : org.mozilla.geckoview.ContentBlocking.Delegate, PetalOwnedDelegate {
+    fun rebind(newUrlProvider: () -> String, newPrivateProvider: () -> Boolean) {
+        urlProvider = newUrlProvider
+        privateProvider = newPrivateProvider
+    }
+
+    override fun onContentBlocked(
+        session: org.mozilla.geckoview.GeckoSession,
+        event: org.mozilla.geckoview.ContentBlocking.BlockEvent
+    ) {
+        try { chained?.onContentBlocked(session, event) } catch (_: Throwable) {}
+        val atCat = try { event.antiTrackingCategory } catch (_: Throwable) { 0 }
+        val cookieCat = try { event.cookieBehaviorCategory } catch (_: Throwable) { 0 }
+        com.petal.browser.browser.PetalAdBlockEngine.recordBlockWithCategories(
+            urlProvider(),
+            atCat,
+            cookieCat,
+            isPrivate = privateProvider()
+        )
+    }
+
+    override fun onContentLoaded(
+        session: org.mozilla.geckoview.GeckoSession,
+        event: org.mozilla.geckoview.ContentBlocking.BlockEvent
+    ) {
+        try { chained?.onContentLoaded(session, event) } catch (_: Throwable) {}
+    }
+}
+
 /**
  * Forwards every NavigationDelegate callback explicitly to Mozilla GeckoEngine's own delegate
  * without using Kotlin `by` interface delegation (which drops Java default methods per KT-18324).
@@ -2425,6 +2463,9 @@ private class ExternalSchemeNavigationDelegate(
         if (newOnConnectivityError != null) onConnectivityError = newOnConnectivityError
     }
 
+    private var lastUnwrappedUrl: String? = null
+    private var lastUnwrappedAtMs: Long = 0L
+
     override fun onLocationChange(
         session: org.mozilla.geckoview.GeckoSession,
         url: String?,
@@ -2433,22 +2474,30 @@ private class ExternalSchemeNavigationDelegate(
     ) {
         android.util.Log.d("PetalTabNav", "ExternalSchemeNavigationDelegate: onLocationChange (4-arg): url=$url gesture=$hasUserGesture")
         if (!url.isNullOrBlank()) {
+            val now = android.os.SystemClock.uptimeMillis()
+            val canUnwrap = !(url.equals(lastUnwrappedUrl, ignoreCase = true) && now - lastUnwrappedAtMs < 5_000L)
             val bounceProtectionEnabled = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
                 .getBoolean("sp_bounce_tracking", false)
-            if (bounceProtectionEnabled) {
+            if (canUnwrap && bounceProtectionEnabled) {
                 val unbouncedUrl = com.petal.browser.privacy.PetalBounceTrackingProtection.detectAndUnwrapBounceUrl(url)
                 if (unbouncedUrl != null && !unbouncedUrl.equals(url, ignoreCase = true)) {
+                    lastUnwrappedUrl = url
+                    lastUnwrappedAtMs = now
                     android.util.Log.i("PetalTabNav", "Bounce Tracking detected: bypassing $url -> $unbouncedUrl")
                     loadReplacingHistory(session, unbouncedUrl)
                     return
                 }
             }
 
-            val deAmpUrl = com.petal.browser.privacy.PetalDeAmpEngine.unwrapAmpUrl(url)
-            if (deAmpUrl != null && !deAmpUrl.equals(url, ignoreCase = true)) {
-                android.util.Log.i("PetalTabNav", "De-AMP triggered: redirecting $url -> $deAmpUrl")
-                loadReplacingHistory(session, deAmpUrl)
-                return
+            if (canUnwrap) {
+                val deAmpUrl = com.petal.browser.privacy.PetalDeAmpEngine.unwrapAmpUrl(url)
+                if (deAmpUrl != null && !deAmpUrl.equals(url, ignoreCase = true)) {
+                    lastUnwrappedUrl = url
+                    lastUnwrappedAtMs = now
+                    android.util.Log.i("PetalTabNav", "De-AMP triggered: redirecting $url -> $deAmpUrl")
+                    loadReplacingHistory(session, deAmpUrl)
+                    return
+                }
             }
 
             onLocationChanged(url)

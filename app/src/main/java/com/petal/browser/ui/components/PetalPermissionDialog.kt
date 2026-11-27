@@ -515,14 +515,27 @@ object PetalPermissionDialogBridge {
         onAllow: (remember: Boolean) -> Unit,
         onDeny: (remember: Boolean) -> Unit
     ) {
+        val resolved = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun completeOnce(block: () -> Unit) {
+            if (resolved.compareAndSet(false, true)) {
+                block()
+            }
+        }
+
         var currContext = context
         while (currContext is android.content.ContextWrapper) {
             if (currContext is androidx.activity.ComponentActivity) break
             currContext = currContext.baseContext
         }
 
-        val activity = currContext as? androidx.activity.ComponentActivity ?: return
-        if (activity.isFinishing || activity.isDestroyed) return
+        val activity = currContext as? androidx.activity.ComponentActivity ?: run {
+            completeOnce { onDeny(false) }
+            return
+        }
+        if (activity.isFinishing || activity.isDestroyed) {
+            completeOnce { onDeny(false) }
+            return
+        }
 
         val dialog = android.app.Dialog(activity)
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
@@ -545,11 +558,11 @@ object PetalPermissionDialogBridge {
                             origin = origin,
                             onAllow = { remember ->
                                 try { dialog.dismiss() } catch (_: Exception) {}
-                                onAllow(remember)
+                                completeOnce { onAllow(remember) }
                             },
                             onDeny = { remember ->
                                 try { dialog.dismiss() } catch (_: Exception) {}
-                                onDeny(remember)
+                                completeOnce { onDeny(remember) }
                             }
                         )
                     }
@@ -561,7 +574,7 @@ object PetalPermissionDialogBridge {
         dialog.setContentView(composeView)
         dialog.setCancelable(true)
         dialog.setCanceledOnTouchOutside(true)
-        dialog.setOnCancelListener { onDeny(false) }
+        dialog.setOnCancelListener { completeOnce { onDeny(false) } }
         dialog.window?.let { win ->
             win.setBackgroundDrawableResource(android.R.color.transparent)
             win.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -579,9 +592,12 @@ object PetalPermissionDialogBridge {
         dialog.setOnDismissListener {
             unbindBlur?.invoke()
             unbindBlur = null
+            completeOnce { onDeny(false) }
         }
         try {
             dialog.show()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            completeOnce { onDeny(false) }
+        }
     }
 }

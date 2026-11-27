@@ -31,6 +31,7 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.mozilla.geckoview.GeckoRuntime
 import java.io.File
 
 /**
@@ -116,11 +117,11 @@ class Stage4GeckoReflectionTest {
 
     @Test
     fun crashHandlerService_constantsMatchGeckoViewSpec() {
-        assertEquals("minidumpPath", PetalCrashHandlerService.EXTRA_MINIDUMP_PATH)
-        assertEquals("extrasPath", PetalCrashHandlerService.EXTRA_EXTRAS_PATH)
-        assertEquals("isFatal", PetalCrashHandlerService.EXTRA_CRASH_IS_FATAL)
-        assertEquals("processType", PetalCrashHandlerService.EXTRA_CRASH_PROCESS)
-        assertEquals("processVisibility", PetalCrashHandlerService.EXTRA_CRASH_PROCESS_VISIBILITY)
+        assertEquals(GeckoRuntime.EXTRA_CRASH_MINIDUMP_PATH, PetalCrashHandlerService.EXTRA_MINIDUMP_PATH)
+        assertEquals(GeckoRuntime.EXTRA_CRASH_EXTRAS_PATH, PetalCrashHandlerService.EXTRA_EXTRAS_PATH)
+        assertEquals(GeckoRuntime.EXTRA_CRASH_PROCESS_TYPE, PetalCrashHandlerService.EXTRA_CRASH_PROCESS)
+        assertEquals(GeckoRuntime.EXTRA_CRASH_PROCESS_VISIBILITY, PetalCrashHandlerService.EXTRA_CRASH_PROCESS_VISIBILITY)
+        assertEquals(GeckoRuntime.EXTRA_CRASH_REMOTE_TYPE, PetalCrashHandlerService.EXTRA_CRASH_REMOTE_TYPE)
     }
 
     @Test

@@ -28,8 +28,7 @@ object BarMetrics {
      * Reports are ignored while the bars are minimized or sliding: a collapsed bar is not composed
      * (so it would report a size of 0) and must never shrink the page padding.
      */
-    private fun settled(): Boolean =
-        BarCollapseState.collapsedFraction <= 0f && !BarCollapseState.viewportCollapsed
+    private fun settled(): Boolean = BarCollapseState.collapsedFraction <= 0f
 
     fun reportTop(px: Int) { if (px > 0 && settled()) topBarPx = px }
     fun reportBottomAddress(px: Int) { if (px > 0 && settled()) bottomAddressPx = px }
@@ -74,7 +73,7 @@ object BarMetrics {
         val nav = if (!navVisible) 0 else if (measuredBottomNav > 0) measuredBottomNav else estimatedBottomNav
         return if (isBottomAddressBar) {
             val address = if (measuredBottomAddress > 0) measuredBottomAddress else estimatedBottomAddress
-            val bottom = if (isFloatingBottomAddress) 0 else address + nav
+            val bottom = (if (isFloatingBottomAddress) 0 else address) + (if (isFloatingNav) 0 else nav)
             PagePadding(top = topOverlayPx, bottom = bottom)
         } else {
             val top = if (measuredTop > 0) measuredTop else estimatedTop

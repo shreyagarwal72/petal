@@ -82,7 +82,10 @@ object PetalBrowserUtils {
                 val scheme = uri.scheme.lowercase(Locale.ROOT)
                 return scheme == "http" || scheme == "https" || scheme == "file" ||
                         scheme == "content" || scheme == "about" || scheme == "chrome" ||
-                        scheme == "moz-extension" || scheme == "petal" || scheme == "javascript"
+                        scheme == "moz-extension" || scheme == "petal" || scheme == "javascript" ||
+                        scheme == "view-source" || scheme == "mailto" || scheme == "data" ||
+                        scheme == "blob" || scheme == "ftp" || scheme == "tel" ||
+                        scheme == "sms" || scheme == "geo" || scheme == "intent"
             }
 
             DOMAIN_OR_IP_PATTERN.matcher(trimmed).matches()
@@ -104,10 +107,22 @@ object PetalBrowserUtils {
         }
 
         if (isURL(processed)) {
-            if (processed.startsWith("about:") || processed.startsWith("mailto:") ||
-                processed.startsWith("file:") || processed.startsWith("content:") ||
-                processed.startsWith("chrome://") || processed.startsWith("moz-extension://") ||
-                processed.startsWith("petal://")
+            if (processed.startsWith("about:", ignoreCase = true) ||
+                processed.startsWith("mailto:", ignoreCase = true) ||
+                processed.startsWith("file:", ignoreCase = true) ||
+                processed.startsWith("content:", ignoreCase = true) ||
+                processed.startsWith("chrome://", ignoreCase = true) ||
+                processed.startsWith("moz-extension://", ignoreCase = true) ||
+                processed.startsWith("petal://", ignoreCase = true) ||
+                processed.startsWith("view-source:", ignoreCase = true) ||
+                processed.startsWith("data:", ignoreCase = true) ||
+                processed.startsWith("blob:", ignoreCase = true) ||
+                processed.startsWith("javascript:", ignoreCase = true) ||
+                processed.startsWith("tel:", ignoreCase = true) ||
+                processed.startsWith("sms:", ignoreCase = true) ||
+                processed.startsWith("geo:", ignoreCase = true) ||
+                processed.startsWith("intent:", ignoreCase = true) ||
+                processed.startsWith("ftp:", ignoreCase = true)
             ) {
                 return processed
             }

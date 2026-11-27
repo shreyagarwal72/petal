@@ -5,6 +5,7 @@ import com.petal.browser.browser.PetalOwnedDelegate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.TranslationsController
 import org.mozilla.geckoview.TranslationsController.SessionTranslation
@@ -55,18 +56,23 @@ object PetalTranslationsManager {
         a != null && b != null && a.substringBefore('-').equals(b.substringBefore('-'), ignoreCase = true)
 
     private fun mutate(tabId: String, block: (TabState) -> TabState) {
-        val current = _states.value[tabId] ?: TabState()
-        _states.value = _states.value + (tabId to block(current))
+        _states.update { map ->
+            val current = map[tabId] ?: TabState()
+            map + (tabId to block(current))
+        }
     }
 
     fun reset(tabId: String) {
-        val prev = _states.value[tabId] ?: return
-        // Keep the user's chosen target language across navigations within the tab.
-        _states.value = _states.value + (tabId to TabState(targetOverride = prev.targetOverride))
+        _states.update { map ->
+            val prev = map[tabId] ?: return@update map
+            map + (tabId to TabState(targetOverride = prev.targetOverride))
+        }
     }
 
     fun remove(tabId: String) {
-        if (_states.value.containsKey(tabId)) _states.value = _states.value - tabId
+        _states.update { map ->
+            if (map.containsKey(tabId)) map - tabId else map
+        }
     }
 
     fun setTarget(tabId: String, languageTag: String) = mutate(tabId) { it.copy(targetOverride = languageTag) }
@@ -158,9 +164,14 @@ object PetalTranslationsManager {
         try {
             st.restoreOriginalPage().accept(
                 { mutate(tabId) { it.copy(translatedFrom = null, translatedTo = null, processing = false, error = null) } },
-                { t -> Log.w(TAG, "restoreOriginalPage failed: ${t?.message}") }
+                { t ->
+                    Log.w(TAG, "restoreOriginalPage failed: ${t?.message}")
+                    mutate(tabId) { it.copy(processing = false, error = t?.message ?: "error") }
+                }
             )
-        } catch (_: Throwable) {}
+        } catch (t: Throwable) {
+            mutate(tabId) { it.copy(processing = false, error = t.message ?: "error") }
+        }
     }
 
     /** Always translate (or stop translating) [languageTag] automatically on page load. */

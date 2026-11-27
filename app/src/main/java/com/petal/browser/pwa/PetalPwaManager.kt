@@ -782,19 +782,25 @@ class PetalPwaManager(
             try {
                 val archiveDir = File(activity.filesDir, "offline_web_archives")
                 if (!archiveDir.exists()) archiveDir.mkdirs()
-                val filename = "archive_" + Math.abs(targetUrl.hashCode()) + ".mht"
+                val filename = "archive_" + Math.abs(targetUrl.hashCode()) + ".pdf"
                 val archiveFile = File(archiveDir, filename)
 
                 activity.runOnUiThread {
                     if (tabViewController != null) {
+                        var fos: FileOutputStream? = null
                         try {
-                            val fos = FileOutputStream(archiveFile)
+                            fos = FileOutputStream(archiveFile)
                             tabViewController.printToPdf(fos) { success ->
                                 if (java.lang.Boolean.TRUE == success) {
                                     PetalEngineStore.addOfflineArchive(activity, targetUrl, archiveFile.absolutePath, title)
+                                } else {
+                                    try { fos?.close() } catch (_: Throwable) {}
+                                    try { archiveFile.delete() } catch (_: Throwable) {}
                                 }
                             }
                         } catch (e: Exception) {
+                            try { fos?.close() } catch (_: Throwable) {}
+                            try { archiveFile.delete() } catch (_: Throwable) {}
                             PetalAppLogger.w(TAG, "Error printing tab to PDF for offline archive", e)
                         }
                     }

@@ -189,7 +189,7 @@ class PetalCustomTabActivity : ComponentActivity() {
                                         url = targetUrl.ifBlank { "about:blank" },
                                         title = "",
                                         isIncognito = isIncognitoCustomTab,
-                                        select = true
+                                        select = false
                                     )
                                     val surface = PetalTabViewController(ctx).also { sfc ->
                                         customTabId = tabId
@@ -197,7 +197,6 @@ class PetalCustomTabActivity : ComponentActivity() {
                                         sfc.bindTab(sessionPair.first)
                                         sfc.attachLifecycle(this@PetalCustomTabActivity)
                                         sfc.activate()
-                                        com.petal.browser.engine.gecko.PetalEngineStore.selectTab(ctx, tabId)
                                         sfc.onBrowserStateChanged = { state ->
                                             currentUrlState = state.url
                                             currentTitleState = state.title
@@ -252,8 +251,35 @@ class PetalCustomTabActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        val wasIncognito = isIncognitoCustomTab
         parseCustomTabsIntentExtras(intent)
+        if (isIncognitoCustomTab) {
+            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.enableIncognitoSecurity(this)
+        } else {
+            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.disableIncognitoSecurity(this)
+        }
         val targetUrl = extractUrlFromIntent(intent)
+        if (wasIncognito != isIncognitoCustomTab && tabSurface != null) {
+            val prevId = customTabId
+            tabSurface?.destroy()
+            if (prevId != null) {
+                com.petal.browser.engine.gecko.PetalEngineStore.removeTab(this, prevId)
+            }
+            val newTabId = "tab_custom_${System.currentTimeMillis()}"
+            customTabId = newTabId
+            val pair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
+                context = this,
+                tabId = newTabId,
+                url = targetUrl.ifBlank { "about:blank" },
+                title = "",
+                isIncognito = isIncognitoCustomTab,
+                select = false
+            )
+            tabSurface?.let {
+                it.bindTab(pair.first)
+                it.activate()
+            }
+        }
         if (targetUrl.isNotBlank() && !targetUrl.equals("about:blank", ignoreCase = true)) {
             currentUrlState = targetUrl
             isSecureState = targetUrl.startsWith("https://", ignoreCase = true)
@@ -263,6 +289,9 @@ class PetalCustomTabActivity : ComponentActivity() {
 
     override fun onResume() {
         com.petal.browser.engine.gecko.PetalGeckoRuntime.setForegroundActivity(this)
+        if (isIncognitoCustomTab) {
+            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.enableIncognitoSecurity(this)
+        }
         super.onResume()
         updateCurrentUrlAndTitle()
     }
@@ -296,15 +325,17 @@ class PetalCustomTabActivity : ComponentActivity() {
                 || intent.getBooleanExtra("org.mozilla.fenix.EXTRA_IS_PRIVATE", false)
                 || intent.getBooleanExtra("com.google.android.apps.chrome.EXTRA_OPEN_NEW_INCOGNITO_TAB", false)
 
-            if (customToolbarColor == null && intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR)) {
+            customToolbarColor = if (intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR)) {
                 val colorInt = intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR, 0)
-                if (colorInt != 0) {
-                    customToolbarColor = Color(colorInt)
-                }
+                if (colorInt != 0) Color(colorInt) else null
+            } else {
+                null
             }
-            if (customCloseButtonBitmap == null && intent.hasExtra(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON)) {
+            customCloseButtonBitmap = if (intent.hasExtra(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON)) {
                 @Suppress("DEPRECATION")
-                customCloseButtonBitmap = intent.getParcelableExtra<Bitmap>(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON)
+                intent.getParcelableExtra<Bitmap>(CustomTabsIntent.EXTRA_CLOSE_BUTTON_ICON)
+            } else {
+                null
             }
         } catch (_: Throwable) {}
     }
@@ -316,8 +347,7 @@ class PetalCustomTabActivity : ComponentActivity() {
             val uriStr = dataUri.toString()
             if (uriStr.isNotBlank()) return uriStr
         }
-        val extraUrl = intent.getStringExtra(CustomTabsIntent.EXTRA_SESSION)
-            ?: intent.getStringExtra(Intent.EXTRA_TEXT)
+        val extraUrl = intent.getStringExtra(Intent.EXTRA_TEXT)
             ?: intent.getStringExtra("url")
         return extraUrl?.takeIf { it.isNotBlank() } ?: "about:blank"
     }

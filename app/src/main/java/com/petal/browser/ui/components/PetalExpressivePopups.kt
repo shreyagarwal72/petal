@@ -929,7 +929,11 @@ object PetalExpressivePromptBridge {
         message: String?,
         onConfirm: Runnable
     ) {
-        val activity = findActivity(context) ?: return
+        val activity = findActivity(context) ?: run { onConfirm.run(); return }
+        val resolved = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun finishAlert() {
+            if (resolved.compareAndSet(false, true)) onConfirm.run()
+        }
         var dialog: androidx.appcompat.app.AlertDialog? = null
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
@@ -941,14 +945,14 @@ object PetalExpressivePromptBridge {
                     PetalExpressiveAlertDialog(
                         onDismissRequest = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
-                            onConfirm.run()
+                            finishAlert()
                         },
                         title = title,
                         message = message,
                         confirmText = stringResource(R.string.ui_ok),
                         onConfirm = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
-                            onConfirm.run()
+                            finishAlert()
                         },
                         dismissText = null
                     )
@@ -958,10 +962,15 @@ object PetalExpressivePromptBridge {
         val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
-            .setOnCancelListener { onConfirm.run() }
-        dialog = builder.create().apply {
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            show()
+            .setOnCancelListener { finishAlert() }
+            .setOnDismissListener { finishAlert() }
+        try {
+            dialog = builder.create().apply {
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                show()
+            }
+        } catch (_: Exception) {
+            finishAlert()
         }
     }
 
@@ -973,7 +982,11 @@ object PetalExpressivePromptBridge {
         onConfirm: Runnable,
         onCancel: Runnable
     ) {
-        val activity = findActivity(context) ?: return
+        val activity = findActivity(context) ?: run { onCancel.run(); return }
+        val resolved = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun completeOnce(action: Runnable) {
+            if (resolved.compareAndSet(false, true)) action.run()
+        }
         var dialog: androidx.appcompat.app.AlertDialog? = null
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
@@ -985,19 +998,19 @@ object PetalExpressivePromptBridge {
                     PetalExpressiveAlertDialog(
                         onDismissRequest = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
-                            onCancel.run()
+                            completeOnce(onCancel)
                         },
                         title = title,
                         message = message,
                         confirmText = stringResource(R.string.ui_ok),
                         onConfirm = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
-                            onConfirm.run()
+                            completeOnce(onConfirm)
                         },
                         dismissText = stringResource(R.string.ui_cancel),
                         onDismiss = {
                             try { dialog?.dismiss() } catch (_: Exception) {}
-                            onCancel.run()
+                            completeOnce(onCancel)
                         }
                     )
                 }
@@ -1006,10 +1019,15 @@ object PetalExpressivePromptBridge {
         val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
-            .setOnCancelListener { onCancel.run() }
-        dialog = builder.create().apply {
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            show()
+            .setOnCancelListener { completeOnce(onCancel) }
+            .setOnDismissListener { completeOnce(onCancel) }
+        try {
+            dialog = builder.create().apply {
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                show()
+            }
+        } catch (_: Exception) {
+            completeOnce(onCancel)
         }
     }
 
@@ -1083,7 +1101,8 @@ object PetalExpressivePromptBridge {
         onConfirm: java.util.function.Consumer<String>,
         onCancel: Runnable
     ) {
-        val activity = findActivity(context) ?: return
+        val activity = findActivity(context) ?: run { onCancel.run(); return }
+        val resolved = java.util.concurrent.atomic.AtomicBoolean(false)
         var dialog: androidx.appcompat.app.AlertDialog? = null
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
@@ -1097,12 +1116,16 @@ object PetalExpressivePromptBridge {
                         message = message,
                         defaultValue = defaultValue ?: "",
                         onConfirm = { value ->
-                            try { dialog?.dismiss() } catch (_: Exception) {}
-                            onConfirm.accept(value)
+                            if (resolved.compareAndSet(false, true)) {
+                                try { dialog?.dismiss() } catch (_: Exception) {}
+                                onConfirm.accept(value)
+                            }
                         },
                         onDismiss = {
-                            try { dialog?.dismiss() } catch (_: Exception) {}
-                            onCancel.run()
+                            if (resolved.compareAndSet(false, true)) {
+                                try { dialog?.dismiss() } catch (_: Exception) {}
+                                onCancel.run()
+                            }
                         }
                     )
                 }
@@ -1111,10 +1134,15 @@ object PetalExpressivePromptBridge {
         val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
-            .setOnCancelListener { onCancel.run() }
-        dialog = builder.create().apply {
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            show()
+            .setOnCancelListener { if (resolved.compareAndSet(false, true)) onCancel.run() }
+            .setOnDismissListener { if (resolved.compareAndSet(false, true)) onCancel.run() }
+        try {
+            dialog = builder.create().apply {
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                show()
+            }
+        } catch (_: Exception) {
+            if (resolved.compareAndSet(false, true)) onCancel.run()
         }
     }
 
@@ -1128,7 +1156,8 @@ object PetalExpressivePromptBridge {
         onConfirm: java.util.function.BiConsumer<String, String>,
         onCancel: Runnable
     ) {
-        val activity = findActivity(context) ?: return
+        val activity = findActivity(context) ?: run { onCancel.run(); return }
+        val resolved = java.util.concurrent.atomic.AtomicBoolean(false)
         var dialog: androidx.appcompat.app.AlertDialog? = null
         val composeView = androidx.compose.ui.platform.ComposeView(activity).apply {
             setViewTreeLifecycleOwner(activity)
@@ -1143,12 +1172,16 @@ object PetalExpressivePromptBridge {
                         isPasswordOnly = isPasswordOnly,
                         initialUsername = initialUsername ?: "",
                         onConfirm = { user, pass ->
-                            try { dialog?.dismiss() } catch (_: Exception) {}
-                            onConfirm.accept(user, pass)
+                            if (resolved.compareAndSet(false, true)) {
+                                try { dialog?.dismiss() } catch (_: Exception) {}
+                                onConfirm.accept(user, pass)
+                            }
                         },
                         onDismiss = {
-                            try { dialog?.dismiss() } catch (_: Exception) {}
-                            onCancel.run()
+                            if (resolved.compareAndSet(false, true)) {
+                                try { dialog?.dismiss() } catch (_: Exception) {}
+                                onCancel.run()
+                            }
                         }
                     )
                 }
@@ -1157,10 +1190,15 @@ object PetalExpressivePromptBridge {
         val builder = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
             .setView(composeView)
             .setCancelable(true)
-            .setOnCancelListener { onCancel.run() }
-        dialog = builder.create().apply {
-            window?.setBackgroundDrawableResource(android.R.color.transparent)
-            show()
+            .setOnCancelListener { if (resolved.compareAndSet(false, true)) onCancel.run() }
+            .setOnDismissListener { if (resolved.compareAndSet(false, true)) onCancel.run() }
+        try {
+            dialog = builder.create().apply {
+                window?.setBackgroundDrawableResource(android.R.color.transparent)
+                show()
+            }
+        } catch (_: Exception) {
+            if (resolved.compareAndSet(false, true)) onCancel.run()
         }
     }
 

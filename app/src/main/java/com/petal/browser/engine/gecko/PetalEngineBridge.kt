@@ -75,8 +75,11 @@ object PetalEngineBridge {
     ): org.mozilla.geckoview.GeckoSessionSettings {
         val sp = PreferenceManager.getDefaultSharedPreferences(context)
         migrateDesktopKeys(sp)
+        val secLevel = com.petal.browser.privacy.PetalPrivacyHardening.getSecurityLevel(sp)
         val jsAllowed = if (isExtensionPopup) {
             true
+        } else if (secLevel == com.petal.browser.privacy.PetalPrivacyHardening.SecurityLevel.SAFEST) {
+            false
         } else {
             sp.getBoolean("sp_javascript", sp.getBoolean("profileStandard_javascript", true))
         }
@@ -156,8 +159,23 @@ object PetalEngineBridge {
             val field = cls.getDeclaredField("geckoSession")
             field.isAccessible = true
             val oldSession = field.get(engineSession) as? GeckoSession
-            if (oldSession != null && oldSession !== geckoSession && oldSession.isOpen) {
-                try { oldSession.close() } catch (_: Throwable) {}
+            if (oldSession != null && oldSession !== geckoSession) {
+                // Transfer Mozilla's internal GeckoEngineSession delegates onto the popup GeckoSession
+                // so BrowserStore keeps receiving URL, title, progress, history, and prompt updates.
+                geckoSession.navigationDelegate = oldSession.navigationDelegate
+                geckoSession.progressDelegate = oldSession.progressDelegate
+                geckoSession.contentDelegate = oldSession.contentDelegate
+                geckoSession.contentBlockingDelegate = oldSession.contentBlockingDelegate
+                geckoSession.permissionDelegate = oldSession.permissionDelegate
+                geckoSession.promptDelegate = oldSession.promptDelegate
+                geckoSession.mediaDelegate = oldSession.mediaDelegate
+                geckoSession.historyDelegate = oldSession.historyDelegate
+                geckoSession.mediaSessionDelegate = oldSession.mediaSessionDelegate
+                geckoSession.scrollDelegate = oldSession.scrollDelegate
+                geckoSession.translationsSessionDelegate = oldSession.translationsSessionDelegate
+                if (oldSession.isOpen) {
+                    try { oldSession.close() } catch (_: Throwable) {}
+                }
             }
             field.set(engineSession, geckoSession)
             true
@@ -746,28 +764,34 @@ object PetalEngineBridge {
                         return GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
                     }
                     return if (blockPopups) {
-                        if (!target.isNullOrBlank()) {
-                            val act = (context as? com.petal.browser.activity.MainActivity)
-                                ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.MainActivity
-                            act?.runOnUiThread {
+                        val act = activityProvider() as? androidx.activity.ComponentActivity
+                        if (act != null && !act.isFinishing && !act.isDestroyed && !target.isNullOrBlank()) {
+                            val result = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
+                            val isPrivate = incognitoProvider()
+                            act.runOnUiThread {
                                 com.petal.browser.compose.menu.PetalPopupBlockedBridge.show(
                                     activity = act,
                                     targetUrl = target,
-                                    isIncognito = incognitoProvider(),
+                                    isIncognito = isPrivate,
                                     onAllowOnce = {
-                                        act.addAlbum(null, target, true, incognitoProvider())
+                                        result.complete(prompt.confirm(AllowOrDeny.ALLOW))
                                     },
                                     onAlwaysAllow = {
-                                        if (host != null) {
+                                        if (host != null && !isPrivate) {
                                             val updated = (sp.getStringSet("sp_popup_allowed_domains", emptySet()) ?: emptySet()) + host
                                             sp.edit().putStringSet("sp_popup_allowed_domains", updated).apply()
                                         }
-                                        act.addAlbum(null, target, true, incognitoProvider())
+                                        result.complete(prompt.confirm(AllowOrDeny.ALLOW))
+                                    },
+                                    onDismiss = {
+                                        result.complete(prompt.confirm(AllowOrDeny.DENY))
                                     }
                                 )
                             }
+                            result
+                        } else {
+                            GeckoResult.fromValue(prompt.confirm(AllowOrDeny.DENY))
                         }
-                        GeckoResult.fromValue(prompt.confirm(AllowOrDeny.DENY))
                     } else {
                         GeckoResult.fromValue(prompt.confirm(AllowOrDeny.ALLOW))
                     }

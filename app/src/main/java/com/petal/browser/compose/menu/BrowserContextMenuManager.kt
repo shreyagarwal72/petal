@@ -97,26 +97,30 @@ object BrowserContextMenuManager {
             isImage = true,
             isVideo = false,
             handler = object : PetalLinkContextMenuHandler {
+                private val isPrivateTab: Boolean
+                    get() = activity.currentAlbumController?.isIncognito
+                        ?: (activity.viewModel.activeTab.value?.content?.private == true)
+
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(displayTitle, imageURL, true)
+                    activity.addAlbum(displayTitle, imageURL, true, isPrivateTab)
                 }
 
                 override fun onOpenInBackgroundTab() {
-                    activity.addAlbum(displayTitle, imageURL, false)
+                    activity.addAlbum(displayTitle, imageURL, false, isPrivateTab)
                     PetalToast.show(activity, "Opened in background tab")
                 }
 
                 override fun onOpenImageInNewTab() {
-                    activity.addAlbum(displayTitle, imageURL, true)
+                    activity.addAlbum(displayTitle, imageURL, true, isPrivateTab)
                 }
 
                 override fun onOpenImageInBackgroundTab() {
-                    activity.addAlbum(displayTitle, imageURL, false)
+                    activity.addAlbum(displayTitle, imageURL, false, isPrivateTab)
                     PetalToast.show(activity, "Opened in background tab")
                 }
 
                 override fun onOpenInNewTabInGroup() {
-                    activity.addAlbum(displayTitle, imageURL, true)
+                    activity.addAlbum(displayTitle, imageURL, true, isPrivateTab)
                 }
 
                 override fun onOpenInIncognitoTab() {
@@ -271,40 +275,46 @@ object BrowserContextMenuManager {
             isImage = false,
             isVideo = false,
             handler = object : PetalLinkContextMenuHandler {
+                private val isPrivateTab: Boolean
+                    get() = activity.currentAlbumController?.isIncognito
+                        ?: (activity.viewModel.activeTab.value?.content?.private == true)
+
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(displayTitle, urlResult, true)
+                    activity.addAlbum(displayTitle, urlResult, true, isPrivateTab)
                 }
 
                 override fun onOpenInBackgroundTab() {
-                    activity.addAlbum(displayTitle, urlResult, false)
+                    activity.addAlbum(displayTitle, urlResult, false, isPrivateTab)
                     PetalToast.show(activity, "Opened in background tab")
                 }
 
                 override fun onOpenInNewTabInGroup() {
+                    val isPriv = isPrivateTab
                     val currentAlbum = activity.currentAlbumController
                     val currentTabSurface = currentAlbum as? com.petal.browser.browser.PetalTabSurface
-                    val currentTabId = currentTabSurface?.tabId
-                        ?: currentAlbum?.hashCode()?.toString()
+                    val activeStoreTab = activity.viewModel.activeTab.value
+                    val currentTabId = currentTabSurface?.tabId ?: activeStoreTab?.id
                     val existingGroup = if (currentTabId != null) {
                         com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(activity, currentTabId)
                     } else null
 
                     if (existingGroup != null) {
-                        activity.addAlbumInGroup(displayTitle, urlResult, true, existingGroup.id, existingGroup.title)
+                        activity.addAlbumInGroup(displayTitle, urlResult, true, existingGroup.id, existingGroup.title, isPriv)
                     } else {
                         if (currentTabId != null) {
                             val currentTab = com.petal.browser.compose.tabs.PetalTabItem(
                                 id = currentTabId,
-                                title = currentAlbum?.title ?: "Tab",
-                                url = currentAlbum?.url ?: "about:blank"
+                                title = currentAlbum?.title ?: activeStoreTab?.content?.title ?: "Tab",
+                                url = currentAlbum?.url ?: activeStoreTab?.content?.url ?: "about:blank",
+                                isIncognito = isPriv
                             )
                             val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, currentTab)
                             val tabVc = currentTabSurface as? com.petal.browser.browser.PetalTabViewController
                             tabVc?.setTabGroupId(newGroup.id)
                             tabVc?.setTabGroupTitle(newGroup.title)
-                            activity.addAlbumInGroup(displayTitle, urlResult, true, newGroup.id, newGroup.title)
+                            activity.addAlbumInGroup(displayTitle, urlResult, true, newGroup.id, newGroup.title, isPriv)
                         } else {
-                            activity.addAlbum(displayTitle, urlResult, true)
+                            activity.addAlbum(displayTitle, urlResult, true, isPriv)
                         }
                     }
                 }
@@ -844,40 +854,46 @@ object BrowserContextMenuManager {
             isAudio = false,
             selectedText = null,
             handler = object : PetalLinkContextMenuHandler {
+                private val isPrivateTab: Boolean
+                    get() = activity.currentAlbumController?.isIncognito
+                        ?: (activity.viewModel.activeTab.value?.content?.private == true)
+
                 override fun onOpenInNewTab() {
-                    activity.addAlbum(displayTitle, linkUrl, true)
+                    activity.addAlbum(displayTitle, linkUrl, true, isPrivateTab)
                 }
 
                 override fun onOpenInBackgroundTab() {
-                    activity.addAlbum(displayTitle, linkUrl, false)
+                    activity.addAlbum(displayTitle, linkUrl, false, isPrivateTab)
                     PetalToast.show(activity, "Opened in background tab")
                 }
 
                 override fun onOpenInNewTabInGroup() {
+                    val isPriv = isPrivateTab
                     val currentAlbum = activity.currentAlbumController
                     val currentTabSurface = currentAlbum as? com.petal.browser.browser.PetalTabSurface
-                    val currentTabId = currentTabSurface?.tabId
-                        ?: currentAlbum?.hashCode()?.toString()
+                    val activeStoreTab = activity.viewModel.activeTab.value
+                    val currentTabId = currentTabSurface?.tabId ?: activeStoreTab?.id
                     val existingGroup = if (currentTabId != null) {
                         com.petal.browser.compose.tabs.PetalTabGroupManager.findGroupByTabId(activity, currentTabId)
                     } else null
 
                     if (existingGroup != null) {
-                        activity.addAlbumInGroup(displayTitle, linkUrl, true, existingGroup.id, existingGroup.title)
+                        activity.addAlbumInGroup(displayTitle, linkUrl, true, existingGroup.id, existingGroup.title, isPriv)
                     } else {
                         if (currentTabId != null) {
                             val currentTab = com.petal.browser.compose.tabs.PetalTabItem(
                                 id = currentTabId,
-                                title = currentAlbum?.title ?: "Tab",
-                                url = currentAlbum?.url ?: "about:blank"
+                                title = currentAlbum?.title ?: activeStoreTab?.content?.title ?: "Tab",
+                                url = currentAlbum?.url ?: activeStoreTab?.content?.url ?: "about:blank",
+                                isIncognito = isPriv
                             )
                             val newGroup = com.petal.browser.compose.tabs.PetalTabGroupManager.createGroupWithTabs(activity, currentTab, currentTab)
                             val tabVc = currentTabSurface as? com.petal.browser.browser.PetalTabViewController
                             tabVc?.setTabGroupId(newGroup.id)
                             tabVc?.setTabGroupTitle(newGroup.title)
-                            activity.addAlbumInGroup(displayTitle, linkUrl, true, newGroup.id, newGroup.title)
+                            activity.addAlbumInGroup(displayTitle, linkUrl, true, newGroup.id, newGroup.title, isPriv)
                         } else {
-                            activity.addAlbum(displayTitle, linkUrl, true)
+                            activity.addAlbum(displayTitle, linkUrl, true, isPriv)
                         }
                     }
                 }

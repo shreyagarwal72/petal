@@ -143,7 +143,7 @@ object PetalLoginsProvider {
         }
     }
 
-    fun save(context: Context, credential: PetalCredential) {
+    fun save(context: Context, credential: PetalCredential): String? {
         val storage = getLoginsStorage(context)
         val origin = normalizeOrigin(credential.originUrl, credential.domain)
         val entry = LoginEntry(
@@ -152,18 +152,20 @@ object PetalLoginsProvider {
             username = credential.username,
             password = credential.password
         )
-        runBlocking(Dispatchers.IO) {
+        return runBlocking(Dispatchers.IO) {
             try {
                 val existing = storage.list().firstOrNull {
                     it.guid == credential.id ||
                     (it.origin.equals(entry.origin, ignoreCase = true) && it.username.equals(entry.username, ignoreCase = true))
                 }
                 if (existing != null) {
-                    storage.update(existing.guid, entry)
+                    storage.update(existing.guid, entry).guid
                 } else {
-                    storage.add(entry)
+                    storage.add(entry).guid
                 }
-            } catch (_: Throwable) {}
+            } catch (_: Throwable) {
+                null
+            }
         }
     }
 

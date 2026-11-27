@@ -175,7 +175,8 @@ object PetalBuiltInExtensionManager {
                 }
                 "RECORD_BLOCK" -> {
                     val pageUrl = json.optString("pageUrl").takeIf { it.isNotBlank() }
-                    com.petal.browser.browser.PetalAdBlockEngine.recordBlock(pageUrl)
+                    val isPrivate = runCatching { sender.session?.settings?.usePrivateMode == true }.getOrDefault(false)
+                    com.petal.browser.browser.PetalAdBlockEngine.recordBlock(pageUrl, isPrivate = isPrivate)
                     return GeckoResult.fromValue(JSONObject().apply { put("success", true) })
                 }
             }
@@ -233,18 +234,32 @@ object PetalBuiltInExtensionManager {
             if (pageUrl != null && PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(pageUrl)) {
                 return null
             }
+            val msgTabId = json.optString("tabId").takeIf { it.isNotBlank() }
+            val storeTab = appContext?.let { ctx ->
+                val state = com.petal.browser.engine.gecko.PetalEngineStore.getStore(ctx).state
+                if (msgTabId != null) {
+                    state.tabs.firstOrNull { it.id == msgTabId }
+                } else if (pageUrl != null) {
+                    state.tabs.firstOrNull { it.content.url == pageUrl } ?: state.tabs.firstOrNull { it.id == state.selectedTabId }
+                } else {
+                    state.tabs.firstOrNull { it.id == state.selectedTabId }
+                }
+            }
+            val privateSession = runCatching {
+                sender.session?.settings?.usePrivateMode == true || storeTab?.content?.private == true
+            }.getOrDefault(false)
             if (pageUrl != null && cookies != null) {
                 // One capture point for every consumer (external managers, yt-dlp, image actions).
                 // Private sessions go to the in-memory private cache only, never to sniffer storage.
-                val privateSession = runCatching { sender.session?.settings?.usePrivateMode == true }.getOrDefault(false)
                 com.petal.browser.download.PetalGeckoCookieBridge.recordCookies(pageUrl, cookies, privateSession)
             }
+            val snifferCookies = if (privateSession) null else cookies
 
             when (msgType) {
                 "DOM_RESOURCES_SNIFFED" -> {
                     val items = json.optString("items")
                     val sniffedPageUrl = json.optString("pageUrl", "")
-                    val tabId = json.optString("tabId").takeIf { it.isNotBlank() } ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
+                    val tabId = msgTabId ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
                     if (!items.isNullOrBlank()) {
                         com.petal.browser.media.sniffer.PetalNativeSnifferEngine.parseDomScanResult(tabId, sniffedPageUrl, items)
                         com.petal.browser.media.sniffer.PetalMediaCaptureStore.parseDomScanResult(tabId, sniffedPageUrl, items)
@@ -255,8 +270,8 @@ object PetalBuiltInExtensionManager {
                     if (PetalMediaSniffer.interceptor.isSearchEngineOrInternalUrl(url)) return null
                     val mime = json.optString("mimeType", "video/mp4")
                     val size = json.optLong("sizeBytes", -1L).takeIf { it > 0 }
-                    PetalMediaSniffer.onAggressiveMedia(url, mime, cookies, size)
-                    val tabId = json.optString("tabId").takeIf { it.isNotBlank() } ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
+                    PetalMediaSniffer.onAggressiveMedia(url, mime, snifferCookies, size)
+                    val tabId = msgTabId ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
                     com.petal.browser.media.sniffer.PetalNativeSnifferEngine.registerResource(
                         tabId = tabId,
                         url = url,
@@ -276,8 +291,8 @@ object PetalBuiltInExtensionManager {
                     val mime = json.optString("mimeType", "video/mp4")
                     val size = json.optLong("sizeBytes", -1L).takeIf { it > 0 }
                     val title = json.optString("title").takeIf { it.isNotBlank() } ?: "video_${System.currentTimeMillis()}"
-                    PetalMediaSniffer.onAggressiveMedia(url, mime, cookies, size)
-                    val tabId = json.optString("tabId").takeIf { it.isNotBlank() } ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
+                    PetalMediaSniffer.onAggressiveMedia(url, mime, snifferCookies, size)
+                    val tabId = msgTabId ?: com.petal.browser.media.sniffer.PetalNativeSnifferEngine.activeTabId.value
                     com.petal.browser.media.sniffer.PetalNativeSnifferEngine.registerResource(
                         tabId = tabId,
                         url = url,

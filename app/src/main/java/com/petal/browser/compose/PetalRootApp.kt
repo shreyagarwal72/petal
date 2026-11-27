@@ -22,7 +22,10 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -50,6 +53,7 @@ import com.petal.browser.browser.PetalTabHistoryState
 import com.petal.browser.ui.components.PetalTabHistorySheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -152,7 +156,10 @@ fun PetalRootApp(
     val webGoBack: () -> Boolean = {
         val ctrl = (activity as? MainActivity)?.currentAlbumController
             as? com.petal.browser.browser.PetalTabViewController
-        if (viewModel.hasOpenOverlay) {
+        if (activeTab?.content?.fullScreen == true) {
+            viewModel.exitFullscreen()
+            true
+        } else if (viewModel.hasOpenOverlay) {
             viewModel.goBack()
         } else if (ctrl != null && ctrl.canGoBack()) {
             ctrl.goBackChecked { viewModel.goHomeFromStuckBack() }
@@ -331,6 +338,19 @@ fun PetalRootApp(
     val omniboxInitialQuery by viewModel.omniboxInitialQuery.collectAsStateWithLifecycle()
 
     val isHome = activeUrl.isBlank() || PetalBrowserUtils.isHomePage(activeUrl)
+    val isFullscreen = activeTab?.content?.fullScreen == true && !isHome
+
+    LaunchedEffect(isHome) {
+        if (isHome) activeWebEngineView = null
+    }
+    LaunchedEffect(isFullscreen, activity) {
+        (activity as? MainActivity)?.setCustomFullscreen(isFullscreen)
+    }
+    DisposableEffect(activity) {
+        onDispose {
+            (activity as? MainActivity)?.setCustomFullscreen(false)
+        }
+    }
 
     val junctionPredictiveEnabled by PetalPredictiveJunction.isPredictiveBackEnabled.collectAsStateWithLifecycle()
     val predictiveBackStyle by PetalPredictiveJunction.backStyle.collectAsStateWithLifecycle()
@@ -391,7 +411,8 @@ fun PetalRootApp(
             isAiSheetOpen ||
             pendingExtensionPopup != null
 
-    val isBottomBarVisible = !isOverlayShowing && (!isMerge || isHome)
+    val isImeVisible = WindowInsets.ime.getBottom(density) > WindowInsets.navigationBars.getBottom(density)
+    val isBottomBarVisible = !isFullscreen && !isOverlayShowing && (!isMerge || isHome) && !(isImeVisible && !isHome)
 
     // Live underlay: while a full-screen overlay (Settings, History, Account...) is dragged away, the
     // real page below animates with it (parallax, dim, depth blur) instead of relying on a snapshot,
@@ -851,12 +872,12 @@ fun PetalRootApp(
                     }
                 }
 
+                val navVisibleHere = isBottomBarVisible
                 val barTotalTopHeight = statusBarTopInset + desktopBarHeight + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
-                val barTotalBottomHeight = navBarBottomInset + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
+                val barTotalBottomHeight = (if (navVisibleHere) 0.dp else navBarBottomInset) + barBaseHeight + (if (isCompact) 6.dp else 10.dp)
 
                 // Page insets come from the bars' REAL measured sizes (BarMetrics); the old constants
                 // are only estimates for the very first frame, before the bars have reported.
-                val navVisibleHere = isBottomBarVisible
                 val navEstimate = if (isBottomAddressBar) 64.dp else 64.dp + navBarBottomInset
                 val pagePad = with(density) {
                     com.petal.browser.ui.components.BarMetrics.pagePadding(
@@ -874,8 +895,14 @@ fun PetalRootApp(
                         isFloatingBottomAddress = floatingTabBar
                     )
                 }
-                val effectiveTopPadding = with(density) { pagePad.top.toDp() }
-                val effectiveBottomPadding = with(density) { pagePad.bottom.toDp() }
+                val effectiveTopPadding = if (isFullscreen) 0.dp else with(density) { pagePad.top.toDp() }
+                val effectiveBottomPadding = if (isFullscreen || isImeVisible) 0.dp else with(density) { pagePad.bottom.toDp() }
+                val collapsedTopPad = if (isFullscreen) 0.dp else statusBarTopInset + desktopBarHeight
+                val collapsedBottomPad = if (!isFullscreen && !isImeVisible && !effectiveFloating && !isBottomAddressBar && !navVisibleHere) {
+                    navBarBottomInset
+                } else {
+                    0.dp
+                }
 
                 ComposeEngineViewport(
                     tab = activeTab,
@@ -883,16 +910,17 @@ fun PetalRootApp(
                     onRefresh = { viewModel.reload() },
                     topPadding = effectiveTopPadding,
                     bottomPadding = effectiveBottomPadding,
-                    // Minimized bars: page keeps only the status bar gap on top and runs edge to edge below.
-                    collapsedTopPadding = statusBarTopInset + desktopBarHeight,
-                    collapsedBottomPadding = 0.dp,
+                    collapsedTopPadding = collapsedTopPad,
+                    collapsedBottomPadding = collapsedBottomPad,
                     onEngineViewReady = { activeWebEngineView = it },
                     onFirstFrameDrawn = { renderedTabId -> renderedWebTabId = renderedTabId },
                     modifier = Modifier
                         .fillMaxSize()
+                        .then(if (isImeVisible && !isFullscreen) Modifier.imePadding() else Modifier)
                         .appleDuoFoldEffect(isWebsite = true)
                 )
 
+                if (!isFullscreen) {
                 androidx.compose.runtime.CompositionLocalProvider(
                     com.petal.browser.ui.glass.LocalPetalGlassSource provides (if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)))
                 ) {
@@ -923,12 +951,18 @@ fun PetalRootApp(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .statusBarsPadding()
+                                    .zIndex(1f)
                             ) {
                                 PetalDesktopTabBar(
                                     handler = desktopTabHandler,
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clipToBounds()
+                            ) {
                             if (isMerge) {
                                 PetalMergedBar(
                                     url = activeUrl,
@@ -1016,6 +1050,7 @@ fun PetalRootApp(
                                     suppressStatusBarTopInset = true,
                                     modifier = Modifier.fillMaxWidth()
                                 )
+                            }
                             }
                         }
                     } else if (isMerge) {
@@ -1115,6 +1150,7 @@ fun PetalRootApp(
                             onSwipeUp = { viewModel.toggleTabSwitcher() },
                             isBottom = isBottomAddressBar,
                             hasBottomNav = isBottomBarVisible,
+                            extraBottomSlidePx = if (isBottomAddressBar && navVisibleHere) com.petal.browser.ui.components.BarMetrics.bottomNavPx else 0,
                             modifier = if (isBottomAddressBar) {
                                 // Stacked directly above the bottom nav (measured), never overlapping it.
                                 Modifier
@@ -1132,6 +1168,7 @@ fun PetalRootApp(
                             }
                         )
                     }
+                }
                 }
             }
         }
@@ -1186,6 +1223,11 @@ fun PetalRootApp(
         }
         androidx.compose.runtime.LaunchedEffect(isBottomBarVisible) {
             if (!isBottomBarVisible) com.petal.browser.ui.components.BarMetrics.clearBottomNav()
+        }
+        androidx.compose.runtime.LaunchedEffect(isBottomAddressBar, isImeVisible, isFullscreen) {
+            if (!isBottomAddressBar || isImeVisible || isFullscreen) {
+                com.petal.browser.ui.components.BarMetrics.clearBottomAddress()
+            }
         }
 
             // Dim over the live page while an overlay is being dragged away (below every overlay).
@@ -1918,7 +1960,11 @@ fun PetalRootApp(
                     onClose = {
                         viewModel.clearFindMatches()
                     },
-                    modifier = Modifier.fillMaxWidth().zIndex(11f)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(if (isBottomAddressBar) Alignment.BottomCenter else Alignment.TopCenter)
+                        .then(if (isBottomAddressBar) Modifier.navigationBarsPadding().imePadding() else Modifier)
+                        .zIndex(11f)
                 )
             }
 

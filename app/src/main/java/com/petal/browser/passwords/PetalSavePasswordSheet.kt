@@ -65,7 +65,17 @@ object PetalSavePasswordSheet {
         onNeverSave: () -> Unit = {},
         onDismiss: () -> Unit = {}
     ) {
+        val resolved = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun completeOnce(block: () -> Unit) {
+            if (resolved.compareAndSet(false, true)) {
+                block()
+            }
+        }
         activity.runOnUiThread {
+            if (activity.isFinishing || activity.isDestroyed) {
+                completeOnce(onDismiss)
+                return@runOnUiThread
+            }
             try {
                 val dialog = Dialog(activity, R.style.PetalContextMenuDialogTheme)
                 val composeView = ComposeView(activity).apply {
@@ -82,13 +92,13 @@ object PetalSavePasswordSheet {
                                     domain = domain,
                                     initialUsername = initialUsername,
                                     initialPassword = initialPassword,
-                                    onSave = onSave,
+                                    onSave = { u, p -> completeOnce { onSave(u, p) } },
                                     onNever = {
-                                        onNeverSave()
+                                        completeOnce(onNeverSave)
                                         dialog.dismiss()
                                     },
                                     onDismiss = {
-                                        onDismiss()
+                                        completeOnce(onDismiss)
                                     },
                                     onExitAnimationFinished = {
                                         dialog.dismiss()
@@ -107,9 +117,12 @@ object PetalSavePasswordSheet {
                     win.clearFlags(android.view.WindowManager.LayoutParams.FLAG_DIM_BEHIND)
                     win.setWindowAnimations(0)
                 }
+                dialog.setOnCancelListener { completeOnce(onDismiss) }
+                dialog.setOnDismissListener { completeOnce(onDismiss) }
                 dialog.show()
             } catch (t: Throwable) {
                 android.util.Log.w("PetalSavePasswordSheet", "Failed to show save password sheet", t)
+                completeOnce(onDismiss)
             }
         }
     }

@@ -61,10 +61,10 @@ object PetalTabMetadataStore {
             }.get()
             cache.clear()
             cache.putAll(loaded)
+            isLoaded = true
         } catch (e: Exception) {
             Log.w(TAG, "Failed to load tab metadata from Room", e)
         }
-        isLoaded = true
     }
 
     /** Warm the cache off the main thread (call from Application/Activity start). */
@@ -303,8 +303,11 @@ object PetalTabMetadataStore {
             val type = object : TypeToken<Map<String, PetalTabMetadata>>() {}.type
             val imported: Map<String, PetalTabMetadata>? = gson.fromJson(json, type)
             if (imported != null) {
-                cache.putAll(imported)
-                persist(context)
+                val valid = imported.filter { (k, v) -> k.isNotBlank() && v.tabId == k }
+                if (valid.isNotEmpty()) {
+                    cache.putAll(valid)
+                    persist(context)
+                }
             }
         } catch (e: Exception) {
             Log.w(TAG, "Failed to import tab metadata sidecar", e)

@@ -51,15 +51,23 @@ object PetalStorageManager {
         }
     }
 
+    private val excludedCacheDirs = setOf(
+        "gecko", "profile", "thumbnails", "image_cache",
+        "image_manager_disk_cache", "coil_cache", "logs_export", "databases"
+    )
+
     private fun cleanDirectory(dir: File, maxAgeMillis: Long) {
         val now = System.currentTimeMillis()
         val files = dir.listFiles() ?: return
         for (f in files) {
             if (f.isDirectory) {
-                cleanDirectory(f, maxAgeMillis)
+                if (f.name.lowercase() !in excludedCacheDirs) {
+                    cleanDirectory(f, maxAgeMillis)
+                }
             } else {
-                if (f.name.startsWith("upload_") || f.name.startsWith("tmp_") || f.name.endsWith(".tmp") ||
-                    (now - f.lastModified()) > maxAgeMillis) {
+                val age = now - f.lastModified()
+                val isEphemeralName = f.name.startsWith("upload_") || f.name.startsWith("tmp_") || f.name.endsWith(".tmp")
+                if ((isEphemeralName && age > 60 * 60 * 1000L) || age > maxAgeMillis) {
                     try { f.delete() } catch (_: Throwable) {}
                 }
             }

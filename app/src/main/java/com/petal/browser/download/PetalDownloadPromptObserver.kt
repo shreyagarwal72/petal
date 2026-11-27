@@ -40,10 +40,14 @@ object PetalDownloadPromptObserver {
             val appContext = context.applicationContext
             val store = PetalEngineStore.getStore(appContext)
             store.observeManually { state ->
-                val tab = state.tabs.firstOrNull { it.id == state.selectedTabId }
-                val download = tab?.content?.download
-                if (tab != null && download != null) {
-                    handle(appContext, store, tab.id, download)
+                val selected = state.tabs.firstOrNull { it.id == state.selectedTabId }
+                if (selected?.content?.download != null) {
+                    handle(appContext, store, selected.id, selected.content.download!!)
+                }
+                for (tab in state.tabs) {
+                    if (tab.id != state.selectedTabId && tab.content.download != null) {
+                        handle(appContext, store, tab.id, tab.content.download!!)
+                    }
                 }
             }.resume()
             started = true
@@ -54,12 +58,12 @@ object PetalDownloadPromptObserver {
         // Nothing can be shown without a foreground activity; leave the download in the tab state
         // and look at it again on the next store emission.
         val activity = PetalGeckoRuntime.getForegroundActivity() ?: return
-        if (!handledIds.add(download.id)) return
-        if (handledIds.size > 200) {
-            synchronized(handledIds) { handledIds.iterator().let { it.next(); it.remove() } }
+        synchronized(handledIds) {
+            if (!handledIds.add(download.id)) return
+            if (handledIds.size > 200) {
+                handledIds.iterator().let { it.next(); it.remove() }
+            }
         }
-        // Consume first: the observer fires on every state change and must not re-prompt.
-        store.dispatch(ContentAction.ConsumeDownloadAction(tabId, download.id))
 
         val url = download.url
         val mimeType = download.contentType
@@ -69,10 +73,19 @@ object PetalDownloadPromptObserver {
         val resolvedName = PetalAndroidUtils.resolveFileName(url, contentDisposition, mimeType)
 
         activity.runOnUiThread {
+            if (activity.isFinishing || activity.isDestroyed) {
+                synchronized(handledIds) { handledIds.remove(download.id) }
+                return@runOnUiThread
+            }
+            store.dispatch(ContentAction.ConsumeDownloadAction(tabId, download.id))
             try {
                 if (isExtension(url, mimeType)) {
-                    com.petal.browser.extensions.PetalExtensionManager.install(url) { success, message ->
-                        PetalToast.show(activity, message ?: if (success) "Extension installed" else "Extension installation failed")
+                    com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
+                        activity, url, contentDisposition, mimeType, contentLength, download.referrerUrl, download.private
+                    ) { _ ->
+                        com.petal.browser.extensions.PetalExtensionManager.install(url) { success, message ->
+                            PetalToast.show(activity, message ?: if (success) "Extension installed" else "Extension installation failed")
+                        }
                     }
                     return@runOnUiThread
                 }
