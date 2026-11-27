@@ -517,7 +517,6 @@ object PetalDownloadDialogBridge {
     }
 
     @JvmStatic
-    @JvmStatic
     @JvmOverloads
     fun showDownloadConfirmation(
         context: Context,

@@ -663,7 +663,7 @@ class PetalPwaManager(
 
         val finalController = targetController
         val finalPageUrl = pageUrl
-        val isPrivateSession = (finalController is PetalTabViewController && finalController.isIncognito()) ||
+        val isPrivateSession = (finalController is PetalTabViewController && finalController.isIncognito) ||
             (activity is MainActivity && activity.viewModel.activeTab.value?.content?.private == true)
 
         Thread {

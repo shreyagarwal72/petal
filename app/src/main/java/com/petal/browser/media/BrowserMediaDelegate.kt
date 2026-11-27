@@ -55,7 +55,7 @@ object BrowserMediaDelegate {
                                 controller != null -> controller.play()
                                 else -> activity.evaluateJavascriptInActiveTab(
                                     "(function(){var vids=document.querySelectorAll('video,audio');for(var i=0;i<vids.length;i++){try{vids[i].play();}catch(e){}}})();",
-                                    null
+                                    null as ((String?) -> Unit)?
                                 )
                             }
                             activity.isMediaPlaying = true
@@ -67,7 +67,7 @@ object BrowserMediaDelegate {
                                 controller != null -> controller.pause()
                                 else -> activity.evaluateJavascriptInActiveTab(
                                     "(function(){var vids=document.querySelectorAll('video,audio');for(var i=0;i<vids.length;i++){try{vids[i].pause();}catch(e){}}})();",
-                                    null
+                                    null as ((String?) -> Unit)?
                                 )
                             }
                             activity.isMediaPlaying = false
@@ -80,7 +80,7 @@ object BrowserMediaDelegate {
                             } else {
                                 activity.evaluateJavascriptInActiveTab(
                                     "(function(){var vids=document.querySelectorAll('video');if(vids.length===0)vids=document.querySelectorAll('audio');var t=null;for(var i=0;i<vids.length;i++){if(!vids[i].paused||vids[i].currentTime>0){t=vids[i];break;}}if(!t&&vids.length>0)t=vids[0];if(t){try{t.currentTime=Math.max(0,Math.min(t.duration||1e9,t.currentTime+($deltaSec)));}catch(e){}}})();",
-                                    null
+                                    null as ((String?) -> Unit)?
                                 )
                             }
                         }

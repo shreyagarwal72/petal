@@ -87,6 +87,7 @@ class PetalFileUploadMiddleware : Middleware<BrowserState, BrowserAction> {
                     toRemove.forEach { runCatching { it.request.onDismiss() } }
                 }
             }
+            else -> Unit
         }
         next(action)
     }

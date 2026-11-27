@@ -240,8 +240,9 @@ object PetalAndroidUtils {
                                     put("Cache-Control", "no-transform")
                                     put("Referer", url)
                                 }
+                                val isPrivateSession = (activity as? MainActivity)?.viewModel?.activeTab?.value?.content?.private == true
                                 PetalFetchDownloadBridge.enqueueMediaDownload(
-                                    activity, url, finalFileName, null, userAgent, cookie, extraHeaders, null, null
+                                    activity, url, finalFileName, null, userAgent, cookie, extraHeaders, isPrivateSession
                                 )
                             }
                         } catch (e: Exception) {

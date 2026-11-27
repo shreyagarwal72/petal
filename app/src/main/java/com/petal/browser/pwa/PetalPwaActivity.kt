@@ -327,7 +327,7 @@ class PetalPwaActivity : AppCompatActivity() {
                 }
                 if (state.title.isNotBlank()) {
                     pwaTitle = state.title
-                    title = state.title
+                    this@PetalPwaActivity.title = state.title
                 }
             }
             layoutParams = FrameLayout.LayoutParams(

@@ -442,8 +442,7 @@ class PetalBrowserPromptBridge(
                     initialUsername = username,
                     initialPassword = password,
                     onSave = { finalUser, finalPass ->
-                        val guid = existing?.id ?: loginEntry.guid ?: UUID.randomUUID().toString()
-                        request.onConfirm(loginEntry.copy(guid = guid, username = finalUser, password = finalPass))
+                        request.onConfirm(loginEntry.copy(username = finalUser, password = finalPass))
                         consume(tabId, request)
                     },
                     onNeverSave = {
