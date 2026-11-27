@@ -24,7 +24,8 @@ class PetalContentDelegateWrapper(
     private var referrerProvider: () -> String? = { null },
     private var onCrashCallback: (() -> Unit)? = null,
     private var pageUrlProvider: () -> String? = { null },
-    private var pageTitleProvider: () -> String? = { null }
+    private var pageTitleProvider: () -> String? = { null },
+    private var isSelectedProvider: () -> Boolean = { true }
 ) : GeckoSession.ContentDelegate, PetalOwnedDelegate {
 
     /** Re-points every provider at a newly bound view (the session can outlive its view). */
@@ -34,7 +35,8 @@ class PetalContentDelegateWrapper(
         referrerProvider: () -> String?,
         onCrashCallback: (() -> Unit)?,
         pageUrlProvider: () -> String?,
-        pageTitleProvider: () -> String?
+        pageTitleProvider: () -> String?,
+        isSelectedProvider: () -> Boolean = { true }
     ) {
         this.contextProvider = contextProvider
         this.isPrivateProvider = isPrivateProvider
@@ -42,6 +44,7 @@ class PetalContentDelegateWrapper(
         this.onCrashCallback = onCrashCallback
         this.pageUrlProvider = pageUrlProvider
         this.pageTitleProvider = pageTitleProvider
+        this.isSelectedProvider = isSelectedProvider
     }
 
     private fun resolveActivity(): Activity? {
@@ -59,9 +62,11 @@ class PetalContentDelegateWrapper(
 
     override fun onFullScreen(session: GeckoSession, fullScreen: Boolean) {
         val act = resolveActivity()
-        if (act is MainActivity) {
+        if (act is MainActivity && isSelectedProvider()) {
             act.runOnUiThread {
-                act.setCustomFullscreen(fullScreen)
+                if (isSelectedProvider()) {
+                    act.setCustomFullscreen(fullScreen)
+                }
             }
         }
         engine?.onFullScreen(session, fullScreen)

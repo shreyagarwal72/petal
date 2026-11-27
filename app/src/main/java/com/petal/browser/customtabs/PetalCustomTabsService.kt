@@ -18,6 +18,6 @@ class PetalCustomTabsService : AbstractCustomTabsService() {
     }
 
     override val customTabsServiceStore: CustomTabsServiceStore by lazy {
-        CustomTabsServiceStore()
+        PetalEngineStore.getCustomTabsServiceStore()
     }
 }

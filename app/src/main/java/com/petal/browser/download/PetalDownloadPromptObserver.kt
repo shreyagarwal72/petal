@@ -80,13 +80,19 @@ object PetalDownloadPromptObserver {
             store.dispatch(ContentAction.ConsumeDownloadAction(tabId, download.id))
             try {
                 if (isExtension(url, mimeType)) {
-                    com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
-                        activity, url, contentDisposition, mimeType, contentLength, download.referrerUrl, download.private
-                    ) { _ ->
-                        com.petal.browser.extensions.PetalExtensionManager.install(url) { success, message ->
-                            PetalToast.show(activity, message ?: if (success) "Extension installed" else "Extension installation failed")
+                    com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+                        activity,
+                        "Install Extension?",
+                        "Download and install Firefox extension \"$resolvedName\"?",
+                        onConfirm = {
+                            com.petal.browser.extensions.PetalExtensionManager.install(url) { success, message ->
+                                PetalToast.show(activity, message ?: if (success) "Extension installed" else "Extension installation failed")
+                            }
+                        },
+                        onCancel = {
+                            synchronized(handledIds) { handledIds.remove(download.id) }
                         }
-                    }
+                    )
                     return@runOnUiThread
                 }
                 if (com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, url, resolvedName, mimeType)) {
@@ -116,7 +122,15 @@ object PetalDownloadPromptObserver {
                     startDownload(resolvedName)
                 } else {
                     com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
-                        activity, url, contentDisposition, mimeType, contentLength, download.referrerUrl, download.private, startDownload
+                        context = activity,
+                        url = url,
+                        contentDisposition = contentDisposition,
+                        mimeType = mimeType,
+                        contentLength = contentLength,
+                        referrerUrl = download.referrerUrl,
+                        isPrivate = download.private,
+                        onCancel = { synchronized(handledIds) { handledIds.remove(download.id) } },
+                        onConfirmDownload = startDownload
                     )
                 }
             } catch (t: Throwable) {

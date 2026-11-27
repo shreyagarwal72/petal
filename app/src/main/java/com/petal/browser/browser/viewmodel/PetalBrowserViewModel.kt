@@ -622,7 +622,11 @@ class PetalBrowserViewModel @Inject constructor(
 
     fun closeOtherTabs(retainedTab: PetalTabItem) {
         val otherIds = browserStore.state.tabs
-            .filter { it.id != retainedTab.id && it.content.private == retainedTab.isIncognito }
+            .filter {
+                !PetalEngineStore.isEphemeralTabId(it.id) &&
+                    it.id != retainedTab.id &&
+                    it.content.private == retainedTab.isIncognito
+            }
             .map { it.id }
         if (otherIds.isNotEmpty()) {
             closeTabs(otherIds)
@@ -630,10 +634,8 @@ class PetalBrowserViewModel @Inject constructor(
     }
 
     fun closeAllTabs(isIncognitoOnly: Boolean = false) {
-        val tabsToClose = if (isIncognitoOnly) {
-            browserStore.state.tabs.filter { it.content.private }
-        } else {
-            browserStore.state.tabs
+        val tabsToClose = browserStore.state.tabs.filter {
+            !PetalEngineStore.isEphemeralTabId(it.id) && (!isIncognitoOnly || it.content.private)
         }
         val ids = tabsToClose.map { it.id }
         if (ids.isNotEmpty()) {

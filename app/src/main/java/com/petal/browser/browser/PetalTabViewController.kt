@@ -52,6 +52,8 @@ class PetalTabViewController private constructor(
     private var boundTabId: String? = null
     private var observedSession: EngineSession? = null
     private var active = false
+    @Volatile
+    private var manualDesktopModeOverride: Boolean? = null
     private var engineScrollDelegate: org.mozilla.geckoview.GeckoSession.ScrollDelegate? = null
     private var engineHistoryDelegate: org.mozilla.geckoview.GeckoSession.HistoryDelegate? = null
     private var engineTranslationsDelegate: org.mozilla.geckoview.TranslationsController.SessionTranslation.Delegate? = null
@@ -558,6 +560,9 @@ class PetalTabViewController private constructor(
         isRefreshing = false
         observedSession = session
         this.tab = tab
+        if (boundTabId != tab.id) {
+            manualDesktopModeOverride = null
+        }
         boundTabId = tab.id
         fullScreenFeature?.stop()
         fullScreenFeature = FullScreenFeature(
@@ -656,7 +661,8 @@ class PetalTabViewController private constructor(
                     referrerProvider = { pageUrl.takeIf { it.startsWith("http") } },
                     onCrashCallback = crashCallback,
                     pageUrlProvider = { pageUrl },
-                    pageTitleProvider = { pageTitle }
+                    pageTitleProvider = { pageTitle },
+                    isSelectedProvider = { active }
                 )
             } else {
                 // The session outlived the previous view (Activity recreation, suspension): point the
@@ -667,7 +673,8 @@ class PetalTabViewController private constructor(
                     referrerProvider = { pageUrl.takeIf { it.startsWith("http") } },
                     onCrashCallback = crashCallback,
                     pageUrlProvider = { pageUrl },
-                    pageTitleProvider = { pageTitle }
+                    pageTitleProvider = { pageTitle },
+                    isSelectedProvider = { active }
                 )
             }
 
@@ -803,25 +810,29 @@ class PetalTabViewController private constructor(
                     selection: org.mozilla.geckoview.GeckoSession.SelectionActionDelegate.Selection
                 ) {
                     this@PetalTabViewController.currentSelection = selection
-                    val act = (context as? com.petal.browser.activity.MainActivity)
-                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.MainActivity
-                        ?: return
+                    val act = resolveActivity(context) ?: return
                     val anchorView: View = findGeckoView(engineView.asView()) ?: this@PetalTabViewController
                     if (com.petal.browser.ui.selection.PetalPageSelectionToolbar.show(act, anchorView, selection)) {
                         return
                     }
                     val selectedText = selection.text
                     if (!selectedText.isNullOrBlank()) {
-                        act.runOnUiThread {
-                            com.petal.browser.compose.menu.BrowserContextMenuManager.showSelectionContextMenu(act, selectedText)
+                        if (act is com.petal.browser.activity.MainActivity) {
+                            act.runOnUiThread {
+                                com.petal.browser.compose.menu.BrowserContextMenuManager.showSelectionContextMenu(act, selectedText)
+                            }
+                        } else {
+                            act.runOnUiThread {
+                                com.petal.browser.unit.PetalAndroidUtils.copy(act, selectedText)
+                                com.petal.browser.view.PetalToast.show(act, "Copied")
+                            }
                         }
                     }
                 }
 
                 override fun onHideAction(session: org.mozilla.geckoview.GeckoSession, reason: Int) {
                     this@PetalTabViewController.currentSelection = null
-                    val act = (context as? com.petal.browser.activity.MainActivity)
-                        ?: (context as? android.content.ContextWrapper)?.baseContext as? com.petal.browser.activity.MainActivity
+                    val act = resolveActivity(context)
                     if (act != null) com.petal.browser.ui.selection.PetalPageSelectionToolbar.hide(act)
                 }
             }
@@ -1201,6 +1212,7 @@ class PetalTabViewController private constructor(
     }
 
     fun setDesktopMode(enabled: Boolean) {
+        manualDesktopModeOverride = enabled
         try {
             getGeckoSession()?.settings?.let { s ->
                 s.viewportMode = if (enabled) {
@@ -1235,7 +1247,7 @@ class PetalTabViewController private constructor(
         }
 
         val host = try { android.net.Uri.parse(url.orEmpty()).host } catch (_: Throwable) { null }
-        val desktopEnabled = if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
+        val desktopEnabled = manualDesktopModeOverride ?: if (!host.isNullOrBlank() && preferences.contains("sp_desktop_site_$host")) {
             preferences.getBoolean("sp_desktop_site_$host", false)
         } else {
             preferences.getBoolean("sp_desktop_site", false)

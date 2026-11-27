@@ -476,6 +476,7 @@ object PetalFetchDownloadBridge {
     }
 
     @JvmStatic
+    @JvmOverloads
     fun enqueueMediaDownload(
         context: Context,
         url: String,
@@ -484,6 +485,7 @@ object PetalFetchDownloadBridge {
         userAgent: String? = null,
         cookie: String? = null,
         headers: Map<String, String> = emptyMap(),
+        isPrivate: Boolean = false,
         onEnqueued: ((Long) -> Unit)? = null,
         onFailed: (() -> Unit)? = null
     ) {
@@ -493,7 +495,7 @@ object PetalFetchDownloadBridge {
             fileName = fileName,
             mimeType = mimeType,
             referrerUrl = headers["Referer"],
-            isPrivate = false,
+            isPrivate = isPrivate,
             userAgent = userAgent,
             cookie = cookie,
             headers = headers,

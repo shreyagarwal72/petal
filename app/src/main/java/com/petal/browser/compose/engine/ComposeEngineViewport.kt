@@ -426,6 +426,37 @@ fun ComposeEngineViewport(
         }
     }
 
+    // Keep per-site color scheme override and translations state synchronized for Compose tabs.
+    val previousTabBaseUrl = remember(tab?.id) { mutableStateOf<String?>(null) }
+    LaunchedEffect(tab?.id, tab?.content?.url) {
+        val currentTab = tab ?: return@LaunchedEffect
+        val baseUrl = currentTab.content.url.substringBefore('#')
+        val prev = previousTabBaseUrl.value
+        if (prev != null && prev != baseUrl) {
+            com.petal.browser.engine.gecko.PetalTranslationsManager.reset(currentTab.id)
+        }
+        previousTabBaseUrl.value = baseUrl
+
+        val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+        val domain = com.petal.browser.unit.PetalAndroidUtils.domain(currentTab.content.url)
+        val prefVal = com.petal.browser.engine.gecko.PetalSiteColorScheme.get(sp, domain)
+        com.petal.browser.engine.gecko.PetalGeckoRuntime.setSiteColorScheme(
+            currentTab.id,
+            com.petal.browser.engine.gecko.PetalSiteColorScheme.toGecko(prefVal),
+            sp
+        )
+    }
+
+    DisposableEffect(tab?.id) {
+        val id = tab?.id
+        onDispose {
+            if (id != null) {
+                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
+                com.petal.browser.engine.gecko.PetalGeckoRuntime.setSiteColorScheme(id, null, sp)
+            }
+        }
+    }
+
     // Bind current active tab session and attach delegates
     LaunchedEffect(tab?.id, tab?.engineState?.engineSession) {
         if (tab == null) return@LaunchedEffect
@@ -627,6 +658,14 @@ private fun attachSessionDelegates(
     val actSupplier: () -> MainActivity? = {
         (context as? MainActivity) ?: (context as? ContextWrapper)?.baseContext as? MainActivity
     }
+    val anyActivitySupplier: () -> android.app.Activity? = {
+        var ctx: Context? = context
+        while (ctx is ContextWrapper) {
+            if (ctx is android.app.Activity) break
+            ctx = ctx.baseContext
+        }
+        ctx as? android.app.Activity
+    }
 
     // 1. Text Selection Action Delegate
     session.selectionActionDelegate = object : GeckoSession.SelectionActionDelegate {
@@ -634,21 +673,27 @@ private fun attachSessionDelegates(
             session: GeckoSession,
             selection: GeckoSession.SelectionActionDelegate.Selection
         ) {
-            val act = actSupplier() ?: return
+            val act = anyActivitySupplier() ?: return
             val anchorView: View = findGeckoView(engineView.asView()) ?: engineView.asView()
             if (PetalPageSelectionToolbar.show(act, anchorView, selection)) {
                 return
             }
             val text = selection.text
             if (!text.isNullOrBlank()) {
-                act.runOnUiThread {
-                    BrowserContextMenuManager.showSelectionContextMenu(act, text)
+                if (act is MainActivity) {
+                    act.runOnUiThread {
+                        BrowserContextMenuManager.showSelectionContextMenu(act, text)
+                    }
+                } else {
+                    act.runOnUiThread {
+                        com.petal.browser.unit.PetalAndroidUtils.copy(act, text)
+                    }
                 }
             }
         }
 
         override fun onHideAction(session: GeckoSession, reason: Int) {
-            val act = actSupplier()
+            val act = anyActivitySupplier()
             if (act != null) PetalPageSelectionToolbar.hide(act)
         }
     }
@@ -708,7 +753,8 @@ private fun attachSessionDelegates(
             referrerProvider = { liveTabProvider().content.url },
             onCrashCallback = crashCallback,
             pageUrlProvider = { liveTabProvider().content.url },
-            pageTitleProvider = { liveTabProvider().content.title }
+            pageTitleProvider = { liveTabProvider().content.title },
+            isSelectedProvider = { PetalEngineStore.getStore(appContext).state.selectedTabId == tab.id }
         )
     } else {
         session.contentDelegate = PetalContentDelegateWrapper(
@@ -718,7 +764,8 @@ private fun attachSessionDelegates(
             referrerProvider = { liveTabProvider().content.url },
             onCrashCallback = crashCallback,
             pageUrlProvider = { liveTabProvider().content.url },
-            pageTitleProvider = { liveTabProvider().content.title }
+            pageTitleProvider = { liveTabProvider().content.title },
+            isSelectedProvider = { PetalEngineStore.getStore(appContext).state.selectedTabId == tab.id }
         )
     }
 

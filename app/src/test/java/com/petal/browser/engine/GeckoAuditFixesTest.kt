@@ -3,12 +3,19 @@ package com.petal.browser.engine
 import android.content.Context
 import android.content.SharedPreferences
 import com.petal.browser.browser.PetalAdBlockEngine
+import com.petal.browser.browser.PetalAdBlockMode
 import com.petal.browser.browser.rules.PetalBackTarget
 import com.petal.browser.browser.rules.PetalRootTabBackRules
 import com.petal.browser.engine.gecko.PetalAppLinksBridge
+import com.petal.browser.engine.gecko.PetalSessionRules
+import com.petal.browser.engine.gecko.PetalSiteColorScheme
 import com.petal.browser.privacy.PetalPrivacyHardening
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.ContentState
+import mozilla.components.browser.state.state.TabSessionState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.mockito.kotlin.any
@@ -79,5 +86,52 @@ class GeckoAuditFixesTest {
 
         assertFalse(PetalPrivacyHardening.isFingerprintingProtectionEnabled(spStandard))
         assertFalse(PetalPrivacyHardening.isWebRtcNoHostEnabled(spStandard))
+    }
+
+    @Test
+    fun `site color scheme reads and maps per-domain overrides`() {
+        val sp = mock<SharedPreferences>()
+        whenever(sp.getString("sp_force_dark_example.com", PetalSiteColorScheme.FOLLOW)).thenReturn("dark")
+        whenever(sp.getString("sp_force_dark_light.example", PetalSiteColorScheme.FOLLOW)).thenReturn("light")
+        whenever(sp.getString("sp_force_dark_unset.example", PetalSiteColorScheme.FOLLOW)).thenReturn(PetalSiteColorScheme.FOLLOW)
+
+        assertEquals(PetalSiteColorScheme.DARK, PetalSiteColorScheme.get(sp, "example.com"))
+        assertEquals(PetalSiteColorScheme.LIGHT, PetalSiteColorScheme.get(sp, "light.example"))
+        assertEquals(PetalSiteColorScheme.FOLLOW, PetalSiteColorScheme.get(sp, "unset.example"))
+        assertNull(PetalSiteColorScheme.toGecko(PetalSiteColorScheme.FOLLOW))
+    }
+
+    @Test
+    fun `session rules exclude ephemeral custom tab and pwa sessions`() {
+        val normal = TabSessionState(id = "tab_1", content = ContentState(url = "https://example.com"))
+        val custom = TabSessionState(id = "tab_custom_123", content = ContentState(url = "https://custom.example"))
+        val pwa = TabSessionState(id = "pwa_456", content = ContentState(url = "https://pwa.example"))
+        val state = BrowserState(tabs = listOf(normal, custom, pwa), selectedTabId = "tab_custom_123")
+
+        assertTrue(PetalSessionRules.isEphemeralTabId("tab_custom_123"))
+        assertTrue(PetalSessionRules.isEphemeralTabId("pwa_456"))
+        assertFalse(PetalSessionRules.isEphemeralTabId("tab_1"))
+
+        val filtered = PetalSessionRules.withoutEphemeralTabs(state, fallbackSelectedId = "tab_1")
+        assertEquals(listOf("tab_1"), filtered.tabs.map { it.id })
+        assertEquals("tab_1", filtered.selectedTabId)
+    }
+
+    @Test
+    fun `adblock engine collects all domain mode overrides`() {
+        val mockCtx = mock<Context>()
+        val mockAppCtx = mock<Context>()
+        val mockSp = mock<SharedPreferences>()
+        whenever(mockCtx.applicationContext).thenReturn(mockAppCtx)
+        whenever(mockAppCtx.getSharedPreferences(any(), any())).thenReturn(mockSp)
+        whenever(mockSp.all).thenReturn(
+            mapOf<String, Any?>(
+                "sp_adblock_domain_mode_news.example" to PetalAdBlockMode.AGGRESSIVE.id,
+                "unrelated_pref" to true
+            )
+        )
+
+        val overrides = PetalAdBlockEngine.getAllDomainOverrides(mockCtx)
+        assertEquals(mapOf("news.example" to PetalAdBlockMode.AGGRESSIVE.id), overrides)
     }
 }

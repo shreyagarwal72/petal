@@ -7,8 +7,11 @@
 
     const NATIVE_APP = "petalApp";
     let isBlockerEnabled = true;
-    let blockerMode = "standard"; // "standard" or "aggressive"
+    let blockerMode = "standard"; // "standard", "aggressive", or "disabled"
     let whitelistedHosts = new Set();
+    let privateWhitelistedHosts = new Set();
+    let domainModes = Object.create(null);
+    let blockerPort = null;
     let adblockEngine = null;
     let engineVersion = 0;
     let isEngineLoading = false;
@@ -224,14 +227,28 @@
                 if (isBadFilter) continue; // Skip badfilters
 
                 let redirectRes = null;
-                const redirectMatch = line.match(/\$redirect=([a-zA-Z0-9_\-\.]+)/);
+                const redirectMatch = line.match(/[\$,]redirect=([a-zA-Z0-9_\-\.]+)/);
                 if (redirectMatch) redirectRes = redirectMatch[1];
 
-                const cspMatch = line.match(/\$csp=([^,]+)/);
+                const cspMatch = line.match(/[\$,]csp=([^,]+)/);
                 const cspRule = cspMatch ? cspMatch[1] : null;
 
-                const hasRemoveParam = line.includes("$removeparam");
-                const isThirdPartyOnly = line.includes("$third-party") || line.includes("$3p") || line.includes(",third-party") || line.includes(",3p");
+                const hasRemoveParam = /[\$,]removeparam\b/.test(line);
+                const isThirdPartyOnly = /[\$,](?:third-party|3p)\b/.test(line);
+                const isFirstPartyOnly = /[\$,]~(?:third-party|3p)\b/.test(line);
+
+                const includeDomains = [];
+                const excludeDomains = [];
+                const domainMatch = line.match(/[\$,]domain=([^,]+)/);
+                if (domainMatch && domainMatch[1]) {
+                    const items = domainMatch[1].split("|");
+                    for (let d = 0; d < items.length; d++) {
+                        const raw = items[d].trim().toLowerCase();
+                        if (!raw) continue;
+                        if (raw.startsWith("~")) excludeDomains.push(normalizeHost(raw.slice(1)));
+                        else includeDomains.push(normalizeHost(raw));
+                    }
+                }
 
                 const startsWithDomain = line.startsWith("||");
                 const rawPattern = line.split("$")[0].replace(/^\|\|/, "").replace(/\^.*$/, "");
@@ -245,9 +262,21 @@
                     redirect: redirectRes,
                     csp: cspRule,
                     removeParam: hasRemoveParam,
-                    thirdPartyOnly: isThirdPartyOnly
+                    thirdPartyOnly: isThirdPartyOnly,
+                    firstPartyOnly: isFirstPartyOnly,
+                    includeDomains: includeDomains,
+                    excludeDomains: excludeDomains
                 });
             }
+        }
+
+        function hostMatchesList(host, list) {
+            if (!host || !list || list.length === 0) return false;
+            for (let i = 0; i < list.length; i++) {
+                const entry = list[i];
+                if (host === entry || host.endsWith("." + entry)) return true;
+            }
+            return false;
         }
 
         function isPatternMatch(url, targetHost, rule) {
@@ -275,6 +304,7 @@
         return {
             checkNetworkRequest: function (url, sourceUrl, reqType) {
                 const targetHost = extractDomain(url);
+                const docHost = extractDomain(sourceUrl);
 
                 // 1. Check network exception rules (unbreak)
                 for (let j = 0; j < networkExceptions.length; j++) {
@@ -287,6 +317,27 @@
                 // 2. Evaluate network rules
                 for (let i = 0; i < networkRules.length; i++) {
                     const r = networkRules[i];
+
+                    // Respect $domain= allow/deny scoping first
+                    if (r.includeDomains.length > 0 && !hostMatchesList(docHost, r.includeDomains)) {
+                        continue;
+                    }
+                    if (r.excludeDomains.length > 0 && hostMatchesList(docHost, r.excludeDomains)) {
+                        continue;
+                    }
+
+                    // Check party constraint
+                    if (r.thirdPartyOnly && sourceUrl && isFirstParty(url, sourceUrl)) {
+                        continue;
+                    }
+                    if (r.firstPartyOnly && sourceUrl && !isFirstParty(url, sourceUrl)) {
+                        continue;
+                    }
+
+                    // Match pattern against target URL / domain before applying rule actions
+                    if (!isPatternMatch(url, targetHost, r)) {
+                        continue;
+                    }
 
                     // Check removeparam query parameter stripping
                     if (r.removeParam) {
@@ -306,22 +357,14 @@
                         } catch (_) {}
                     }
 
-                    // Check third-party constraint
-                    if (r.thirdPartyOnly && sourceUrl && isFirstParty(url, sourceUrl)) {
-                        continue;
-                    }
-
-                    // Match pattern against target URL / domain
-                    if (isPatternMatch(url, targetHost, r)) {
-                        return {
-                            matched: true,
-                            important: r.important,
-                            redirect: r.redirect,
-                            rewritten_url: null,
-                            csp: r.csp,
-                            filter: r.raw
-                        };
-                    }
+                    return {
+                        matched: true,
+                        important: r.important,
+                        redirect: r.redirect,
+                        rewritten_url: null,
+                        csp: r.csp,
+                        filter: r.raw
+                    };
                 }
                 return { matched: false, important: false, redirect: null, rewritten_url: null, csp: null, filter: null };
             },
@@ -346,24 +389,74 @@
         };
     }
 
+    function applyBlockerConfig(cfg) {
+        if (!cfg) return;
+        if (typeof cfg.enabled === "boolean") {
+            isBlockerEnabled = cfg.enabled;
+        }
+        if (typeof cfg.mode === "string") {
+            blockerMode = cfg.mode.toLowerCase();
+        }
+        if (Array.isArray(cfg.whitelist)) {
+            whitelistedHosts = new Set(cfg.whitelist.map(normalizeHost).filter(Boolean));
+        }
+        if (Array.isArray(cfg.privateWhitelist)) {
+            privateWhitelistedHosts = new Set(cfg.privateWhitelist.map(normalizeHost).filter(Boolean));
+        }
+        if (cfg.domainModes && typeof cfg.domainModes === "object") {
+            const nextModes = Object.create(null);
+            for (const k of Object.keys(cfg.domainModes)) {
+                const normalized = normalizeHost(k);
+                if (normalized && typeof cfg.domainModes[k] === "string") {
+                    nextModes[normalized] = cfg.domainModes[k].toLowerCase();
+                }
+            }
+            domainModes = nextModes;
+        }
+    }
+
+    function isHostWhitelisted(docHost, isPrivate) {
+        if (!docHost) return false;
+        const targetSet = isPrivate ? privateWhitelistedHosts : whitelistedHosts;
+        if (targetSet.has(docHost)) return true;
+        const parts = docHost.split(".");
+        for (let i = 1; i < parts.length - 1; i++) {
+            if (targetSet.has(parts.slice(i).join("."))) return true;
+        }
+        return false;
+    }
+
+    function effectiveModeFor(docHost, isPrivate) {
+        if (docHost && isHostWhitelisted(docHost, isPrivate)) return "disabled";
+        if (!isPrivate && docHost && domainModes[docHost]) return domainModes[docHost];
+        return isBlockerEnabled ? blockerMode : "disabled";
+    }
+
     // Connect initially with Native App
     function connectNativeApp() {
         try {
             const api = (typeof browser !== "undefined") ? browser : chrome;
-            if (api && api.runtime && typeof api.runtime.sendNativeMessage === "function") {
-                api.runtime.sendNativeMessage(NATIVE_APP, { type: "GET_BLOCKER_CONFIG" }, function (response) {
-                    if (response) {
-                        if (typeof response.enabled === "boolean") {
-                            isBlockerEnabled = response.enabled;
-                        }
-                        if (typeof response.mode === "string") {
-                            blockerMode = response.mode.toLowerCase();
-                        }
-                        if (Array.isArray(response.whitelist)) {
-                            whitelistedHosts = new Set(response.whitelist.map(normalizeHost));
-                        }
+            if (api && api.runtime) {
+                if (typeof api.runtime.connectNative === "function") {
+                    try {
+                        blockerPort = api.runtime.connectNative(NATIVE_APP);
+                        blockerPort.onMessage.addListener(function (msg) {
+                            if (!msg) return;
+                            if (msg.type === "UPDATE_BLOCKER_CONFIG") {
+                                applyBlockerConfig(msg);
+                            } else if (msg.type === "RELOAD_ENGINE") {
+                                queryEngineDataFromNative();
+                            }
+                        });
+                    } catch (portErr) {
+                        console.warn("[PetalAdblock] Native port setup failed:", portErr);
                     }
-                });
+                }
+                if (typeof api.runtime.sendNativeMessage === "function") {
+                    api.runtime.sendNativeMessage(NATIVE_APP, { type: "GET_BLOCKER_CONFIG" }, function (response) {
+                        applyBlockerConfig(response);
+                    });
+                }
             }
         } catch (e) {
             console.warn("[PetalAdblock] Failed to query native config:", e);
@@ -380,15 +473,7 @@
             if (!message) return;
 
             if (message.type === "UPDATE_BLOCKER_CONFIG") {
-                if (typeof message.enabled === "boolean") {
-                    isBlockerEnabled = message.enabled;
-                }
-                if (typeof message.mode === "string") {
-                    blockerMode = message.mode.toLowerCase();
-                }
-                if (Array.isArray(message.whitelist)) {
-                    whitelistedHosts = new Set(message.whitelist.map(normalizeHost));
-                }
+                applyBlockerConfig(message);
                 sendResponse({ success: true });
                 return true;
             }
@@ -396,22 +481,34 @@
             // Cosmetic resources requested by early_cosmetics.js
             if (message.type === "GET_COSMETIC_RESOURCES") {
                 const pageUrl = message.url || (sender.tab && sender.tab.url) || "";
-                if (!isBlockerEnabled || !adblockEngine) {
-                    sendResponse({ hide_selectors: [], exceptions: [], injected_scriptlets: [], generichide: false });
-                    return true;
-                }
-
+                const isPrivate = Boolean(sender && sender.tab && sender.tab.incognito);
                 const docHost = extractDomain(pageUrl);
-                if (whitelistedHosts.has(docHost)) {
-                    sendResponse({ hide_selectors: [], exceptions: [], injected_scriptlets: [], generichide: true });
+                const mode = effectiveModeFor(docHost, isPrivate);
+                const whitelisted = (mode === "disabled");
+                if (!isBlockerEnabled || whitelisted || !adblockEngine) {
+                    sendResponse({
+                        enabled: isBlockerEnabled,
+                        whitelisted: whitelisted,
+                        hide_selectors: [],
+                        exceptions: [],
+                        injected_scriptlets: [],
+                        generichide: whitelisted
+                    });
                     return true;
                 }
 
                 try {
                     const res = adblockEngine.urlCosmeticResources(pageUrl);
-                    sendResponse(res);
+                    sendResponse({
+                        enabled: true,
+                        whitelisted: false,
+                        hide_selectors: res.hide_selectors || [],
+                        exceptions: res.exceptions || [],
+                        injected_scriptlets: res.injected_scriptlets || [],
+                        generichide: Boolean(res.generichide)
+                    });
                 } catch (e) {
-                    sendResponse({ hide_selectors: [], exceptions: [], injected_scriptlets: [], generichide: false });
+                    sendResponse({ enabled: isBlockerEnabled, whitelisted: false, hide_selectors: [], exceptions: [], injected_scriptlets: [], generichide: false });
                 }
                 return true;
             }
@@ -450,39 +547,20 @@
                     return { cancel: false };
                 }
 
-                // Check doc host / page host for site exception whitelist
+                // Check doc host / page host for site exception whitelist & per-domain mode
                 const sourceUrl = details.documentUrl || details.originUrl || details.initiator || "";
                 const docHost = extractDomain(sourceUrl);
-                if (docHost && whitelistedHosts.has(docHost)) {
+                const isPrivate = Boolean(details.incognito);
+                const mode = effectiveModeFor(docHost, isPrivate);
+                if (mode === "disabled") {
                     return { cancel: false };
                 }
 
                 // First-party handling according to PetalAdBlockMode
                 // STANDARD: skips first-party blocking to avoid site breakage
                 // AGGRESSIVE: blocks first-party requests too
-                if (blockerMode === "standard" && sourceUrl && isFirstParty(url, sourceUrl)) {
+                if (mode === "standard" && sourceUrl && isFirstParty(url, sourceUrl)) {
                     return { cancel: false };
-                }
-
-                // CNAME Uncloaking check (if GeckoView exposes browser.dns.resolve)
-                if (api.dns && typeof api.dns.resolve === "function") {
-                    try {
-                        const targetHost = extractDomain(url);
-                        if (targetHost) {
-                            api.dns.resolve(targetHost, ["canonical_name"]).then(record => {
-                                if (record && record.canonicalName && record.canonicalName !== targetHost) {
-                                    // Test uncloaked CNAME against engine
-                                    const uncloakedUrl = url.replace(targetHost, record.canonicalName);
-                                    if (adblockEngine) {
-                                        const uncloakedRes = adblockEngine.checkNetworkRequest(uncloakedUrl, sourceUrl, details.type);
-                                        if (uncloakedRes && uncloakedRes.matched) {
-                                            console.log("[PetalAdblock] Blocked CNAME uncloaked tracker:", record.canonicalName);
-                                        }
-                                    }
-                                }
-                            }).catch(() => {});
-                        }
-                    } catch (_) {}
                 }
 
                 // Evaluate adblock-rust engine

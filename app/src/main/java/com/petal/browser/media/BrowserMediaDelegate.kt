@@ -46,22 +46,43 @@ object BrowserMediaDelegate {
                     if (intent == null || intent.action != ACTION_PIP_CONTROL) return
                     val controlType = intent.getIntExtra(EXTRA_CONTROL_TYPE, 0)
                     val mediaBridge = activity.activeMediaBridge
+                    val storeMedia = activity.viewModel.activeTab.value?.mediaSessionState
+                    val controller = storeMedia?.controller
                     when (controlType) {
                         CONTROL_TYPE_PLAY -> {
-                            mediaBridge?.playMedia()
+                            when {
+                                mediaBridge != null -> mediaBridge.playMedia()
+                                controller != null -> controller.play()
+                                else -> activity.evaluateJavascriptInActiveTab(
+                                    "(function(){var vids=document.querySelectorAll('video,audio');for(var i=0;i<vids.length;i++){try{vids[i].play();}catch(e){}}})();",
+                                    null
+                                )
+                            }
                             activity.isMediaPlaying = true
                             updatePipParams(activity, true)
                         }
                         CONTROL_TYPE_PAUSE -> {
-                            mediaBridge?.pauseMedia()
+                            when {
+                                mediaBridge != null -> mediaBridge.pauseMedia()
+                                controller != null -> controller.pause()
+                                else -> activity.evaluateJavascriptInActiveTab(
+                                    "(function(){var vids=document.querySelectorAll('video,audio');for(var i=0;i<vids.length;i++){try{vids[i].pause();}catch(e){}}})();",
+                                    null
+                                )
+                            }
                             activity.isMediaPlaying = false
                             updatePipParams(activity, false)
                         }
-                        CONTROL_TYPE_REPLAY_10 -> {
-                            mediaBridge?.skip(-10)
-                        }
-                        CONTROL_TYPE_FORWARD_10 -> {
-                            mediaBridge?.skip(10)
+                        CONTROL_TYPE_REPLAY_10, CONTROL_TYPE_FORWARD_10 -> {
+                            val deltaSec = if (controlType == CONTROL_TYPE_REPLAY_10) -10 else 10
+                            if (mediaBridge != null) {
+                                mediaBridge.skip(deltaSec)
+                            } else {
+                                activity.evaluateJavascriptInActiveTab(
+                                    "(function(){var vids=document.querySelectorAll('video');if(vids.length===0)vids=document.querySelectorAll('audio');var t=null;for(var i=0;i<vids.length;i++){if(!vids[i].paused||vids[i].currentTime>0){t=vids[i];break;}}if(!t&&vids.length>0)t=vids[0];if(t){try{t.currentTime=Math.max(0,Math.min(t.duration||1e9,t.currentTime+($deltaSec)));}catch(e){}}})();",
+                                    null
+                                )
+                            }
                         }
                     }
                 }
@@ -145,8 +166,9 @@ object BrowserMediaDelegate {
         }
 
         val currentAlbumView = if (activity.currentAlbumController is View) activity.currentAlbumController as View else null
+        val composeGeckoView = findVisibleGeckoView(activity.window?.decorView)
         val targetView: View? = activity.customView
-            ?: (activity.videoView ?: (currentAlbumView ?: activity.findViewById(android.R.id.content)))
+            ?: (activity.videoView ?: (currentAlbumView ?: (composeGeckoView ?: activity.findViewById(android.R.id.content))))
 
         var width = 0
         var height = 0
@@ -222,30 +244,43 @@ object BrowserMediaDelegate {
         }
 
         // 1. Rewind / Replay 10s
-        val replayIntent = Intent(ACTION_PIP_CONTROL).putExtra(EXTRA_CONTROL_TYPE, CONTROL_TYPE_REPLAY_10)
+        val replayIntent = Intent(ACTION_PIP_CONTROL).setPackage(context.packageName).putExtra(EXTRA_CONTROL_TYPE, CONTROL_TYPE_REPLAY_10)
         val replayPendingIntent = PendingIntent.getBroadcast(context, CONTROL_TYPE_REPLAY_10, replayIntent, flag)
         val replayIcon = Icon.createWithResource(context, R.drawable.icon_pip_replay)
         actions.add(RemoteAction(replayIcon, "Rewind 10s", "Rewind 10s", replayPendingIntent))
 
         // 2. Play / Pause Action
         if (isPlaying) {
-            val pauseIntent = Intent(ACTION_PIP_CONTROL).putExtra(EXTRA_CONTROL_TYPE, CONTROL_TYPE_PAUSE)
+            val pauseIntent = Intent(ACTION_PIP_CONTROL).setPackage(context.packageName).putExtra(EXTRA_CONTROL_TYPE, CONTROL_TYPE_PAUSE)
             val pausePendingIntent = PendingIntent.getBroadcast(context, CONTROL_TYPE_PAUSE, pauseIntent, flag)
             val pauseIcon = Icon.createWithResource(context, R.drawable.icon_pause)
             actions.add(RemoteAction(pauseIcon, "Pause", "Pause", pausePendingIntent))
         } else {
-            val playIntent = Intent(ACTION_PIP_CONTROL).putExtra(EXTRA_CONTROL_TYPE, CONTROL_TYPE_PLAY)
+            val playIntent = Intent(ACTION_PIP_CONTROL).setPackage(context.packageName).putExtra(EXTRA_CONTROL_TYPE, CONTROL_TYPE_PLAY)
             val playPendingIntent = PendingIntent.getBroadcast(context, CONTROL_TYPE_PLAY, playIntent, flag)
             val playIcon = Icon.createWithResource(context, R.drawable.icon_play)
             actions.add(RemoteAction(playIcon, "Play", "Play", playPendingIntent))
         }
 
         // 3. Fast Forward 10s
-        val forwardIntent = Intent(ACTION_PIP_CONTROL).putExtra(EXTRA_CONTROL_TYPE, CONTROL_TYPE_FORWARD_10)
+        val forwardIntent = Intent(ACTION_PIP_CONTROL).setPackage(context.packageName).putExtra(EXTRA_CONTROL_TYPE, CONTROL_TYPE_FORWARD_10)
         val forwardPendingIntent = PendingIntent.getBroadcast(context, CONTROL_TYPE_FORWARD_10, forwardIntent, flag)
         val forwardIcon = Icon.createWithResource(context, R.drawable.icon_pip_forward)
         actions.add(RemoteAction(forwardIcon, "Forward 10s", "Forward 10s", forwardPendingIntent))
 
         return actions
+    }
+
+    private fun findVisibleGeckoView(root: View?): org.mozilla.geckoview.GeckoView? {
+        if (root == null) return null
+        if (root is org.mozilla.geckoview.GeckoView && root.isShown && root.width > 0 && root.height > 0) {
+            return root
+        }
+        if (root is android.view.ViewGroup) {
+            for (i in 0 until root.childCount) {
+                findVisibleGeckoView(root.getChildAt(i))?.let { return it }
+            }
+        }
+        return null
     }
 }

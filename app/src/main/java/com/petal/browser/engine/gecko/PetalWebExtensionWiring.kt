@@ -78,15 +78,7 @@ internal object PetalWebExtensionWiring {
             support.onPageActionDefined(extension, action); petal.onPageActionDefined(extension, action)
         }
 
-        // Petal-only: these must be answered exactly once.
-        override fun onNewTab(
-            extension: WebExtension,
-            engineSession: EngineSession,
-            active: Boolean,
-            url: String,
-            isPrivate: Boolean
-        ) = petal.onNewTab(extension, engineSession, active, url, isPrivate)
-
+        // Petal-only prompts, popups, and options pages (tabs flow through WebExtensionSupport overrides).
         override fun onInstallPermissionRequest(
             extension: WebExtension,
             permissions: List<String>,

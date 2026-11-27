@@ -16,20 +16,34 @@ import android.webkit.WebChromeClient
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.setViewTreeLifecycleOwner
+import androidx.lifecycle.setViewTreeViewModelStoreOwner
 import androidx.preference.PreferenceManager
+import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.petal.browser.R
 import com.petal.browser.activity.MainActivity
 import com.petal.browser.browser.PetalTabViewController
-import com.petal.browser.compose.file.PetalUploadChooser
 import com.petal.browser.engine.gecko.PetalEngineStore
 import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import com.petal.browser.ui.components.PetalAlertDialogBuilder
 import com.petal.browser.ui.components.PetalRuntimePermissionBridge
+import com.petal.browser.ui.theme.PetalExpressiveTheme
 import com.petal.browser.unit.PetalAndroidUtils
 import java.io.File
 
@@ -64,6 +78,8 @@ class PetalPwaActivity : AppCompatActivity() {
     private var displayMode = "standalone"
     private var offlineArchivePath: String? = null
     private var pwaTabId: String? = null
+    private var pwaLoadProgress by mutableIntStateOf(0)
+    private var pwaIsLoading by mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -229,7 +245,7 @@ class PetalPwaActivity : AppCompatActivity() {
 
     private fun isPwaFullscreenMode(): Boolean {
         return "fullscreen".equals(displayMode, ignoreCase = true) ||
-                PreferenceManager.getDefaultSharedPreferences(this).getBoolean("sp_pwa_default_fullscreen", true) ||
+                PreferenceManager.getDefaultSharedPreferences(this).getBoolean("sp_pwa_default_fullscreen", false) ||
                 PreferenceManager.getDefaultSharedPreferences(this).getBoolean("sp_immersive_fullscreen", false)
     }
 
@@ -293,7 +309,7 @@ class PetalPwaActivity : AppCompatActivity() {
         val sessionPair = PetalEngineStore.createTabSession(
             this,
             pwaTabId!!,
-            effectiveUrl,
+            "about:blank",
             pwaTitle,
             false,
             false
@@ -302,6 +318,18 @@ class PetalPwaActivity : AppCompatActivity() {
         val gv = PetalTabViewController(this).apply {
             bindTab(sessionPair.first)
             attachLifecycle(this@PetalPwaActivity)
+            activate()
+            onBrowserStateChanged = { state ->
+                pwaLoadProgress = state.progress
+                pwaIsLoading = state.loading && state.progress < 100
+                if (state.url.isNotBlank() && !state.url.equals("about:blank", ignoreCase = true)) {
+                    pwaUrl = state.url
+                }
+                if (state.title.isNotBlank()) {
+                    pwaTitle = state.title
+                    title = state.title
+                }
+            }
             layoutParams = FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -309,6 +337,24 @@ class PetalPwaActivity : AppCompatActivity() {
         }
         geckoView = gv
         frame.addView(gv)
+        (progressBarComposeView as? ComposeView)?.apply {
+            setViewTreeLifecycleOwner(this@PetalPwaActivity)
+            setViewTreeViewModelStoreOwner(this@PetalPwaActivity)
+            setViewTreeSavedStateRegistryOwner(this@PetalPwaActivity)
+            setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+            setContent {
+                PetalExpressiveTheme {
+                    if (pwaIsLoading && pwaLoadProgress in 1..99) {
+                        LinearProgressIndicator(
+                            progress = { pwaLoadProgress / 100f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(3.dp)
+                        )
+                    }
+                }
+            }
+        }
         // The tab view's default spinner is never drawn; show Petal's Compose pull indicator instead.
         com.petal.browser.compose.composable.PetalRefreshBarBridge.attachTo(frame, this, gv)
 
@@ -412,19 +458,6 @@ class PetalPwaActivity : AppCompatActivity() {
             permissions as Array<String>,
             grantResults
         )
-    }
-
-    fun showFileChooser(
-        filePathCallback: ValueCallback<Array<Uri>>?,
-        fileChooserParams: WebChromeClient.FileChooserParams?
-    ) {
-        PetalUploadChooser.show(
-            this,
-            filePathCallback,
-            fileChooserParams
-        ) {
-            Log.e("PetalPwaActivity", "Petal pickers failed to open")
-        }
     }
 
     override fun onDestroy() {

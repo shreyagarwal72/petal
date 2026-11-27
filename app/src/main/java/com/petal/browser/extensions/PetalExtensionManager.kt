@@ -514,7 +514,9 @@ object PetalExtensionManager {
     @Volatile private var attached = false
     @Volatile private var appContext: Context? = null
 
-    /** Tracks pending installs marked for auto-confirmation (e.g. 1-tap connects like AdGuard). */
+    private val trustedOneTapExtensionIds = setOf("adguardadblocker@adguard.com")
+
+    /** Tracks pending installs explicitly started with 1-tap autoConfirm = true. */
     private val autoConfirmInstallUris = java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap<String, Boolean>())
 
     /** Extension ids already registered with DefaultAddonUpdater's periodic work. */
@@ -857,11 +859,10 @@ object PetalExtensionManager {
 
     // ── Hooks called by PetalWebExtensionDelegate ────────────────────────────
 
-    /** Install prompts are auto-confirmed for AdGuard and for 1-tap installs started from Petal itself. */
-    internal fun shouldAutoConfirm(extensionId: String, name: String?): Boolean =
-        extensionId.contains("adguard", ignoreCase = true) ||
-            name?.contains("AdGuard", ignoreCase = true) == true ||
-            autoConfirmInstallUris.isNotEmpty()
+    /** Install prompts are auto-confirmed only for explicit 1-tap curated installs matching verified extension IDs. */
+    internal fun shouldAutoConfirm(extensionId: String, @Suppress("UNUSED_PARAMETER") name: String?): Boolean =
+        autoConfirmInstallUris.isNotEmpty() &&
+            trustedOneTapExtensionIds.any { it.equals(extensionId.trim(), ignoreCase = true) }
 
     /** Surfaces a permission/install prompt to the Compose dialog and reports the answer back. */
     internal fun showPrompt(
@@ -937,39 +938,23 @@ object PetalExtensionManager {
             Log.e(TAG, "Failed to create extension popup session", t)
             return null
         }
-        // Extension pages need JavaScript regardless of the user's per-site setting.
+        // Extension pages need JavaScript and mobile viewport scaling regardless of per-site desktop prefs.
         try { engineSession.settings.javascriptEnabled = true } catch (_: Throwable) {}
         val popupGecko = com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(engineSession)
         if (popupGecko == null) {
             Log.e(TAG, "Popup EngineSession exposes no GeckoSession")
             return null
         }
+        try {
+            popupGecko.settings.viewportMode = org.mozilla.geckoview.GeckoSessionSettings.VIEWPORT_MODE_MOBILE
+            popupGecko.settings.userAgentMode = org.mozilla.geckoview.GeckoSessionSettings.USER_AGENT_MODE_MOBILE
+        } catch (_: Throwable) {}
         // Open before handing the session back so the popup page starts loading immediately.
         try {
             if (!popupGecko.isOpen) popupGecko.open(com.petal.browser.engine.gecko.PetalGeckoRuntime.getOrCreate(ctx))
         } catch (t: Throwable) {
             Log.e(TAG, "Failed to open extension popup session", t)
             return null
-        }
-        // Many popups (uBlock Origin, Bitwarden, AdGuard) render at desktop width unless fixed on load.
-        val existingProgress = popupGecko.progressDelegate
-        popupGecko.progressDelegate = object : GeckoSession.ProgressDelegate {
-            override fun onPageStart(session: GeckoSession, url: String) {
-                try { existingProgress?.onPageStart(session, url) } catch (_: Throwable) {}
-            }
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                try { existingProgress?.onPageStop(session, success) } catch (_: Throwable) {}
-                injectExtensionPopupResponsiveFix(session)
-            }
-            override fun onProgressChange(session: GeckoSession, progress: Int) {
-                try { existingProgress?.onProgressChange(session, progress) } catch (_: Throwable) {}
-            }
-            override fun onSecurityChange(session: GeckoSession, securityInfo: GeckoSession.ProgressDelegate.SecurityInformation) {
-                try { existingProgress?.onSecurityChange(session, securityInfo) } catch (_: Throwable) {}
-            }
-            override fun onSessionStateChange(session: GeckoSession, sessionState: GeckoSession.SessionState) {
-                try { existingProgress?.onSessionStateChange(session, sessionState) } catch (_: Throwable) {}
-            }
         }
         popupGecko.promptDelegate = popupPromptDelegate()
         val popup = PendingPopup(
@@ -999,32 +984,6 @@ object PetalExtensionManager {
             prompt: GeckoSession.PromptDelegate.ButtonPrompt
         ): org.mozilla.geckoview.GeckoResult<GeckoSession.PromptDelegate.PromptResponse>? =
             org.mozilla.geckoview.GeckoResult.fromValue(prompt.confirm(GeckoSession.PromptDelegate.ButtonPrompt.Type.POSITIVE))
-    }
-
-    /** Injects a mobile-responsive viewport + CSS fix into extension popup pages. */
-    private fun injectExtensionPopupResponsiveFix(session: GeckoSession) {
-        val js = """
-            (function() {
-                try {
-                    var existing = document.querySelector('meta[name="viewport"]');
-                    if (!existing) {
-                        var meta = document.createElement('meta');
-                        meta.name    = 'viewport';
-                        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes';
-                        (document.head || document.documentElement).appendChild(meta);
-                    } else if (!existing.content || existing.content.indexOf('width=device-width') === -1) {
-                        existing.content = 'width=device-width, initial-scale=1.0, maximum-scale=3.0, user-scalable=yes';
-                    }
-                    if (document.getElementById('petal-ext-popup-responsive')) return;
-                    var style = document.createElement('style');
-                    style.id = 'petal-ext-popup-responsive';
-                    style.innerHTML = 'html, body { max-width: 100vw !important; overflow-x: hidden !important; }';
-                    (document.head || document.documentElement).appendChild(style);
-                } catch(e) {}
-            })();
-        """.trimIndent().replace("\n", " ")
-        // evaluateJS from the native side bypasses the extension page's CSP (javascript: URLs would not).
-        try { PetalBuiltInExtensionManager.evaluateJavascript(session, js) } catch (_: Exception) {}
     }
 
     @JvmStatic
@@ -1392,8 +1351,10 @@ object PetalExtensionManager {
         }
         val ctx = appContext ?: return
         attach(ctx)
-        val isAdGuard = uri.contains("adguard", ignoreCase = true) || installUri.contains("adguard", ignoreCase = true)
-        if (autoConfirm || isAdGuard) autoConfirmInstallUris.add(installUri)
+        val trustedCatalogAutoConfirm = autoConfirm && catalog.any {
+            it.id == "adguard-adblocker" && it.downloadUrl.equals(installUri, ignoreCase = true)
+        }
+        if (trustedCatalogAutoConfirm) autoConfirmInstallUris.add(installUri)
         _busy.value = true
         _lastError.value = null
         PetalEngineStore.getAddonManager(ctx).installAddon(
@@ -1403,7 +1364,7 @@ object PetalExtensionManager {
                 autoConfirmInstallUris.remove(installUri)
                 _busy.value = false
                 noteInstallIntent(addon.id)
-                if (isAdGuard || autoConfirm || addon.id.contains("adguard", ignoreCase = true)) {
+                if (trustedOneTapExtensionIds.any { it.equals(addon.id, ignoreCase = true) }) {
                     runCatching {
                         PetalEngineStore.getAddonManager(ctx).setAddonAllowedInPrivateBrowsing(
                             addon, true, onSuccess = { refresh() }, onError = { }

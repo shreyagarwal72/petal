@@ -71,7 +71,7 @@
         } catch (_) {}
     }
 
-    injectGenericCosmetics();
+    // Defer generic cosmetic injection until background config confirms blocker is enabled and domain is not whitelisted.
 
     // ─────────────────────────────────────────────────────────────────────────
     // 2. YouTube Mobile Video Ad Skipper & Accelerator
@@ -198,7 +198,11 @@
         type: "GET_COSMETIC_RESOURCES",
         url: location.href
     }, function (response) {
-        if (!response) return;
+        if (!response || response.enabled === false || response.whitelisted === true) return;
+
+        if (!response.generichide) {
+            injectGenericCosmetics();
+        }
 
         // Apply hide selectors
         if (Array.isArray(response.hide_selectors) && response.hide_selectors.length > 0) {

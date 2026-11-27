@@ -124,13 +124,16 @@ object PetalAppLinksBridge {
                 return true
             }
 
-            useCases.openAppLink(
-                appIntent = appIntent,
-                launchInNewTask = true,
-                failedToLaunchAction = { fallbackUrl ->
-                    handleFailedLaunch(activity, fallbackUrl, onLoadFallbackUrl)
-                }
-            )
+            activity.runOnUiThread {
+                if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+                useCases.openAppLink(
+                    appIntent = appIntent,
+                    launchInNewTask = true,
+                    failedToLaunchAction = { fallbackUrl ->
+                        handleFailedLaunch(activity, fallbackUrl, onLoadFallbackUrl)
+                    }
+                )
+            }
             return true
         }
 
@@ -141,19 +144,24 @@ object PetalAppLinksBridge {
         // Fallback URL handling for intent:// links
         val fallback = redirect.fallbackUrl
         if (!fallback.isNullOrBlank()) {
-            handleFailedLaunch(activity, fallback, onLoadFallbackUrl)
+            handleFailedLaunch(activity, fallback, onLoadFallbackUrl, syncReturn = true)
             return true
         }
 
         // Marketplace fallback for missing packages
         val marketIntent = redirect.marketplaceIntent
         if (marketIntent != null && hasUserGesture) {
-            try {
+            if (marketIntent.resolveActivity(activity.packageManager) != null) {
                 marketIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                activity.startActivity(marketIntent)
+                activity.runOnUiThread {
+                    if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+                    try {
+                        activity.startActivity(marketIntent)
+                    } catch (t: Throwable) {
+                        Log.w(TAG, "Failed launching marketplace intent: ${t.message}")
+                    }
+                }
                 return true
-            } catch (t: Throwable) {
-                Log.w(TAG, "Failed launching marketplace intent: ${t.message}")
             }
         }
 
@@ -173,7 +181,14 @@ object PetalAppLinksBridge {
                         }
                     }
                 } else {
-                    activity.startActivity(viewIntent)
+                    activity.runOnUiThread {
+                        if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+                        try {
+                            activity.startActivity(viewIntent)
+                        } catch (t: Throwable) {
+                            Log.w(TAG, "Failed launching scheme activity: ${t.message}")
+                        }
+                    }
                 }
                 return true
             }
@@ -187,9 +202,16 @@ object PetalAppLinksBridge {
     private fun handleFailedLaunch(
         activity: Activity,
         fallbackUrl: String?,
-        onLoadFallbackUrl: ((String) -> Unit)?
+        onLoadFallbackUrl: ((String) -> Unit)?,
+        syncReturn: Boolean = false
     ) {
-        if (!fallbackUrl.isNullOrBlank()) {
+        if (fallbackUrl.isNullOrBlank()) return
+        if (syncReturn && onLoadFallbackUrl != null) {
+            onLoadFallbackUrl(fallbackUrl)
+            return
+        }
+        activity.runOnUiThread {
+            if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
             if (onLoadFallbackUrl != null) {
                 onLoadFallbackUrl(fallbackUrl)
             } else if (activity is MainActivity) {
@@ -203,16 +225,18 @@ object PetalAppLinksBridge {
         appName: String,
         onConfirmed: () -> Unit
     ) {
-        if (activity.isFinishing || (android.os.Build.VERSION.SDK_INT >= 17 && activity.isDestroyed)) return
-        val targetName = appName.ifBlank { "an external application" }
-        val title = activity.getString(com.petal.browser.R.string.open_external_app_title)
-        val message = activity.getString(com.petal.browser.R.string.open_external_app_message, targetName)
-        com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
-            activity,
-            title,
-            message,
-            onConfirm = { onConfirmed() },
-            onCancel = { }
-        )
+        activity.runOnUiThread {
+            if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+            val targetName = appName.ifBlank { "an external application" }
+            val title = activity.getString(com.petal.browser.R.string.open_external_app_title)
+            val message = activity.getString(com.petal.browser.R.string.open_external_app_message, targetName)
+            com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+                activity,
+                title,
+                message,
+                onConfirm = { onConfirmed() },
+                onCancel = { }
+            )
+        }
     }
 }

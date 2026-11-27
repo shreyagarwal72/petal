@@ -424,6 +424,7 @@ object PetalFilterSubscriptionManager {
         compiledRulesCache.clear()
         compiledRulesCache.addAll(newSet)
         invalidateCachedEngineBlob(context)
+        runCatching { com.petal.browser.extensions.PetalBuiltInExtensionManager.pushBlockerRulesReload(context.applicationContext) }
     }
 
     const val ENGINE_BLOB_FILE = "adblock_engine.blob"

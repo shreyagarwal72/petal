@@ -117,7 +117,9 @@ object PetalTabSuspender {
         if (mode == "off" || !isRealPressure(level)) return 0
         val keepAwake = if (mode == "aggressive") MIN_AWAKE_TABS_AGGRESSIVE else MIN_AWAKE_TABS_BALANCED
         val store = PetalEngineStore.getStore(context)
-        val awake = store.state.tabs.count { it.engineState.engineSession != null }
+        val awake = store.state.tabs.count {
+            it.engineState.engineSession != null && !PetalEngineStore.isEphemeralTabId(it.id)
+        }
         val toSuspend = candidates(context, protectPinnedAndMedia(context))
             .sortedBy { it.lastAccess }
             .take((awake - keepAwake).coerceAtLeast(0))

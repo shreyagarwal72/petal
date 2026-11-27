@@ -137,6 +137,18 @@ object PetalEngineStore {
     private var addonUpdater: mozilla.components.feature.addons.update.DefaultAddonUpdater? = null
 
     @Volatile
+    private var customTabsServiceStore: mozilla.components.feature.customtabs.store.CustomTabsServiceStore? = null
+
+    @JvmStatic
+    fun getCustomTabsServiceStore(): mozilla.components.feature.customtabs.store.CustomTabsServiceStore {
+        return customTabsServiceStore ?: synchronized(this) {
+            customTabsServiceStore ?: mozilla.components.feature.customtabs.store.CustomTabsServiceStore().also {
+                customTabsServiceStore = it
+            }
+        }
+    }
+
+    @Volatile
     private var autoSaveStarted = false
 
     /**
@@ -180,6 +192,7 @@ object PetalEngineStore {
                     }
                     val isPrivate = matchedTab?.content?.private ?: false
                     var fallbackLoadedUrl: String? = null
+                    var interceptReturned = false
                     val handled = PetalAppLinksBridge.handleExternalLoadRequest(
                         activity = act,
                         uri = uri,
@@ -187,8 +200,18 @@ object PetalEngineStore {
                         isIncognito = isPrivate,
                         isRedirect = isRedirect,
                         isDirectNavigation = isDirectNavigation,
-                        onLoadFallbackUrl = { fallback -> fallbackLoadedUrl = fallback }
+                        onLoadFallbackUrl = { fallback ->
+                            if (!interceptReturned) {
+                                fallbackLoadedUrl = fallback
+                            } else {
+                                act.runOnUiThread {
+                                    (act as? com.petal.browser.activity.MainActivity)?.viewModel?.loadUrl(fallback)
+                                        ?: engineSession.loadUrl(fallback)
+                                }
+                            }
+                        }
                     )
+                    interceptReturned = true
                     return when {
                         fallbackLoadedUrl != null -> RequestInterceptor.InterceptionResponse.Url(fallbackLoadedUrl!!)
                         handled -> RequestInterceptor.InterceptionResponse.Deny

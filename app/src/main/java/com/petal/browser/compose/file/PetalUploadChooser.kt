@@ -199,7 +199,11 @@ object PetalUploadChooser {
         params: WebChromeClient.FileChooserParams?,
         onFatalFallback: () -> Unit
     ) {
-        val decorView = activity.window?.decorView as? android.view.ViewGroup ?: return
+        val decorView = activity.window?.decorView as? android.view.ViewGroup ?: run {
+            cb?.onReceiveValue(null)
+            onFatalFallback()
+            return
+        }
         var chosen = false
         lateinit var composeView: ComposeView
 

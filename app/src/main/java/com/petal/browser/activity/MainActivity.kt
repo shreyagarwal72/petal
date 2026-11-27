@@ -503,25 +503,59 @@ class MainActivity : FragmentActivity(), BrowserController {
     fun showQuickTools() {
         com.petal.browser.ui.components.PetalQuickToolsBridge.showQuickTools(this)
     }
+    private var readerOverlayView: androidx.compose.ui.platform.ComposeView? = null
+
+    private fun dismissReaderOverlay(): Boolean {
+        val overlay = readerOverlayView ?: return false
+        readerOverlayView = null
+        (overlay.parent as? android.view.ViewGroup)?.removeView(overlay)
+        pendingOverlayBackAction = null
+        com.petal.browser.live.PetalLiveActionBus.postSimple(
+            com.petal.browser.live.LiveEventKind.READER_MODE,
+            "reader",
+            "Reader mode off"
+        )
+        return true
+    }
+
     fun showReaderMode() {
+        if (dismissReaderOverlay()) return
         val tab = viewModel.activeTab.value
         if (tab != null) {
             val curUrl = tab.content.url
-            val isReader = curUrl.startsWith("about:reader?url=")
-            com.petal.browser.engine.gecko.PetalEngineStore.toggleReaderMode(this, tab.id, !isReader)
-            try {
-                if (!isReader) {
-                    viewModel.loadUrl("about:reader?url=${android.net.Uri.encode(curUrl)}")
-                } else {
-                    val origUrl = android.net.Uri.decode(curUrl.substringAfter("about:reader?url="))
-                    viewModel.loadUrl(origUrl)
+            if (!curUrl.startsWith("http://", ignoreCase = true) && !curUrl.startsWith("https://", ignoreCase = true)) {
+                com.petal.browser.view.PetalToast.show(this, "Reader mode is available on web articles")
+                return
+            }
+            val gs = tab.engineState.engineSession?.let {
+                com.petal.browser.engine.gecko.PetalEngineBridge.extractGeckoSession(it)
+            }
+            com.petal.browser.compose.reader.PetalReaderBridge.extractArticle(this, gs, curUrl, tab.content.title) { article ->
+                if (isFinishing || isDestroyed) return@extractArticle
+                if (article == null || article.contentText.isBlank()) {
+                    com.petal.browser.view.PetalToast.show(this, "Couldn't extract article text from this page")
+                    return@extractArticle
                 }
-            } catch (_: Throwable) {}
-            com.petal.browser.live.PetalLiveActionBus.postSimple(
-                com.petal.browser.live.LiveEventKind.READER_MODE,
-                "reader",
-                if (isReader) "Reader mode off" else "Reader mode on"
-            )
+                dismissReaderOverlay()
+                val host = findViewById<android.view.ViewGroup>(android.R.id.content) ?: return@extractArticle
+                val view = com.petal.browser.compose.reader.PetalReaderBridge.createReaderView(this, article) {
+                    dismissReaderOverlay()
+                }
+                readerOverlayView = view
+                pendingOverlayBackAction = Runnable { dismissReaderOverlay() }
+                host.addView(
+                    view,
+                    android.view.ViewGroup.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+                        android.view.ViewGroup.LayoutParams.MATCH_PARENT
+                    )
+                )
+                com.petal.browser.live.PetalLiveActionBus.postSimple(
+                    com.petal.browser.live.LiveEventKind.READER_MODE,
+                    "reader",
+                    "Reader mode on"
+                )
+            }
             return
         }
         val controller = currentAlbumController as? com.petal.browser.browser.PetalTabViewController
@@ -1175,7 +1209,28 @@ class MainActivity : FragmentActivity(), BrowserController {
             }
             Intent.ACTION_VIEW -> {
                 if (!data.isNullOrBlank()) {
-                    viewModel.loadUrl(data)
+                    val hasCustomTabSession = intent.hasExtra("android.support.customtabs.extra.SESSION")
+                    val forceFullBrowser = intent.getBooleanExtra("petal_force_full_browser", false)
+                    val customTabsEnabled = sp.getBoolean("sp_custom_tabs_enabled", true)
+                    if (hasCustomTabSession && !forceFullBrowser && customTabsEnabled) {
+                        val customTabIntent = Intent(intent).apply {
+                            setClass(this@MainActivity, com.petal.browser.customtabs.PetalCustomTabActivity::class.java)
+                            component = android.content.ComponentName(
+                                this@MainActivity,
+                                com.petal.browser.customtabs.PetalCustomTabActivity::class.java
+                            )
+                        }
+                        startActivity(customTabIntent)
+                        finish()
+                        return
+                    }
+                    val openPrivate = intent.getBooleanExtra("com.petal.browser.extra.OPEN_PRIVATE_TAB", false)
+                    if (openPrivate) {
+                        intent.removeExtra("com.petal.browser.extra.OPEN_PRIVATE_TAB")
+                        viewModel.openNewTab(url = data, selectTab = true, private = true)
+                    } else {
+                        viewModel.loadUrl(data)
+                    }
                 }
             }
             Intent.ACTION_SEND -> {

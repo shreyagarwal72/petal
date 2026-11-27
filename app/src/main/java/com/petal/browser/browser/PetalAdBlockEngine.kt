@@ -37,14 +37,19 @@ object PetalAdBlockEngine {
     @get:JvmStatic
     val stateVersion: StateFlow<Long> = _stateVersion.asStateFlow()
     @Volatile private var isInitialized = false
+    @Volatile private var storedAppContext: Context? = null
 
-    private fun notifyStateChanged() {
+    private fun notifyStateChanged(context: Context? = storedAppContext) {
         _stateVersion.value = _stateVersion.value + 1L
         _trackerRevision.value = _trackerRevision.value + 1L
+        context?.let {
+            runCatching { com.petal.browser.extensions.PetalBuiltInExtensionManager.pushBlockerConfig(it.applicationContext) }
+        }
     }
 
     @JvmStatic
     fun ensureInitialized(context: Context) {
+        storedAppContext = context.applicationContext ?: context
         if (isInitialized) return
         synchronized(this) {
             if (isInitialized) return
@@ -83,7 +88,9 @@ object PetalAdBlockEngine {
 
     @JvmStatic
     fun setAdBlockMode(context: Context, mode: PetalAdBlockMode) {
-        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
+        val appCtx = context.contextOrApp()
+        storedAppContext = appCtx
+        val sp = PreferenceManager.getDefaultSharedPreferences(appCtx)
         val isEnabled = mode != PetalAdBlockMode.DISABLED
         sp.edit()
             .putBoolean("sp_ad_block", isEnabled)
@@ -93,7 +100,7 @@ object PetalAdBlockEngine {
         try {
             com.petal.browser.engine.gecko.PetalGeckoRuntime.syncPreferences(sp)
         } catch (_: Throwable) {}
-        notifyStateChanged()
+        notifyStateChanged(appCtx)
     }
 
     @JvmStatic
@@ -108,14 +115,16 @@ object PetalAdBlockEngine {
     @JvmStatic
     fun setDomainOverride(context: Context, domain: String, mode: PetalAdBlockMode?) {
         if (domain.isBlank()) return
+        val appCtx = context.contextOrApp()
+        storedAppContext = appCtx
         val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
-        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
+        val sp = PreferenceManager.getDefaultSharedPreferences(appCtx)
         if (mode == null) {
             sp.edit().remove("sp_adblock_domain_mode_$cleanDomain").apply()
         } else {
             sp.edit().putString("sp_adblock_domain_mode_$cleanDomain", mode.id).apply()
         }
-        notifyStateChanged()
+        notifyStateChanged(appCtx)
     }
 
     @JvmStatic
@@ -158,32 +167,38 @@ object PetalAdBlockEngine {
     @JvmOverloads
     fun addDomainToWhitelist(context: Context, domain: String, isPrivate: Boolean = false) {
         if (domain.isBlank()) return
+        val appCtx = context.contextOrApp()
+        storedAppContext = appCtx
         val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
         if (isPrivate) {
             // Private tabs only hold session-scoped exceptions in memory; never persist to disk.
             privateWhitelistedDomains.add(cleanDomain)
+            notifyStateChanged(appCtx)
             return
         }
         whitelistedDomains.add(cleanDomain)
 
-        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
+        val sp = PreferenceManager.getDefaultSharedPreferences(appCtx)
         sp.edit().putStringSet("sp_adblock_whitelisted_domains", whitelistedDomains.toSet()).apply()
-        notifyStateChanged()
+        notifyStateChanged(appCtx)
     }
 
     @JvmStatic
     @JvmOverloads
     fun removeDomainFromWhitelist(context: Context, domain: String, isPrivate: Boolean = false) {
+        val appCtx = context.contextOrApp()
+        storedAppContext = appCtx
         val cleanDomain = domain.lowercase(Locale.US).removePrefix("www.")
         if (isPrivate) {
             privateWhitelistedDomains.remove(cleanDomain)
+            notifyStateChanged(appCtx)
             return
         }
         whitelistedDomains.remove(cleanDomain)
 
-        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
+        val sp = PreferenceManager.getDefaultSharedPreferences(appCtx)
         sp.edit().putStringSet("sp_adblock_whitelisted_domains", whitelistedDomains.toSet()).apply()
-        notifyStateChanged()
+        notifyStateChanged(appCtx)
     }
 
     @JvmStatic
@@ -191,10 +206,28 @@ object PetalAdBlockEngine {
         privateWhitelistedDomains.clear()
         privateDomainBlockedCount.clear()
         privateDomainCategoryCounts.clear()
+        notifyStateChanged()
     }
 
     @JvmStatic
     fun getWhitelistedDomains(): Set<String> = whitelistedDomains.toSet()
+
+    @JvmStatic
+    fun getPrivateWhitelistedDomains(): Set<String> = privateWhitelistedDomains.toSet()
+
+    @JvmStatic
+    fun getAllDomainOverrides(context: Context): Map<String, String> {
+        val sp = PreferenceManager.getDefaultSharedPreferences(context.contextOrApp())
+        val prefix = "sp_adblock_domain_mode_"
+        val out = LinkedHashMap<String, String>()
+        for ((k, v) in sp.all) {
+            if (k.startsWith(prefix) && v is String) {
+                val domain = k.removePrefix(prefix)
+                if (domain.isNotBlank()) out[domain] = PetalAdBlockMode.fromId(v).id
+            }
+        }
+        return out
+    }
 
     data class BlockedCategoryCounts(
         val ads: Int = 0,

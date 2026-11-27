@@ -75,27 +75,7 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
     // ── Tabs ─────────────────────────────────────────────────────────────────
 
     /**
-     * An extension opened a tab (`browser.tabs.create`). Gecko already built [engineSession] for it;
-     * it is adopted into the BrowserStore, which also makes WebExtensionSupport register it.
-     */
-    override fun onNewTab(
-        extension: WebExtension,
-        engineSession: EngineSession,
-        active: Boolean,
-        url: String,
-        isPrivate: Boolean
-    ) {
-        mainHandler.post {
-            try {
-                openExtensionTab(extension, engineSession, url, active, isPrivate)
-            } catch (t: Throwable) {
-                Log.e(TAG, "Failed to handle onNewTab from extension ${extension.id}: ${t.message}", t)
-            }
-        }
-    }
-
-    /**
-     * Adopts [engineSession] as a new store tab and returns its id. Also the body of
+     * Adopts [engineSession] as a new store tab and returns its id. Body of
      * `WebExtensionSupport`'s `onNewTabOverride`.
      */
     fun openExtensionTab(
@@ -144,21 +124,6 @@ class PetalWebExtensionDelegate(private val context: Context) : WebExtensionDele
                 Log.w(TAG, "Extension tab close request failed", t)
             }
         }
-    }
-
-    /** `browser.tabs.remove`: closes the store tab that owns [engineSession]. */
-    fun onCloseTab(extension: WebExtension?, engineSession: EngineSession): Boolean {
-        val store = PetalEngineStore.getStore(context)
-        val tab = store.state.tabs.firstOrNull { it.engineState.engineSession === engineSession } ?: return false
-        mainHandler.post {
-            try {
-                PetalEngineStore.removeTab(context, tab.id)
-                com.petal.browser.compose.incognito.PetalIncognitoSessionManager.syncIncognitoState(context)
-            } catch (t: Throwable) {
-                Log.w(TAG, "Extension tab close request failed", t)
-            }
-        }
-        return true
     }
 
     // ── Permission prompts (Petal Compose dialogs) ───────────────────────────

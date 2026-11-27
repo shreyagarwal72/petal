@@ -403,19 +403,34 @@ class PetalBrowserPromptBridge(
             }
 
             is PromptRequest.SaveLoginPrompt -> {
+                val tab = store.state.tabs.firstOrNull { it.id == tabId }
                 val loginEntry = request.logins.firstOrNull()
-                if (loginEntry == null) {
+                if (tab?.content?.private == true || loginEntry == null) {
                     request.onDismiss()
                     consume(tabId, request)
                     return
                 }
 
-                val domain = loginEntry.origin
+                val rawOrigin = loginEntry.origin.ifBlank { loginEntry.formActionOrigin.orEmpty() }
+                val domain = PetalCredentialVault.cleanDomain(rawOrigin)
                 val username = loginEntry.username.orEmpty()
                 val password = loginEntry.password.orEmpty()
+                if (password.isBlank() || domain.isBlank()) {
+                    request.onDismiss()
+                    consume(tabId, request)
+                    return
+                }
 
                 PetalCredentialVault.init(activity)
                 if (PetalCredentialVault.isNeverSave(activity, domain)) {
+                    request.onDismiss()
+                    consume(tabId, request)
+                    return
+                }
+
+                val existing = PetalCredentialVault.findByDomainAndUsername(domain, username)
+                if (existing != null && existing.password == password) {
+                    PetalCredentialVault.markUsed(existing.id)
                     request.onDismiss()
                     consume(tabId, request)
                     return
@@ -427,17 +442,8 @@ class PetalBrowserPromptBridge(
                     initialUsername = username,
                     initialPassword = password,
                     onSave = { finalUser, finalPass ->
-                        val guid = UUID.randomUUID().toString()
-                        PetalCredentialVault.save(
-                            PetalCredential(
-                                id = guid,
-                                domain = domain,
-                                originUrl = domain,
-                                username = finalUser,
-                                password = finalPass
-                            )
-                        )
-                        request.onConfirm(loginEntry.copy(username = finalUser, password = finalPass))
+                        val guid = existing?.id ?: loginEntry.guid ?: UUID.randomUUID().toString()
+                        request.onConfirm(loginEntry.copy(guid = guid, username = finalUser, password = finalPass))
                         consume(tabId, request)
                     },
                     onNeverSave = {
@@ -465,6 +471,7 @@ class PetalBrowserPromptBridge(
                         "Autofill Account",
                         "Sign in as ${onlyLogin.username.orEmpty().ifBlank { "saved account" }} on ${onlyLogin.origin}?",
                         onConfirm = {
+                            onlyLogin.guid?.let { PetalCredentialVault.markUsed(it) }
                             request.onConfirm(onlyLogin)
                             consume(tabId, request)
                         },
@@ -489,6 +496,7 @@ class PetalBrowserPromptBridge(
                         onConfirm = { selectedIds ->
                             val selectedIndex = selectedIds.firstOrNull()?.toIntOrNull() ?: 0
                             val chosen = request.logins.getOrNull(selectedIndex) ?: request.logins.first()
+                            chosen.guid?.let { PetalCredentialVault.markUsed(it) }
                             request.onConfirm(chosen)
                             consume(tabId, request)
                         },

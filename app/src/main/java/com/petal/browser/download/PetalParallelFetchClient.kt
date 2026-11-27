@@ -121,7 +121,16 @@ class PetalParallelFetchClient(
                 return probe
             }
             if (probe.status != 206) {
-                if (probe.status in 200..299) CapabilityCache.markSingleStream(request.url, probe.headers.get("ETag"))
+                if (probe.status in 200..299) {
+                    CapabilityCache.markSingleStream(request.url, probe.headers.get("ETag"))
+                    return null
+                }
+                // Return terminal HTTP error responses (401/403/404/410/429/etc.) directly so single-use
+                // signed URLs are not fetched twice; only fall back to plain GET on range-rejection codes.
+                if (probe.status !in listOf(400, 405, 416, 501)) {
+                    handedOff = true
+                    return probe
+                }
                 return null
             }
 

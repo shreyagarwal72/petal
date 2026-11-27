@@ -333,10 +333,21 @@ object PetalEngineBridge {
         val isXpiUrl = parsed?.path?.endsWith(".xpi", ignoreCase = true) == true ||
             response.headers["content-type"]?.contains("application/x-xpinstall", ignoreCase = true) == true
         if (isXpiUrl) {
+            runCatching { response.body?.close() }
+            val extName = parsed?.lastPathSegment?.takeIf { it.isNotBlank() } ?: "extension.xpi"
             activity.runOnUiThread {
-                com.petal.browser.extensions.PetalExtensionManager.install(responseUrl) { success, message ->
-                    PetalToast.show(activity, message ?: if (success) "Extension installed" else "Extension installation failed")
-                }
+                if (activity.isFinishing || activity.isDestroyed) return@runOnUiThread
+                com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+                    activity,
+                    "Install Extension?",
+                    "Download and install Firefox extension \"$extName\"?",
+                    onConfirm = {
+                        com.petal.browser.extensions.PetalExtensionManager.install(responseUrl) { success, message ->
+                            PetalToast.show(activity, message ?: if (success) "Extension installed" else "Extension installation failed")
+                        }
+                    },
+                    onCancel = {}
+                )
             }
             return
         }
@@ -346,15 +357,45 @@ object PetalEngineBridge {
         if (isUserScript) {
             CoroutineScope(Dispatchers.IO).launch {
                 try {
-                    val body = response.body?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
-                    if (body != null) {
-                        val meta = com.petal.browser.compose.store.PetalUserScriptEngine.installScript(activity, body)
+                    val body = response.body?.use { stream ->
+                        val maxBytes = 2 * 1024 * 1024
+                        val out = java.io.ByteArrayOutputStream()
+                        val buf = ByteArray(8192)
+                        var total = 0
+                        while (true) {
+                            val n = stream.read(buf)
+                            if (n < 0) break
+                            total += n
+                            if (total > maxBytes) throw IllegalArgumentException("UserScript exceeds 2 MB limit")
+                            out.write(buf, 0, n)
+                        }
+                        out.toString(Charsets.UTF_8.name())
+                    }
+                    if (!body.isNullOrBlank()) {
+                        val preview = com.petal.browser.compose.store.PetalUserScriptEngine.parseMetadata(body, "preview")
+                        val displayName = preview.name.takeUnless { it == "preview" || it.isBlank() }
+                            ?: parsed?.lastPathSegment
+                            ?: "UserScript"
                         withContext(Dispatchers.Main) {
-                            PetalToast.show(activity, "UserScript installed: ${meta?.name ?: "Unknown"}")
+                            if (activity.isFinishing || activity.isDestroyed) return@withContext
+                            com.petal.browser.ui.components.PetalExpressivePromptBridge.showConfirm(
+                                activity,
+                                "Install UserScript?",
+                                "Install \"$displayName\"? UserScripts run custom JavaScript on matching websites (${preview.matchPatterns.joinToString(", ")}).",
+                                onConfirm = {
+                                    CoroutineScope(Dispatchers.IO).launch {
+                                        val meta = com.petal.browser.compose.store.PetalUserScriptEngine.installScript(activity, body)
+                                        withContext(Dispatchers.Main) {
+                                            PetalToast.show(activity, "UserScript installed: ${meta?.name ?: displayName}")
+                                        }
+                                    }
+                                },
+                                onCancel = {}
+                            )
                         }
                     }
                 } catch (e: Exception) {
-                    Log.e(TAG, "Error installing userscript", e)
+                    Log.e(TAG, "Error handling userscript response", e)
                 }
             }
             return
@@ -378,7 +419,14 @@ object PetalEngineBridge {
             if (bodyStream != null) {
                 activity.runOnUiThread {
                     com.petal.browser.ui.components.PetalDownloadDialogBridge.showDownloadConfirmation(
-                        activity, responseUrl, contentDisposition, mimeType, contentLength
+                        context = activity,
+                        url = responseUrl,
+                        contentDisposition = contentDisposition,
+                        mimeType = mimeType,
+                        contentLength = contentLength,
+                        referrerUrl = referrer,
+                        isPrivate = isPrivate,
+                        onCancel = { runCatching { bodyStream.close() } }
                     ) { confirmedName ->
                         val finalName = confirmedName.ifBlank { fileName }
                         val appContext = activity.applicationContext
@@ -852,7 +900,7 @@ object PetalEngineBridge {
                     val geckoResult = GeckoResult<GeckoSession.PromptDelegate.PromptResponse>()
                     val act = activityProvider()
                     val option = request.options.firstOrNull()
-                    if (option == null || act !is androidx.activity.ComponentActivity) {
+                    if (option == null || act !is androidx.activity.ComponentActivity || incognitoProvider()) {
                         return GeckoResult.fromValue(request.dismiss())
                     }
 
@@ -860,7 +908,9 @@ object PetalEngineBridge {
                     val username = login.username.orEmpty()
                     val password = login.password.orEmpty()
                     val origin = login.origin.orEmpty()
-                    val domain = origin.ifBlank { login.formActionOrigin.orEmpty() }
+                    val domain = com.petal.browser.passwords.PetalCredentialVault.cleanDomain(
+                        origin.ifBlank { login.formActionOrigin.orEmpty() }
+                    )
 
                     if (password.isBlank() || domain.isBlank()) {
                         return GeckoResult.fromValue(request.dismiss())

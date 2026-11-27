@@ -101,17 +101,27 @@ object PetalReaderBridge {
     @JvmStatic
     fun extractArticle(controller: AlbumController?, callback: (ReaderArticleData?) -> Unit) {
         val url = controller?.url
-        if (controller == null || url.isNullOrBlank() || url.startsWith("about:") || url.startsWith("petal://")) {
-            callback(null)
+        val context = (controller as? View)?.context
+        val session = (controller as? com.petal.browser.browser.PetalTabViewController)?.getGeckoSession()
+        extractArticle(context, session, url, controller?.title, callback)
+    }
+
+    @JvmStatic
+    fun extractArticle(
+        context: Context?,
+        session: org.mozilla.geckoview.GeckoSession?,
+        url: String?,
+        pageTitle: String?,
+        callback: (ReaderArticleData?) -> Unit
+    ) {
+        if (session == null || url.isNullOrBlank() || url.startsWith("about:") || url.startsWith("petal://")) {
+            mainHandler.post { callback(null) }
             return
         }
 
-        val pageTitle = controller.title ?: "Article"
         val domain = PetalAndroidUtils.domain(url) ?: ""
-
         pendingCallbacks[url] = callback
 
-        val context = (controller as? View)?.context
         val useMozillaReadability = if (context != null) {
             PreferenceManager.getDefaultSharedPreferences(context).getBoolean("sp_mozilla_readability", true)
         } else {
@@ -179,18 +189,9 @@ object PetalReaderBridge {
                     }
 
                     var bodyText = cleanBlocks.length > 0 ? cleanBlocks.join('\n\n') : (clone.innerText || '');
-                    var art = { title: title, author: author, lead: leadImg, text: bodyText };
-
-                    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-                        chrome.runtime.sendMessage({
-                            type: 'READER_ARTICLE_DATA',
-                            article: art,
-                            pageUrl: window.location.href
-                        }).catch(function() {});
-                    }
-                    window.postMessage({ type: 'PETAL_EXTRACT_ARTICLE', article: art }, '*');
+                    return JSON.stringify({ title: title, author: author, lead: leadImg, text: bodyText });
                 } catch(e) {
-                    console.error('Petal Mozilla Readability error:', e);
+                    return '';
                 }
             })();
             """.trimIndent()
@@ -203,41 +204,44 @@ object PetalReaderBridge {
                     var by = (document.querySelector('[rel="author"], .author, .byline, [itemprop="author"], .article-author') ? document.querySelector('[rel="author"], .author, .byline, [itemprop="author"], .article-author').innerText.trim() : '') || '';
                     var img = document.querySelector('article img, [itemprop="image"], meta[property="og:image"]');
                     var lead = img ? (img.src || img.content || '') : '';
-                    
+
                     var paragraphs = Array.from(el.querySelectorAll('p'))
                         .map(function(p) { return p.innerText.trim(); })
                         .filter(function(text) { return text.length > 20; });
-                    
-                    var bodyText = paragraphs.length > 0 ? paragraphs.join('\n\n') : (el.innerText || '');
-                    var art = { title: t, author: by, lead: lead, text: bodyText };
 
-                    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-                        chrome.runtime.sendMessage({
-                            type: 'READER_ARTICLE_DATA',
-                            article: art,
-                            pageUrl: window.location.href
-                        }).catch(function() {});
-                    }
-                    window.postMessage({ type: 'PETAL_EXTRACT_ARTICLE', article: art }, '*');
+                    var bodyText = paragraphs.length > 0 ? paragraphs.join('\n\n') : (el.innerText || '');
+                    return JSON.stringify({ title: t, author: by, lead: lead, text: bodyText });
                 } catch(e) {
-                    console.error('Reader extraction error:', e);
+                    return '';
                 }
             })();
             """.trimIndent()
         }
 
-        when (controller) {
-            is com.petal.browser.browser.PetalTabViewController -> controller.evaluateJavascript(extractScript)
+        com.petal.browser.extensions.PetalBuiltInExtensionManager.evaluateJavascript(session, extractScript) { rawJson ->
+            val cb = pendingCallbacks.remove(url) ?: return@evaluateJavascript
+            val parsed = rawJson?.takeIf { it.isNotBlank() && it != "null" }?.let { raw ->
+                runCatching {
+                    val obj = org.json.JSONObject(raw)
+                    val contentText = obj.optString("text", "")
+                    if (contentText.isBlank()) null else ReaderArticleData(
+                        title = obj.optString("title", "").ifBlank { pageTitle ?: "Article" },
+                        author = obj.optString("author", ""),
+                        domain = domain,
+                        leadImageUrl = obj.optString("lead", ""),
+                        contentText = contentText
+                    )
+                }.getOrNull()
+            }
+            mainHandler.post { cb(parsed) }
         }
 
-        // 1200ms fallback timeout: if WebExtension did not respond, construct a fallback article from page title
         mainHandler.postDelayed({
             val timedOutCb = pendingCallbacks.remove(url)
             if (timedOutCb != null) {
-                // Return null so MainActivity triggers native Firefox about:reader?url=... fallback
                 timedOutCb(null)
             }
-        }, 1200L)
+        }, 2000L)
     }
 
     /**

@@ -32,12 +32,17 @@ import com.petal.browser.R
 import com.petal.browser.browser.AlbumController
 import com.petal.browser.browser.PetalTabViewController
 import com.petal.browser.database.FaviconHelper
+import com.petal.browser.engine.gecko.PetalEngineBridge
 import com.petal.browser.engine.gecko.PetalEngineStore
+import com.petal.browser.engine.gecko.PetalGeckoRuntime
 import com.petal.browser.logger.PetalAppLogger
 import com.petal.browser.ui.components.PetalAlertDialogBuilder
 import com.petal.browser.unit.PetalAndroidUtils
 import com.petal.browser.view.PetalToast
 import kotlinx.coroutines.launch
+import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
+import mozilla.components.concept.fetch.MutableHeaders
+import mozilla.components.concept.fetch.Request
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -92,6 +97,7 @@ class PetalPwaManager(
 
         private val sPwaExecutor: ExecutorService = Executors.newSingleThreadExecutor()
         private val sManifestCache: MutableMap<String, PwaManifest> = ConcurrentHashMap()
+        private val sPrivateManifestCache: MutableMap<String, PwaManifest> = ConcurrentHashMap()
 
         @Volatile
         @JvmStatic
@@ -104,51 +110,115 @@ class PetalPwaManager(
         @JvmStatic
         fun getLatestManifest(): PwaManifest? = currentManifest
 
+        private fun createGeckoFetchClient(): GeckoViewFetchClient? {
+            val ctx = com.petal.browser.PetalApplication.instance?.applicationContext ?: return null
+            return runCatching {
+                GeckoViewFetchClient(ctx, PetalGeckoRuntime.getOrCreate(ctx))
+            }.getOrNull()
+        }
+
+        private data class FetchedPayload(val finalUrl: String, val bytes: ByteArray)
+
+        private fun fetchBytes(
+            urlStr: String,
+            accept: String,
+            userAgent: String,
+            isPrivate: Boolean,
+            timeoutMs: Int = 5000
+        ): FetchedPayload? {
+            val geckoClient = createGeckoFetchClient()
+            if (geckoClient != null) {
+                return try {
+                    val headers = MutableHeaders().apply {
+                        append("Accept", accept)
+                        append("User-Agent", userAgent)
+                    }
+                    val request = Request(
+                        url = urlStr,
+                        method = Request.Method.GET,
+                        headers = headers,
+                        connectTimeout = timeoutMs.toLong() to java.util.concurrent.TimeUnit.MILLISECONDS,
+                        readTimeout = timeoutMs.toLong() to java.util.concurrent.TimeUnit.MILLISECONDS,
+                        redirect = Request.Redirect.FOLLOW,
+                        private = isPrivate
+                    )
+                    val response = geckoClient.fetch(request)
+                    try {
+                        if (response.status in 200..399) {
+                            val bytes = response.body.useStream { it.readBytes() }
+                            FetchedPayload(response.url.ifBlank { urlStr }, bytes)
+                        } else null
+                    } finally {
+                        runCatching { response.body.close() }
+                    }
+                } catch (e: Exception) {
+                    Log.d(TAG, "Gecko PWA fetch note ($urlStr): ${e.message}")
+                    null
+                }
+            }
+            if (isPrivate) return null
+            var conn: HttpURLConnection? = null
+            return try {
+                conn = (URL(urlStr).openConnection() as HttpURLConnection).apply {
+                    setRequestProperty("User-Agent", userAgent)
+                    setRequestProperty("Accept", accept)
+                    connectTimeout = timeoutMs
+                    readTimeout = timeoutMs
+                    instanceFollowRedirects = true
+                }
+                conn.connect()
+                if (conn.responseCode in 200..399) {
+                    val finalUrl = conn.url?.toString() ?: urlStr
+                    val bytes = conn.inputStream.use { it.readBytes() }
+                    FetchedPayload(finalUrl, bytes)
+                } else null
+            } catch (_: Exception) {
+                null
+            } finally {
+                conn?.disconnect()
+            }
+        }
+
         @JvmStatic
-        fun onManifestDiscovered(manifestUrl: String?, pageUrl: String?, pageTitle: String?) {
+        @JvmOverloads
+        fun onManifestDiscovered(
+            manifestUrl: String?,
+            pageUrl: String?,
+            pageTitle: String?,
+            isPrivate: Boolean = false
+        ) {
             if (manifestUrl.isNullOrBlank()) return
             sPwaExecutor.execute {
-                var conn: HttpURLConnection? = null
                 try {
-                    val url = URL(manifestUrl)
-                    conn = url.openConnection() as HttpURLConnection
-                    conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14; Mobile; rv:128.0) Gecko/128.0 Firefox/128.0")
-                    conn.setRequestProperty("Accept", "application/manifest+json, application/json, text/plain, */*")
-                    conn.connectTimeout = 6000
-                    conn.readTimeout = 6000
-                    conn.instanceFollowRedirects = true
-                    conn.connect()
-
-                    val code = conn.responseCode
-                    if (code in 200..399) {
-                        val reader = BufferedReader(InputStreamReader(conn.inputStream))
-                        val sb = StringBuilder()
-                        var line: String?
-                        while (reader.readLine().also { line = it } != null) {
-                            sb.append(line)
-                        }
-                        reader.close()
-
-                        val jsonStr = sb.toString().trim()
-                        if (jsonStr.isNotEmpty()) {
-                            val json = JSONObject(jsonStr)
-                            val manifest = parseManifest(json, manifestUrl, pageUrl, pageTitle)
-                            if (manifest != null) {
+                    val payload = fetchBytes(
+                        urlStr = manifestUrl,
+                        accept = "application/manifest+json, application/json, text/plain, */*",
+                        userAgent = "Mozilla/5.0 (Linux; Android 14; Mobile; rv:161.0) Gecko/161.0 Firefox/161.0",
+                        isPrivate = isPrivate,
+                        timeoutMs = 6000
+                    ) ?: return@execute
+                    val jsonStr = payload.bytes.toString(Charsets.UTF_8).trim()
+                    if (jsonStr.isNotEmpty()) {
+                        val json = JSONObject(jsonStr)
+                        val manifest = parseManifest(json, manifestUrl, pageUrl, pageTitle)
+                        if (manifest != null) {
+                            val targetCache = if (isPrivate) sPrivateManifestCache else sManifestCache
+                            if (!isPrivate) {
                                 currentManifest = manifest
-                                if (!pageUrl.isNullOrEmpty()) {
-                                    sManifestCache[pageUrl] = manifest
-                                }
-                                sManifestCache[manifestUrl] = manifest
-                                Log.d(TAG, "PWA manifest discovered & parsed for ${pageUrl ?: manifestUrl}: name=${manifest.name}, display=${manifest.display}")
+                            }
+                            if (!pageUrl.isNullOrEmpty()) {
+                                targetCache[pageUrl] = manifest
+                            }
+                            targetCache[manifestUrl] = manifest
+                            Log.d(TAG, "PWA manifest discovered & parsed for ${pageUrl ?: manifestUrl}: name=${manifest.name}, display=${manifest.display}")
 
-                                val prompt = sPromptListener
-                                if (prompt != null && ("standalone".equals(manifest.display, ignoreCase = true) || "fullscreen".equals(manifest.display, ignoreCase = true))) {
-                                    Handler(Looper.getMainLooper()).post {
-                                        try {
-                                            prompt.onPwaDetected(manifest)
-                                        } catch (e: Exception) {
-                                            Log.w(TAG, "Error notifying PWA prompt listener", e)
-                                        }
+                            val prompt = sPromptListener
+                            if (prompt != null && ("standalone".equals(manifest.display, ignoreCase = true) || "fullscreen".equals(manifest.display, ignoreCase = true))) {
+                                Handler(Looper.getMainLooper()).post {
+                                    try {
+                                        prompt.onPwaDetected(manifest)
+                                    } catch (e: Exception) {
+                                        Log.w(TAG, "Error notifying PWA prompt listener", e)
                                     }
                                 }
                             }
@@ -156,8 +226,6 @@ class PetalPwaManager(
                     }
                 } catch (e: Exception) {
                     Log.w(TAG, "Failed to fetch PWA manifest from $manifestUrl: ${e.message}")
-                } finally {
-                    conn?.disconnect()
                 }
             }
         }
@@ -275,145 +343,135 @@ class PetalPwaManager(
             }
         }
 
-        private fun discoverManifestAndIcons(pageUrl: String?, manifest: PwaManifest, iconCandidates: MutableList<String>) {
+        private fun discoverManifestAndIcons(
+            pageUrl: String?,
+            manifest: PwaManifest,
+            iconCandidates: MutableList<String>,
+            isPrivate: Boolean = false
+        ) {
             if (pageUrl == null || !pageUrl.startsWith("http")) return
             try {
-                val url = URL(pageUrl)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
-                conn.connectTimeout = 4000
-                conn.readTimeout = 4000
-                conn.instanceFollowRedirects = true
-                conn.connect()
+                val payload = fetchBytes(
+                    urlStr = pageUrl,
+                    accept = "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    userAgent = "Mozilla/5.0 (Linux; Android 14; Mobile; rv:161.0) Gecko/161.0 Firefox/161.0",
+                    isPrivate = isPrivate,
+                    timeoutMs = 4000
+                ) ?: return
 
-                val code = conn.responseCode
-                if (code in 200..399) {
-                    val actualUrl = conn.url.toString()
-                    val reader = BufferedReader(InputStreamReader(conn.inputStream))
-                    val headHtml = StringBuilder()
-                    var line: String?
-                    var lineCount = 0
-                    while (reader.readLine().also { line = it } != null && lineCount++ < 150) {
-                        headHtml.append(line).append("\n")
-                        if (line!!.lowercase().contains("</head>")) break
-                    }
-                    reader.close()
+                val actualUrl = payload.finalUrl
+                val rawHtml = payload.bytes.toString(Charsets.UTF_8)
+                val headEnd = rawHtml.indexOf("</head>", ignoreCase = true)
+                val html = if (headEnd >= 0) rawHtml.substring(0, headEnd + 7) else rawHtml.take(32_768)
 
-                    val html = headHtml.toString()
-
-                    // 1. Check title
-                    val titlePattern = Pattern.compile("<title[^>]*>(.*?)</title>", Pattern.CASE_INSENSITIVE or Pattern.DOTALL)
-                    val titleMatcher = titlePattern.matcher(html)
-                    if (titleMatcher.find()) {
-                        val extractedTitle = titleMatcher.group(1)?.trim() ?: ""
-                        if (extractedTitle.isNotEmpty() && manifest.name.isEmpty()) {
-                            manifest.name = extractedTitle
-                            manifest.shortName = extractedTitle
-                        }
-                    }
-
-                    // 2. Check manifest link
-                    var manifestPattern = Pattern.compile("<link[^>]+rel=[\"']manifest[\"'][^>]*href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE)
-                    var manifestMatcher = manifestPattern.matcher(html)
-                    if (!manifestMatcher.find()) {
-                        manifestPattern = Pattern.compile("<link[^>]+href=[\"']([^\"']+)[\"'][^>]*rel=[\"']manifest[\"']", Pattern.CASE_INSENSITIVE)
-                        manifestMatcher = manifestPattern.matcher(html)
-                    }
-                    if (manifestMatcher.find()) {
-                        val manifestHref = manifestMatcher.group(1)
-                        if (manifestHref != null) {
-                            val manifestResolvedUrl = resolveUrl(actualUrl, manifestHref)
-                            parseManifestFromNetwork(manifestResolvedUrl, manifest, iconCandidates)
-                        }
-                    }
-
-                    // 3. Apple Touch Icons
-                    val applePattern = Pattern.compile("<link[^>]+rel=[\"']apple-touch-icon(?:-precomposed)?[\"'][^>]*href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE)
-                    val appleMatcher = applePattern.matcher(html)
-                    while (appleMatcher.find()) {
-                        appleMatcher.group(1)?.let {
-                            val resolved = resolveUrl(actualUrl, it)
-                            if (!iconCandidates.contains(resolved)) iconCandidates.add(resolved)
-                        }
-                    }
-
-                    // 4. Standard Icons
-                    val iconPattern = Pattern.compile("<link[^>]+rel=[\"'](?:shortcut )?icon[\"'][^>]*href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE)
-                    val iconMatcher = iconPattern.matcher(html)
-                    while (iconMatcher.find()) {
-                        iconMatcher.group(1)?.let {
-                            val resolved = resolveUrl(actualUrl, it)
-                            if (!iconCandidates.contains(resolved)) iconCandidates.add(resolved)
-                        }
-                    }
-
-                    // 5. Theme Color
-                    val themePattern = Pattern.compile("<meta[^>]+name=[\"']theme-color[\"'][^>]*content=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE)
-                    val themeMatcher = themePattern.matcher(html)
-                    if (themeMatcher.find()) {
-                        val color = themeMatcher.group(1)?.trim() ?: ""
-                        if (color.isNotEmpty() && (manifest.themeColor.isEmpty() || "#FFFFFF".equals(manifest.themeColor, ignoreCase = true))) {
-                            manifest.themeColor = color
-                        }
+                // 1. Check title
+                val titlePattern = Pattern.compile("<title[^>]*>(.*?)</title>", Pattern.CASE_INSENSITIVE or Pattern.DOTALL)
+                val titleMatcher = titlePattern.matcher(html)
+                if (titleMatcher.find()) {
+                    val extractedTitle = titleMatcher.group(1)?.trim() ?: ""
+                    if (extractedTitle.isNotEmpty() && manifest.name.isEmpty()) {
+                        manifest.name = extractedTitle
+                        manifest.shortName = extractedTitle
                     }
                 }
-                conn.disconnect()
+
+                // 2. Check manifest link
+                var manifestPattern = Pattern.compile("<link[^>]+rel=[\"']manifest[\"'][^>]*href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE)
+                var manifestMatcher = manifestPattern.matcher(html)
+                if (!manifestMatcher.find()) {
+                    manifestPattern = Pattern.compile("<link[^>]+href=[\"']([^\"']+)[\"'][^>]*rel=[\"']manifest[\"']", Pattern.CASE_INSENSITIVE)
+                    manifestMatcher = manifestPattern.matcher(html)
+                }
+                if (manifestMatcher.find()) {
+                    val manifestHref = manifestMatcher.group(1)
+                    if (manifestHref != null) {
+                        val manifestResolvedUrl = resolveUrl(actualUrl, manifestHref)
+                        parseManifestFromNetwork(manifestResolvedUrl, manifest, iconCandidates, isPrivate)
+                    }
+                }
+
+                // 3. Apple Touch Icons
+                val applePattern = Pattern.compile("<link[^>]+rel=[\"']apple-touch-icon(?:-precomposed)?[\"'][^>]*href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE)
+                val appleMatcher = applePattern.matcher(html)
+                while (appleMatcher.find()) {
+                    appleMatcher.group(1)?.let {
+                        val resolved = resolveUrl(actualUrl, it)
+                        if (!iconCandidates.contains(resolved)) iconCandidates.add(resolved)
+                    }
+                }
+
+                // 4. Standard Icons
+                val iconPattern = Pattern.compile("<link[^>]+rel=[\"'](?:shortcut )?icon[\"'][^>]*href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE)
+                val iconMatcher = iconPattern.matcher(html)
+                while (iconMatcher.find()) {
+                    iconMatcher.group(1)?.let {
+                        val resolved = resolveUrl(actualUrl, it)
+                        if (!iconCandidates.contains(resolved)) iconCandidates.add(resolved)
+                    }
+                }
+
+                // 5. Theme Color
+                val themePattern = Pattern.compile("<meta[^>]+name=[\"']theme-color[\"'][^>]*content=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE)
+                val themeMatcher = themePattern.matcher(html)
+                if (themeMatcher.find()) {
+                    val color = themeMatcher.group(1)?.trim() ?: ""
+                    if (color.isNotEmpty() && (manifest.themeColor.isEmpty() || "#FFFFFF".equals(manifest.themeColor, ignoreCase = true))) {
+                        manifest.themeColor = color
+                    }
+                }
             } catch (e: Exception) {
                 Log.d(TAG, "Network discovery note: ${e.message}")
             }
         }
 
-        private fun parseManifestFromNetwork(manifestUrl: String, manifest: PwaManifest, iconCandidates: MutableList<String>) {
+        private fun parseManifestFromNetwork(
+            manifestUrl: String,
+            manifest: PwaManifest,
+            iconCandidates: MutableList<String>,
+            isPrivate: Boolean = false
+        ) {
             try {
-                val url = URL(manifestUrl)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
-                conn.connectTimeout = 4000
-                conn.readTimeout = 4000
-                conn.connect()
+                val payload = fetchBytes(
+                    urlStr = manifestUrl,
+                    accept = "application/manifest+json, application/json, text/plain, */*",
+                    userAgent = "Mozilla/5.0 (Linux; Android 14; Mobile; rv:161.0) Gecko/161.0 Firefox/161.0",
+                    isPrivate = isPrivate,
+                    timeoutMs = 4000
+                ) ?: return
 
-                if (conn.responseCode == 200) {
-                    val reader = BufferedReader(InputStreamReader(conn.inputStream))
-                    val sb = StringBuilder()
-                    var l: String?
-                    while (reader.readLine().also { l = it } != null) sb.append(l)
-                    reader.close()
+                val json = JSONObject(payload.bytes.toString(Charsets.UTF_8))
+                if (json.has("name") && manifest.name.isEmpty()) {
+                    manifest.name = json.optString("name", "")
+                }
+                if (json.has("short_name") && manifest.shortName.isEmpty()) {
+                    manifest.shortName = json.optString("short_name", manifest.name)
+                }
+                if (json.has("start_url") && manifest.startUrl.isEmpty()) {
+                    manifest.startUrl = resolveUrl(manifestUrl, json.optString("start_url", ""))
+                }
+                if (json.has("display")) {
+                    manifest.display = json.optString("display", "standalone")
+                }
+                if (json.has("theme_color")) {
+                    manifest.themeColor = json.optString("theme_color", "#FFFFFF")
+                }
+                if (json.has("background_color")) {
+                    manifest.backgroundColor = json.optString("background_color", "#FFFFFF")
+                }
 
-                    val json = JSONObject(sb.toString())
-                    if (json.has("name") && manifest.name.isEmpty()) {
-                        manifest.name = json.optString("name", "")
-                    }
-                    if (json.has("short_name") && manifest.shortName.isEmpty()) {
-                        manifest.shortName = json.optString("short_name", manifest.name)
-                    }
-                    if (json.has("start_url") && manifest.startUrl.isEmpty()) {
-                        manifest.startUrl = resolveUrl(manifestUrl, json.optString("start_url", ""))
-                    }
-                    if (json.has("display")) {
-                        manifest.display = json.optString("display", "standalone")
-                    }
-                    if (json.has("theme_color")) {
-                        manifest.themeColor = json.optString("theme_color", "#FFFFFF")
-                    }
-                    if (json.has("background_color")) {
-                        manifest.backgroundColor = json.optString("background_color", "#FFFFFF")
-                    }
-
-                    if (json.has("icons")) {
-                        val icons = json.getJSONArray("icons")
-                        for (i in 0 until icons.length()) {
-                            val ic = icons.getJSONObject(i)
-                            val src = ic.optString("src", "")
-                            if (src.isNotEmpty()) {
-                                val resolved = resolveUrl(manifestUrl, src)
-                                if (!iconCandidates.contains(resolved)) {
-                                    iconCandidates.add(0, resolved)
-                                }
+                if (json.has("icons")) {
+                    val icons = json.getJSONArray("icons")
+                    for (i in 0 until icons.length()) {
+                        val ic = icons.getJSONObject(i)
+                        val src = ic.optString("src", "")
+                        if (src.isNotEmpty()) {
+                            val resolved = resolveUrl(manifestUrl, src)
+                            if (!iconCandidates.contains(resolved)) {
+                                iconCandidates.add(0, resolved)
                             }
                         }
                     }
                 }
-                conn.disconnect()
             } catch (e: Exception) {
                 Log.d(TAG, "Manifest fetch note: ${e.message}")
             }
@@ -493,26 +551,16 @@ class PetalPwaManager(
             return output
         }
 
-        private fun fetchBitmap(urlStr: String?): Bitmap? {
+        private fun fetchBitmap(urlStr: String?, isPrivate: Boolean = false): Bitmap? {
             if (urlStr.isNullOrEmpty()) return null
-            return try {
-                val url = URL(urlStr)
-                val conn = url.openConnection() as HttpURLConnection
-                conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Mobile Safari/537.36")
-                conn.setRequestProperty("Accept", "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
-                conn.connectTimeout = 4000
-                conn.readTimeout = 4000
-                conn.instanceFollowRedirects = true
-                conn.doInput = true
-                conn.connect()
-                if (conn.responseCode in 200..399) {
-                    conn.inputStream.use { BitmapFactory.decodeStream(it) }
-                } else {
-                    null
-                }
-            } catch (_: Exception) {
-                null
-            }
+            val payload = fetchBytes(
+                urlStr = urlStr,
+                accept = "image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                userAgent = "Mozilla/5.0 (Linux; Android 14; Mobile; rv:161.0) Gecko/161.0 Firefox/161.0",
+                isPrivate = isPrivate,
+                timeoutMs = 4000
+            ) ?: return null
+            return runCatching { BitmapFactory.decodeByteArray(payload.bytes, 0, payload.bytes.size) }.getOrNull()
         }
     }
 
@@ -615,13 +663,20 @@ class PetalPwaManager(
 
         val finalController = targetController
         val finalPageUrl = pageUrl
+        val isPrivateSession = (finalController is PetalTabViewController && finalController.isIncognito()) ||
+            (activity is MainActivity && activity.viewModel.activeTab.value?.content?.private == true)
 
         Thread {
             try {
                 val workingManifest = PwaManifest()
-                var activeManifest = currentManifest
-                if (activeManifest == null) {
-                    activeManifest = sManifestCache[finalPageUrl]
+                val pageHost = runCatching { URI(finalPageUrl).host.orEmpty() }.getOrDefault("")
+                var activeManifest = if (isPrivateSession) sPrivateManifestCache[finalPageUrl] else sManifestCache[finalPageUrl]
+                if (activeManifest == null && !isPrivateSession) {
+                    val candidate = currentManifest
+                    val candidateHost = runCatching { candidate?.startUrl?.let { URI(it).host } }.getOrNull().orEmpty()
+                    if (candidate != null && (candidateHost.isEmpty() || candidateHost.equals(pageHost, ignoreCase = true))) {
+                        activeManifest = candidate
+                    }
                 }
                 if (activeManifest != null) {
                     workingManifest.name = activeManifest.name
@@ -638,7 +693,7 @@ class PetalPwaManager(
                     iconCandidates.add(resolveUrl(finalPageUrl, workingManifest.iconUrl))
                 }
 
-                discoverManifestAndIcons(finalPageUrl, workingManifest, iconCandidates)
+                discoverManifestAndIcons(finalPageUrl, workingManifest, iconCandidates, isPrivateSession)
 
                 var host = ""
                 try {
@@ -650,7 +705,9 @@ class PetalPwaManager(
                     iconCandidates.add("$origin/apple-touch-icon.png")
                     iconCandidates.add("$origin/apple-touch-icon-precomposed.png")
                     iconCandidates.add("$origin/favicon.ico")
-                    iconCandidates.add("https://www.google.com/s2/favicons?domain=$host&sz=256")
+                    if (!isPrivateSession) {
+                        iconCandidates.add("https://www.google.com/s2/favicons?domain=$host&sz=256")
+                    }
                 }
 
                 var rawTitle: String? = null
@@ -661,6 +718,9 @@ class PetalPwaManager(
                 }
                 if (rawTitle.isNullOrEmpty()) {
                     rawTitle = if (!finalController?.title.isNullOrEmpty()) finalController?.title else PetalAndroidUtils.domain(finalPageUrl)
+                }
+                if (rawTitle.isNullOrEmpty() && activity is MainActivity) {
+                    rawTitle = activity.viewModel.activeTitle.value.takeIf { it.isNotBlank() }
                 }
                 if (rawTitle.isNullOrEmpty()) {
                     rawTitle = "Web App"
@@ -676,7 +736,7 @@ class PetalPwaManager(
                 var rawBitmap: Bitmap? = null
                 for (candidate in iconCandidates) {
                     if (candidate.isNotEmpty()) {
-                        rawBitmap = fetchBitmap(candidate)
+                        rawBitmap = fetchBitmap(candidate, isPrivateSession)
                         if (rawBitmap != null) break
                     }
                 }
@@ -684,7 +744,10 @@ class PetalPwaManager(
                 if (rawBitmap == null && finalController is PetalTabViewController) {
                     rawBitmap = finalController.favicon
                 }
-                if (rawBitmap == null) {
+                if (rawBitmap == null && activity is MainActivity) {
+                    rawBitmap = activity.viewModel.activeTab.value?.content?.icon
+                }
+                if (rawBitmap == null && !isPrivateSession) {
                     val helper = FaviconHelper(activity)
                     rawBitmap = helper.getFavicon(finalPageUrl)
                 }
@@ -784,6 +847,9 @@ class PetalPwaManager(
                 if (!archiveDir.exists()) archiveDir.mkdirs()
                 val filename = "archive_" + Math.abs(targetUrl.hashCode()) + ".pdf"
                 val archiveFile = File(archiveDir, filename)
+                val composeSession = (activity as? MainActivity)?.viewModel?.activeTab?.value?.engineState?.engineSession
+                    ?.let { PetalEngineBridge.extractGeckoSession(it) }
+                val canSaveOfflinePdf = tabViewController != null || composeSession != null
 
                 activity.runOnUiThread {
                     if (tabViewController != null) {
@@ -803,6 +869,30 @@ class PetalPwaManager(
                             try { archiveFile.delete() } catch (_: Throwable) {}
                             PetalAppLogger.w(TAG, "Error printing tab to PDF for offline archive", e)
                         }
+                    } else if (composeSession != null) {
+                        try {
+                            val pdfResult = composeSession.saveAsPdf()
+                            pdfResult?.accept(
+                                { pdfStream ->
+                                    if (pdfStream != null) {
+                                        Thread {
+                                            try {
+                                                pdfStream.use { inp ->
+                                                    FileOutputStream(archiveFile).use { out -> inp.copyTo(out) }
+                                                }
+                                                PetalEngineStore.addOfflineArchive(activity, targetUrl, archiveFile.absolutePath, title)
+                                            } catch (t: Throwable) {
+                                                runCatching { archiveFile.delete() }
+                                                PetalAppLogger.w(TAG, "Failed saving Compose offline archive PDF", t)
+                                            }
+                                        }.start()
+                                    }
+                                },
+                                { err -> PetalAppLogger.w(TAG, "Compose saveAsPdf rejected", err) }
+                            )
+                        } catch (e: Exception) {
+                            PetalAppLogger.w(TAG, "Error capturing Compose offline PDF", e)
+                        }
                     }
                 }
 
@@ -812,7 +902,9 @@ class PetalPwaManager(
                     putExtra(PetalPwaActivity.EXTRA_TITLE, title)
                     putExtra(PetalPwaActivity.EXTRA_THEME_COLOR, themeColorHex)
                     putExtra(PetalPwaActivity.EXTRA_DISPLAY, manifest.display)
-                    putExtra(PetalPwaActivity.EXTRA_OFFLINE_ARCHIVE, archiveFile.absolutePath)
+                    if (canSaveOfflinePdf) {
+                        putExtra(PetalPwaActivity.EXTRA_OFFLINE_ARCHIVE, archiveFile.absolutePath)
+                    }
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_MULTIPLE_TASK
                 }
 

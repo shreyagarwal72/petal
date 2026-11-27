@@ -114,6 +114,9 @@ class PetalCustomTabActivity : ComponentActivity() {
         com.petal.browser.unit.PetalAndroidUtils.initTheme(this)
 
         parseCustomTabsIntentExtras(intent)
+        if (isIncognitoCustomTab) {
+            com.petal.browser.compose.incognito.PetalIncognitoSessionManager.enableIncognitoSecurity(this)
+        }
 
         val targetUrl = extractUrlFromIntent(intent)
         currentUrlState = targetUrl
@@ -186,7 +189,7 @@ class PetalCustomTabActivity : ComponentActivity() {
                                     val sessionPair = com.petal.browser.engine.gecko.PetalEngineStore.createTabSession(
                                         context = ctx,
                                         tabId = tabId,
-                                        url = targetUrl.ifBlank { "about:blank" },
+                                        url = "about:blank",
                                         title = "",
                                         isIncognito = isIncognitoCustomTab,
                                         select = false
@@ -392,6 +395,10 @@ class PetalCustomTabActivity : ComponentActivity() {
 
         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(urlToOpen)).apply {
             component = ComponentName(this@PetalCustomTabActivity, MainActivity::class.java)
+            putExtra("petal_force_full_browser", true)
+            if (isIncognitoCustomTab) {
+                putExtra("com.petal.browser.extra.OPEN_PRIVATE_TAB", true)
+            }
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
         startActivity(browserIntent)

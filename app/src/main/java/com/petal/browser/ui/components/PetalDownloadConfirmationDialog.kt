@@ -517,6 +517,8 @@ object PetalDownloadDialogBridge {
     }
 
     @JvmStatic
+    @JvmStatic
+    @JvmOverloads
     fun showDownloadConfirmation(
         context: Context,
         url: String,
@@ -525,6 +527,7 @@ object PetalDownloadDialogBridge {
         contentLength: Long,
         referrerUrl: String? = null,
         isPrivate: Boolean = false,
+        onCancel: () -> Unit = {},
         onConfirmDownload: (String) -> Unit
     ) {
         val guessedFileName = com.petal.browser.unit.PetalAndroidUtils.resolveFileName(url, contentDisposition, mimeType)
@@ -538,12 +541,25 @@ object PetalDownloadDialogBridge {
         }
         val activity = currContext as? androidx.activity.ComponentActivity
         if (activity == null || activity.isFinishing || activity.isDestroyed) {
-            onConfirmDownload(guessedFileName)
+            onCancel()
             return
         }
 
         val showConfirmationDialogAction = {
             activity.runOnUiThread {
+                var settled = false
+                fun finishCancel() {
+                    if (!settled) {
+                        settled = true
+                        onCancel()
+                    }
+                }
+                fun finishConfirm(action: () -> Unit) {
+                    if (!settled) {
+                        settled = true
+                        action()
+                    }
+                }
                 try {
                     lateinit var dialog: androidx.appcompat.app.AlertDialog
 
@@ -563,14 +579,16 @@ object PetalDownloadDialogBridge {
                             null
                         } else {
                             fun() {
-                                if (dialog.isShowing) dialog.dismiss()
-                                val launched = com.petal.browser.unit.ExternalDownloadManagerHelper.launchDownloadInExternalManager(
-                                    activity, url, guessedFileName, mimeType, null,
-                                    null, null, referrerUrl
-                                )
-                                if (!launched) {
-                                    com.petal.browser.view.PetalToast.show(activity, "No external downloader found, downloading in Petal")
-                                    onConfirmDownload(guessedFileName)
+                                finishConfirm {
+                                    if (dialog.isShowing) dialog.dismiss()
+                                    val launched = com.petal.browser.unit.ExternalDownloadManagerHelper.launchDownloadInExternalManager(
+                                        activity, url, guessedFileName, mimeType, null,
+                                        null, null, referrerUrl
+                                    )
+                                    if (!launched) {
+                                        com.petal.browser.view.PetalToast.show(activity, "No external downloader found, downloading in Petal")
+                                        onConfirmDownload(guessedFileName)
+                                    }
                                 }
                             }
                         }
@@ -597,13 +615,16 @@ object PetalDownloadDialogBridge {
                                         fileSizeFormatted = formattedSize,
                                         isDuplicate = isDuplicate,
                                         onConfirm = {
-                                            if (dialog.isShowing) dialog.dismiss()
-                                            if (!com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, url, guessedFileName, mimeType)) {
-                                                onConfirmDownload(guessedFileName)
+                                            finishConfirm {
+                                                if (dialog.isShowing) dialog.dismiss()
+                                                if (!com.petal.browser.torrent.PetalTorrentEngineManager.handleTorrentOrMagnet(activity, url, guessedFileName, mimeType)) {
+                                                    onConfirmDownload(guessedFileName)
+                                                }
                                             }
                                         },
                                         onDismiss = {
                                             if (dialog.isShowing) dialog.dismiss()
+                                            finishCancel()
                                         },
                                         onExternalDownload = externalDownloadAction
                                     )
@@ -615,15 +636,16 @@ object PetalDownloadDialogBridge {
                     dialog = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
                         .setView(composeView)
                         .setCancelable(true)
+                        .setOnCancelListener { finishCancel() }
+                        .setOnDismissListener { finishCancel() }
                         .create()
 
                     dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
                     dialog.show()
                     com.petal.browser.unit.PetalAndroidUtils.setupDialog(activity, dialog)
                 } catch (e: Exception) {
-                    e.printStackTrace()
-                    // Fallback to direct download if dialog creation fails
-                    onConfirmDownload(guessedFileName)
+                    android.util.Log.w("PetalDownloadDialog", "Failed to show confirmation dialog: ${e.message}", e)
+                    finishCancel()
                 }
             }
         }
@@ -654,11 +676,24 @@ object PetalDownloadDialogBridge {
         }
         val activity = currContext as? androidx.activity.ComponentActivity
         if (activity == null || activity.isFinishing || activity.isDestroyed) {
-            onConfirmDownload()
+            onDismiss()
             return
         }
 
         activity.runOnUiThread {
+            var settled = false
+            fun finishConfirm() {
+                if (!settled) {
+                    settled = true
+                    onConfirmDownload()
+                }
+            }
+            fun finishDismiss() {
+                if (!settled) {
+                    settled = true
+                    onDismiss()
+                }
+            }
             try {
                 lateinit var dialog: androidx.appcompat.app.AlertDialog
 
@@ -690,11 +725,11 @@ object PetalDownloadDialogBridge {
                                 isDuplicate = isDuplicate,
                                 onConfirm = {
                                     if (dialog.isShowing) dialog.dismiss()
-                                    onConfirmDownload()
+                                    finishConfirm()
                                 },
                                 onDismiss = {
                                     if (dialog.isShowing) dialog.dismiss()
-                                    onDismiss()
+                                    finishDismiss()
                                 }
                             )
                         }
@@ -704,15 +739,16 @@ object PetalDownloadDialogBridge {
                 dialog = com.petal.browser.ui.components.PetalAlertDialogBuilder(activity)
                     .setView(composeView)
                     .setCancelable(true)
+                    .setOnCancelListener { finishDismiss() }
+                    .setOnDismissListener { finishDismiss() }
                     .create()
 
                 dialog.window?.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.TRANSPARENT))
                 dialog.show()
                 com.petal.browser.unit.PetalAndroidUtils.setupDialog(activity, dialog)
             } catch (e: Exception) {
-                e.printStackTrace()
-                // Fallback to direct save if dialog creation fails
-                onConfirmDownload()
+                android.util.Log.w("PetalDownloadDialog", "Failed to show blob confirmation dialog: ${e.message}", e)
+                finishDismiss()
             }
         }
     }

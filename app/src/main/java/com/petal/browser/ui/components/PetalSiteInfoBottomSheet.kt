@@ -368,7 +368,18 @@ fun PetalSiteInfoBottomSheet(
                                         siteScheme = next
                                         com.petal.browser.engine.gecko.PetalSiteColorScheme.set(sp, domain, next)
                                         // Re-applies the override for this tab and reloads the page.
-                                        tabViewController?.onSiteColorSchemeChanged()
+                                        if (tabViewController != null) {
+                                            tabViewController.onSiteColorSchemeChanged()
+                                        } else if (mainAct != null) {
+                                            mainAct.viewModel.activeTab.value?.id?.let { activeId ->
+                                                com.petal.browser.engine.gecko.PetalGeckoRuntime.setSiteColorScheme(
+                                                    activeId,
+                                                    com.petal.browser.engine.gecko.PetalSiteColorScheme.toGecko(next),
+                                                    sp
+                                                )
+                                            }
+                                            mainAct.viewModel.reload()
+                                        }
                                     }
                                 }
                             )

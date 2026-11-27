@@ -38,6 +38,8 @@ object PetalBuiltInExtensionManager {
     private val installedExtensions = ConcurrentHashMap<String, WebExtension>()
     private val activeSessions = Collections.newSetFromMap(WeakHashMap<GeckoSession, Boolean>())
     private val sessionPorts = Collections.synchronizedMap(WeakHashMap<GeckoSession, WebExtension.Port>())
+    @Volatile
+    private var blockerPort: WebExtension.Port? = null
     private val pendingEvaluations = ConcurrentHashMap<String, (String?) -> Unit>()
 
     private val defuserPortDelegate = object : WebExtension.PortDelegate {
@@ -132,7 +134,67 @@ object PetalBuiltInExtensionManager {
         }
     }
 
+    private fun buildBlockerConfigJson(ctx: Context, type: String): JSONObject {
+        com.petal.browser.browser.PetalAdBlockEngine.ensureInitialized(ctx)
+        val enabled = com.petal.browser.browser.PetalAdBlockEngine.isAdBlockEnabled(ctx)
+        val mode = com.petal.browser.browser.PetalAdBlockEngine.getAdBlockMode(ctx).id
+        val whitelist = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains().toList()
+        val privateWhitelist = com.petal.browser.browser.PetalAdBlockEngine.getPrivateWhitelistedDomains().toList()
+        val domainModes = com.petal.browser.browser.PetalAdBlockEngine.getAllDomainOverrides(ctx)
+        val totalBlocked = com.petal.browser.browser.PetalAdBlockEngine.getTotalBlockedCount()
+        return JSONObject().apply {
+            put("type", type)
+            put("enabled", enabled)
+            put("mode", mode)
+            put("whitelist", org.json.JSONArray(whitelist))
+            put("privateWhitelist", org.json.JSONArray(privateWhitelist))
+            put("domainModes", JSONObject(domainModes))
+            put("totalBlocked", totalBlocked)
+        }
+    }
+
+    @JvmStatic
+    fun pushBlockerConfig(context: Context) {
+        val port = blockerPort ?: return
+        runCatching {
+            port.postMessage(buildBlockerConfigJson(context.applicationContext, "UPDATE_BLOCKER_CONFIG"))
+        }.onFailure {
+            Log.w(TAG, "Failed to push UPDATE_BLOCKER_CONFIG to blocker port: ${it.message}")
+        }
+    }
+
+    @JvmStatic
+    fun pushBlockerRulesReload(context: Context) {
+        val port = blockerPort ?: return
+        runCatching {
+            val payload = JSONObject().apply {
+                put("type", "RELOAD_ENGINE")
+                put("rulesVersion", com.petal.browser.browser.PetalFilterSubscriptionManager.getLastUpdatedVersion(context.applicationContext))
+            }
+            port.postMessage(payload)
+        }.onFailure {
+            Log.w(TAG, "Failed to push RELOAD_ENGINE to blocker port: ${it.message}")
+        }
+    }
+
+    private val blockerPortDelegate = object : WebExtension.PortDelegate {
+        override fun onPortMessage(message: Any, port: WebExtension.Port) = Unit
+        override fun onDisconnect(port: WebExtension.Port) {
+            if (blockerPort === port) {
+                blockerPort = null
+            }
+        }
+    }
+
     private val blockerMessageDelegate = object : WebExtension.MessageDelegate {
+        override fun onConnect(port: WebExtension.Port) {
+            blockerPort = port
+            port.setDelegate(blockerPortDelegate)
+            appContext?.let { ctx ->
+                runCatching { port.postMessage(buildBlockerConfigJson(ctx, "UPDATE_BLOCKER_CONFIG")) }
+            }
+        }
+
         override fun onMessage(nativeApp: String, message: Any, sender: WebExtension.MessageSender): GeckoResult<Any>? {
             if (nativeApp != NATIVE_APP) return null
             val json = runCatching { if (message is JSONObject) message else JSONObject(message.toString()) }.getOrNull()
@@ -142,18 +204,7 @@ object PetalBuiltInExtensionManager {
 
             when (msgType) {
                 "GET_BLOCKER_CONFIG" -> {
-                    val enabled = com.petal.browser.browser.PetalAdBlockEngine.isAdBlockEnabled(ctx)
-                    val mode = com.petal.browser.browser.PetalAdBlockEngine.getAdBlockMode(ctx).id
-                    val whitelist = com.petal.browser.browser.PetalAdBlockEngine.getWhitelistedDomains().toList()
-                    val totalBlocked = com.petal.browser.browser.PetalAdBlockEngine.getTotalBlockedCount()
-                    val resp = JSONObject().apply {
-                        put("type", "BLOCKER_CONFIG_RESPONSE")
-                        put("enabled", enabled)
-                        put("mode", mode)
-                        put("whitelist", org.json.JSONArray(whitelist))
-                        put("totalBlocked", totalBlocked)
-                    }
-                    return GeckoResult.fromValue(resp)
+                    return GeckoResult.fromValue(buildBlockerConfigJson(ctx, "BLOCKER_CONFIG_RESPONSE"))
                 }
                 "GET_ENGINE_DATA" -> {
                     val rawSerialized = com.petal.browser.browser.PetalFilterSubscriptionManager.getCachedEngineBlobBase64(ctx)
@@ -203,8 +254,21 @@ object PetalBuiltInExtensionManager {
                 val manifestUrl = json.optString("manifestUrl").takeIf { it.isNotBlank() }
                 val pUrl = json.optString("pageUrl", "")
                 val pTitle = json.optString("pageTitle", "")
+                val pwaPrivate = runCatching {
+                    sender.session?.settings?.usePrivateMode == true ||
+                        appContext?.let { ctx ->
+                            val state = com.petal.browser.engine.gecko.PetalEngineStore.getStore(ctx).state
+                            state.tabs.firstOrNull { it.content.url == pUrl }?.content?.private
+                                ?: state.tabs.firstOrNull { it.id == state.selectedTabId }?.content?.private
+                        } == true
+                }.getOrDefault(false)
                 if (!manifestUrl.isNullOrBlank()) {
-                    com.petal.browser.pwa.PetalPwaManager.onManifestDiscovered(manifestUrl, pUrl, pTitle)
+                    com.petal.browser.pwa.PetalPwaManager.onManifestDiscovered(
+                        manifestUrl = manifestUrl,
+                        pageUrl = pUrl,
+                        pageTitle = pTitle,
+                        isPrivate = pwaPrivate
+                    )
                 }
                 return null
             }
@@ -248,10 +312,13 @@ object PetalBuiltInExtensionManager {
             val privateSession = runCatching {
                 sender.session?.settings?.usePrivateMode == true || storeTab?.content?.private == true
             }.getOrDefault(false)
-            if (pageUrl != null && cookies != null) {
+            val cookiePageUrl = pageUrl
+                ?: storeTab?.content?.url?.takeIf { it.startsWith("http") }
+                ?: json.optString("url").takeIf { it.startsWith("http") }
+            if (cookiePageUrl != null && cookies != null) {
                 // One capture point for every consumer (external managers, yt-dlp, image actions).
                 // Private sessions go to the in-memory private cache only, never to sniffer storage.
-                com.petal.browser.download.PetalGeckoCookieBridge.recordCookies(pageUrl, cookies, privateSession)
+                com.petal.browser.download.PetalGeckoCookieBridge.recordCookies(cookiePageUrl, cookies, privateSession)
             }
             val snifferCookies = if (privateSession) null else cookies
 
@@ -319,7 +386,8 @@ object PetalBuiltInExtensionManager {
                             url = url,
                             fileName = fileName,
                             mimeType = mime,
-                            cookie = cookies
+                            cookie = cookies,
+                            isPrivate = privateSession
                         )
                     }
                 }
@@ -573,12 +641,25 @@ object PetalBuiltInExtensionManager {
                         }
                     }
                 }
-                controller.setAllowedInPrivateBrowsing(ext, true)
-                val action = if (enabled)
-                    controller.enable(ext, WebExtensionController.EnableSource.APP)
-                else
-                    controller.disable(ext, WebExtensionController.EnableSource.APP)
-                action.accept(
+                controller.setAllowedInPrivateBrowsing(ext, true).then(
+                    { updated ->
+                        val targetExt = updated ?: ext
+                        installedExtensions[spec.extensionId] = targetExt
+                        if (enabled) {
+                            controller.enable(targetExt, WebExtensionController.EnableSource.APP)
+                        } else {
+                            controller.disable(targetExt, WebExtensionController.EnableSource.APP)
+                        }
+                    },
+                    { e ->
+                        Log.w(TAG, "setAllowedInPrivateBrowsing failed for ${spec.label}: ${e?.message}")
+                        if (enabled) {
+                            controller.enable(ext, WebExtensionController.EnableSource.APP)
+                        } else {
+                            controller.disable(ext, WebExtensionController.EnableSource.APP)
+                        }
+                    }
+                ).accept(
                     { Log.d(TAG, "${spec.label} → ${if (enabled) "enabled" else "disabled"}") },
                     { e -> Log.e(TAG, "Failed to set state for ${spec.label}", e) }
                 )
