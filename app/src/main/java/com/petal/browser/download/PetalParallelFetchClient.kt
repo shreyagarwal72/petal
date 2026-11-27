@@ -93,8 +93,8 @@ class PetalParallelFetchClient(
             val parallel = fetchParallel(request, startOffset, cfg.connections)
             when {
                 parallel == null -> throttleResponse(delegate.fetch(request))
-                parallel.body.stream is PetalParallelRangeStream -> parallel
-                else -> throttleResponse(parallel)
+                parallel.isSegmented -> parallel.response
+                else -> throttleResponse(parallel.response)
             }
         } catch (e: Exception) {
             // The probe itself failed. Fall back to the untouched request so the service
@@ -104,21 +104,73 @@ class PetalParallelFetchClient(
         }
     }
 
+    private class ParallelAttempt(val response: Response, val isSegmented: Boolean)
+
     /** Wraps a single-stream response body with [PetalBandwidthLimiter] so speed caps apply uniformly. */
     private fun throttleResponse(response: Response): Response {
         if (response.status !in 200..299) return response
         val originalBody = response.body
-        val throttledStream = object : java.io.FilterInputStream(originalBody.stream) {
+        val throttledStream = object : java.io.InputStream() {
+            private val pipedOut = java.io.PipedOutputStream()
+            private val pipedIn = java.io.PipedInputStream(pipedOut, 64 * 1024)
+            private val errorRef = java.util.concurrent.atomic.AtomicReference<IOException?>()
+            private val singleByte = ByteArray(1)
+            @Volatile private var started = false
+            @Volatile private var closed = false
+            @Volatile private var pumpThread: Thread? = null
+
+            private fun ensureStarted() {
+                if (started || closed) return
+                synchronized(this) {
+                    if (started || closed) return
+                    started = true
+                    val t = Thread({
+                        try {
+                            originalBody.useStream { src ->
+                                val buf = ByteArray(32 * 1024)
+                                while (!closed) {
+                                    PetalBandwidthLimiter.acquire(buf.size)
+                                    val n = src.read(buf)
+                                    if (n < 0) break
+                                    pipedOut.write(buf, 0, n)
+                                }
+                            }
+                        } catch (e: IOException) {
+                            if (!closed) errorRef.compareAndSet(null, e)
+                        } catch (e: InterruptedException) {
+                            Thread.currentThread().interrupt()
+                            if (!closed) errorRef.compareAndSet(null, IOException("Interrupted", e))
+                        } finally {
+                            runCatching { pipedOut.close() }
+                        }
+                    }, "petal-throttled-stream")
+                    t.isDaemon = true
+                    pumpThread = t
+                    t.start()
+                }
+            }
+
             override fun read(): Int {
-                PetalBandwidthLimiter.acquire(1)
-                return super.read()
+                val n = read(singleByte, 0, 1)
+                return if (n < 0) -1 else (singleByte[0].toInt() and 0xFF)
             }
 
             override fun read(b: ByteArray, off: Int, len: Int): Int {
                 if (len <= 0) return 0
-                val chunk = minOf(len, 64 * 1024)
-                PetalBandwidthLimiter.acquire(chunk)
-                return super.read(b, off, chunk)
+                ensureStarted()
+                val n = pipedIn.read(b, off, len)
+                if (n < 0) {
+                    errorRef.get()?.let { throw it }
+                }
+                return n
+            }
+
+            override fun close() {
+                closed = true
+                runCatching { pipedIn.close() }
+                runCatching { pipedOut.close() }
+                runCatching { originalBody.close() }
+                pumpThread?.interrupt()
             }
         }
         return Response(
@@ -140,7 +192,7 @@ class PetalParallelFetchClient(
         return match.groupValues[1].toLongOrNull()
     }
 
-    private fun fetchParallel(request: Request, start: Long, connections: Int): Response? {
+    private fun fetchParallel(request: Request, start: Long, connections: Int): ParallelAttempt? {
         val probe = delegate.fetch(request.copy(headers = rangeHeaders(request, start, start + CHUNK_BYTES - 1)))
         var handedOff = false
         try {
@@ -148,7 +200,7 @@ class PetalParallelFetchClient(
             if (probe.status == 200) {
                 CapabilityCache.markSingleStream(request.url, probe.headers.get("ETag"))
                 handedOff = true
-                return probe
+                return ParallelAttempt(probe, isSegmented = false)
             }
             if (probe.status != 206) {
                 if (probe.status in 200..299) {
@@ -159,7 +211,7 @@ class PetalParallelFetchClient(
                 // signed URLs are not fetched twice; only fall back to plain GET on range-rejection codes.
                 if (probe.status !in listOf(400, 405, 416, 501)) {
                     handedOff = true
-                    return probe
+                    return ParallelAttempt(probe, isSegmented = false)
                 }
                 return null
             }
@@ -200,11 +252,14 @@ class PetalParallelFetchClient(
             if (hadRange) headers.append("Content-Range", "bytes $start-${total - 1}/$total")
             headers.append("Content-Length", (total - start).toString())
 
-            return Response(
-                url = probe.url,
-                status = if (hadRange) 206 else 200,
-                headers = headers,
-                body = Response.Body(stream, probe.headers.get("Content-Type"))
+            return ParallelAttempt(
+                Response(
+                    url = probe.url,
+                    status = if (hadRange) 206 else 200,
+                    headers = headers,
+                    body = Response.Body(stream, probe.headers.get("Content-Type"))
+                ),
+                isSegmented = true
             )
         } finally {
             if (!handedOff) closeQuietly(probe)
