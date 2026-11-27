@@ -946,7 +946,7 @@ fun PetalRootApp(
 
                 if (!isFullscreen) {
                 androidx.compose.runtime.CompositionLocalProvider(
-                    com.petal.browser.ui.glass.LocalPetalGlassSource provides (if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)))
+                    com.petal.browser.ui.glass.LocalPetalGlassSource provides (if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.gecko_engine_content)))
                 ) {
                     if (showDesktopTabBar && isBottomAddressBar) {
                         Box(
@@ -1243,7 +1243,7 @@ fun PetalRootApp(
                 isIncognito = isIncognito,
                 isFloatingStyle = floatingTabBar,
                 isBottomAddressBar = isBottomAddressBar,
-                glassSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content)),
+                glassSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.gecko_engine_content)),
                 onHomeClick = navHomeClick,
                 onAiClick = navAiClick,
                 onNewTabClick = navNewTabClick,
@@ -1445,7 +1445,7 @@ fun PetalRootApp(
                 }
             }
             if (isMenuOpen) {
-                val menuSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content))
+                val menuSource = if (isHome) null else (activeWebEngineView ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.gecko_engine_content) ?: (activity as? android.app.Activity)?.findViewById(com.petal.browser.R.id.main_content))
                 androidx.compose.runtime.CompositionLocalProvider(
                     com.petal.browser.ui.glass.LocalPetalGlassSource provides menuSource
                 ) {

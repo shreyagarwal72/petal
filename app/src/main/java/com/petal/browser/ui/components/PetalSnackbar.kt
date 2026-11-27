@@ -263,10 +263,13 @@ fun PetalSnackbar(
     val isGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_containments")
     val context = androidx.compose.ui.platform.LocalContext.current
     // Live glass over the page, same recipe as the bars: blur + edge refraction + tint.
-    val glassSource = remember(context) {
-        var c: Context? = context
-        while (c is android.content.ContextWrapper && c !is Activity) c = c.baseContext
-        (c as? Activity)?.findViewById<android.view.View>(R.id.main_content)
+    val ambientSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
+    val glassSource = remember(context, ambientSource) {
+        ambientSource ?: run {
+            var c: Context? = context
+            while (c is android.content.ContextWrapper && c !is Activity) c = c.baseContext
+            (c as? Activity)?.findViewById<android.view.View>(R.id.gecko_engine_content)
+        }
     }
     val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isGlass) glassSource else null)
     val liveGlass = isGlass && glassBar != null

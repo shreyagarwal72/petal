@@ -278,7 +278,7 @@ fun PetalBottomNavBar(
     val searchAllowed = showSearch && !onHomePage && navSearchStyle != NavSearchButtonStyle.HIDDEN
     val aiShift = if (onHomePage) 1 else 0
     val ambientGlassSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
-    val resolvedGlassSource = if (isHomeTab || isPreview) null else (glassSource ?: ambientGlassSource ?: (context as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
+    val resolvedGlassSource = if (isHomeTab || isPreview) null else (glassSource ?: ambientGlassSource ?: (context as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.gecko_engine_content))
 
     val effectiveFloating = isFloatingStyle && !isBottomAddressBar
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
@@ -335,7 +335,7 @@ fun PetalBottomNavBar(
     }
     if (!navMounted) return
     val showLabels = barSettings.showNavLabels
-    val activeGlassSource = if (BarCollapseState.isPageScrolling || isPreview) null else resolvedGlassSource
+    val activeGlassSource = if (isPreview) null else resolvedGlassSource
 
     if (effectiveFloating) {
         // Stride's floating glass nav bar (see PetalStrideNavBar): the tab pill sits in the

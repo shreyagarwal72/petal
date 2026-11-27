@@ -93,7 +93,8 @@ fun PetalFindInPageBar(
 
     LocalPetalGlassRevision.current
     val isGlass = isLiquidGlassEnabled("sp_liquid_glass_address_bar")
-    val glassSource = LocalView.current.rootView.findViewById<android.view.View>(R.id.main_content)
+    val ambientGlassSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
+    val glassSource = ambientGlassSource ?: LocalView.current.rootView.findViewById<android.view.View>(R.id.gecko_engine_content)
     val glassBar = rememberGlassBar(if (isGlass) glassSource else null)
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
@@ -121,7 +122,7 @@ fun PetalFindInPageBar(
                     if (isBottom) Modifier
                     else Modifier.padding(start = 12.dp, end = 12.dp, top = statusBarTopInset + vGap, bottom = vGap)
                 )
-                .then(if (isGlass) Modifier.liquidGlass(barShape, baseGlassColor, glassBar) else Modifier),
+                .then(if (isGlass) Modifier.liquidGlass(barShape, baseGlassColor, glassBar, progressiveEdge = if (isBottom) 1 else 0) else Modifier),
             shape = barShape,
             color = if (isGlass) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
             tonalElevation = if (isGlass) 0.dp else if (isBottom) 2.dp else 4.dp,

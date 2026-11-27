@@ -243,6 +243,7 @@ internal interface PetalBlurTarget {
 private class WindowBlurTarget(private val window: Window) : PetalBlurTarget {
     override fun set(radiusPx: Int, dim: Float?) {
         try {
+            if (!window.decorView.isAttachedToWindow) return
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 if (radiusPx > 0) window.addFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                 else window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
@@ -260,6 +261,7 @@ private class WindowBlurTarget(private val window: Window) : PetalBlurTarget {
 
     override fun reset() {
         try {
+            if (!window.decorView.isAttachedToWindow) return
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 window.clearFlags(WindowManager.LayoutParams.FLAG_BLUR_BEHIND)
                 val lp = window.attributes
@@ -277,6 +279,7 @@ private class ViewBlurTarget(private val view: View) : PetalBlurTarget {
         try {
             // Resolved per call: the view may not be attached yet when the target is created.
             val root = view.rootView
+            if (!root.isAttachedToWindow) return
             val lp = root.layoutParams as? WindowManager.LayoutParams ?: return
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 lp.blurBehindRadius = radiusPx
@@ -353,6 +356,8 @@ internal class PetalBackdropCapturer(
     private var pixelsA = IntArray(0)
     private var pixelsB = IntArray(0)
 
+    private val inFlightWatchdog = Runnable { inFlight = false }
+
     private val tick = object : Runnable {
         override fun run() {
             if (!running) return
@@ -368,16 +373,42 @@ internal class PetalBackdropCapturer(
     fun start() {
         if (running) return
         running = true
-        main.post(tick)
+        // Capture immediately on the current frame to minimize unblurred startup latency,
+        // then schedule periodic live updates at ~20 fps.
+        capture()
+        main.postDelayed(tick, FRAME_INTERVAL_MS)
     }
 
     fun stop() {
         running = false
+        inFlight = false
         main.removeCallbacks(tick)
+        main.removeCallbacks(inFlightWatchdog)
+    }
+
+    fun release() {
+        stop()
+        main.post {
+            drawable.bitmap = null
+        }
+        PetalBackdropThread.handler.post {
+            try { copy?.recycle() } catch (_: Throwable) {}
+            try { svCopy?.recycle() } catch (_: Throwable) {}
+            try { composed?.recycle() } catch (_: Throwable) {}
+            outs[0]?.let { try { it.recycle() } catch (_: Throwable) {} }
+            outs[1]?.let { try { it.recycle() } catch (_: Throwable) {} }
+            copy = null
+            svCopy = null
+            composed = null
+            outs[0] = null
+            outs[1] = null
+            pixelsA = IntArray(0)
+            pixelsB = IntArray(0)
+        }
     }
 
     private fun capture() {
-        if (inFlight) return
+        if (!running || inFlight) return
         val window = hostWindow() ?: return
         val decor = window.decorView
         if (!decor.isAttachedToWindow || decor.width <= 0 || decor.height <= 0) return
@@ -385,6 +416,7 @@ internal class PetalBackdropCapturer(
         val h = max(MIN_SIDE, decor.height / DOWNSCALE)
         var bmp = copy
         if (bmp == null || bmp.width != w || bmp.height != h) {
+            try { bmp?.recycle() } catch (_: Throwable) {}
             bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
             copy = bmp
         }
@@ -405,10 +437,13 @@ internal class PetalBackdropCapturer(
             svRect = Rect(l, t, l + max(1, (sv.width * sx).roundToInt()), t + max(1, (sv.height * sy).roundToInt()))
         }
         inFlight = true
+        main.removeCallbacks(inFlightWatchdog)
+        main.postDelayed(inFlightWatchdog, 250L)
         try {
             val target = bmp
             PixelCopy.request(window, target, { result ->
                 if (result != PixelCopy.SUCCESS) {
+                    main.removeCallbacks(inFlightWatchdog)
                     inFlight = false
                 } else if (sv != null && svRect != null) {
                     copySurfaceView(sv, svRect, target)
@@ -417,6 +452,7 @@ internal class PetalBackdropCapturer(
                 }
             }, PetalBackdropThread.handler)
         } catch (_: Throwable) {
+            main.removeCallbacks(inFlightWatchdog)
             inFlight = false
         }
     }
@@ -491,11 +527,15 @@ internal class PetalBackdropCapturer(
             val ready = out
             outIndex = 1 - outIndex
             main.post {
-                drawable.bitmap = ready
-                drawable.invalidateSelf()
+                main.removeCallbacks(inFlightWatchdog)
                 inFlight = false
+                if (running) {
+                    drawable.bitmap = ready
+                    drawable.invalidateSelf()
+                }
             }
         } catch (_: Throwable) {
+            main.removeCallbacks(inFlightWatchdog)
             inFlight = false
         }
     }
@@ -631,7 +671,7 @@ internal class PetalBlurController(
     }
 
     private fun stopBackdrop() {
-        capturer?.stop()
+        capturer?.release()
         capturer = null
         drawable = null
         setBackdrop(null)

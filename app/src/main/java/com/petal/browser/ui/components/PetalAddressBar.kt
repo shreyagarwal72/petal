@@ -147,6 +147,7 @@ fun PetalAddressBar(
                                 shape = containerShape,
                                 tint = baseGlassColor,
                                 bar = glassBar,
+                                progressiveEdge = if (resolvedIsBottom && !isFloatingBar) 1 else 0,
                                 scrollSolidFallback = true,
                                 alphaProvider = { chrome.currentVisuals().fullBarAlpha }
                             )

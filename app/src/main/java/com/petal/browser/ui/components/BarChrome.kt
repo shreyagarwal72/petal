@@ -104,8 +104,8 @@ fun rememberBarChrome(
     val ambient = LocalPetalGlassSource.current
     val activity = context as? Activity
     val glassSource = if (isPreview || !wantsLiquidGlass || samplesWallpaper) null
-    else (ambient ?: activity?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
-    val activeGlassSource = if (wantsLiquidGlass && !BarCollapseState.isPageScrolling) glassSource else null
+    else (ambient ?: activity?.findViewById<android.view.View>(com.petal.browser.R.id.gecko_engine_content))
+    val activeGlassSource = if (wantsLiquidGlass) glassSource else null
     val glassBar = rememberGlassBar(activeGlassSource)
     val pillGlassBar = rememberGlassBar(activeGlassSource)
     val isLiquidGlass = wantsLiquidGlass && (glassBar != null || glassSource == null)

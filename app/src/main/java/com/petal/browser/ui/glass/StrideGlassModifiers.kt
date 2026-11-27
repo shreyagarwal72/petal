@@ -115,7 +115,7 @@ private fun Modifier.liquidGlassBase(
     val baseTintAlpha = ((if (dark) 0.16f else 0.22f) * opacity.coerceAtMost(1.1f)).coerceIn(0.10f, 0.40f)
     if (bar == null) {
         if (wallpaper != null && wallpaper.ready) {
-            // Cards use Stride's panel tint (22% dark / 32% light), scaled by the Translucency slider.
+            // Cards & Home bars use Stride's panel tint scaled by Translucency.
             val panelAlpha = ((if (dark) 0.22f else 0.32f) * opacity.coerceAtMost(1.1f)).coerceIn(0.15f, 0.45f)
             return this.petalGlassPanel(shape, tint.copy(alpha = panelAlpha), baseEdge)
         }
@@ -145,10 +145,6 @@ private fun Modifier.liquidGlassBase(
                     onDrawBehind {
                         val layerAlpha = alphaProvider?.invoke() ?: 1f
                         if (layerAlpha < 0.05f) return@onDrawBehind
-                        if (scrollSolidFallback && GeckoGlassBackend.isScrolling) {
-                            drawOutline(outline, tint)
-                            return@onDrawBehind
-                        }
                         drawOutline(outline, tint.copy(alpha = (fallbackAlpha * opacity).coerceIn(0.15f, 0.85f)))
                         drawRect(specBrush)
                         drawOutline(outline, rimBrush, style = Stroke((1.25.dp * (0.8f + baseEdge * 0.4f)).toPx()))
@@ -159,10 +155,11 @@ private fun Modifier.liquidGlassBase(
     }
     // Liquid glass tint: authentic physical glass with pure light bending refraction,
     // beveled specular sheen, and clear optical depth.
+    val progressiveOn = progressiveEdge != 0 && prefs.getBoolean("sp_liquid_glass_progressive_blur", false)
     val look = with(density) {
-        // Stride: a light 6 dp blur (a heavy one flattens the image to frost and hides the
-        // refraction) and a deep lens, 22 dp in from the rim, pulling the image 36 dp.
-        val blur = (readGlassBlurDp(prefs) ?: 6f).dp.toPx()
+        // Default 6 dp blur keeps standard refraction crisp; when progressive blur is active in
+        // Auto mode, use 14 dp so the feathered blur ramp from sharp page to frosted glass is rich.
+        val blur = (readGlassBlurDp(prefs) ?: if (progressiveOn) 14f else 6f).dp.toPx()
         val lensHeight = 22.dp.toPx() * tuning.width
         val lensAmount = 36.dp.toPx() * tuning.strength
         // The lens samples inward only, so the margin is for the blur alone.
@@ -178,7 +175,7 @@ private fun Modifier.liquidGlassBase(
             specHeight = 3.dp.toPx(),
             rimWidth = 1.dp.toPx(),
             pad = pad,
-            fadeEdge = if (progressiveEdge != 0 && prefs.getBoolean("sp_liquid_glass_progressive_blur", false)) progressiveEdge else 0
+            fadeEdge = if (progressiveOn) progressiveEdge else 0
         )
     }
     return this
@@ -189,10 +186,6 @@ private fun Modifier.liquidGlassBase(
             onDrawBehind {
                 val layerAlpha = alphaProvider?.invoke() ?: 1f
                 if (layerAlpha < 0.05f) return@onDrawBehind
-                if (scrollSolidFallback && GeckoGlassBackend.isScrolling) {
-                    drawOutline(fallbackOutline, tint)
-                    return@onDrawBehind
-                }
                 bar.record()
                 drawIntoCanvas { canvas ->
                     if (!bar.drawBar(canvas.nativeCanvas)) {
@@ -288,13 +281,6 @@ fun Modifier.glassTile(
                 val barCoords = bar.coords?.takeIf { it.isAttached } ?: return@onDrawBehind
                 val own = place[0]?.takeIf { it.isAttached } ?: return@onDrawBehind
                 val barInRoot = barCoords.positionInRoot()
-                if (GeckoGlassBackend.isScrolling) {
-                    val rLocal = target()?.translate(-own.positionInRoot()) ?: return@onDrawBehind
-                    translate(rLocal.left, rLocal.top) {
-                        drawOutline(shape.createOutline(rLocal.size, layoutDirection, this), tint.copy(alpha = 0.22f))
-                    }
-                    return@onDrawBehind
-                }
                 val r = target()?.translate(-barInRoot)
 
                 // Kyant's slab interaction: while held the slab swells, its lens deepens, and

@@ -54,6 +54,7 @@ class GlassBackdrop internal constructor(private val source: View) {
     private val sourceLoc = IntArray(2)
     private var listening: ViewTreeObserver? = null
     private var isRecording = false
+    private var lastScrollRecordMs = 0L
 
     internal val isRecordingBackdrop: Boolean
         get() = isRecording
@@ -88,7 +89,12 @@ class GlassBackdrop internal constructor(private val source: View) {
 
     /** Records the source again, then every bar sampling it. */
     internal fun refresh() {
-        if (GeckoGlassBackend.isScrolling) return
+        // Keep TextureView backdrop sampling live during page scroll (~30 fps) instead of snapping solid.
+        if (GeckoGlassBackend.isScrolling) {
+            val now = android.os.SystemClock.uptimeMillis()
+            if (now - lastScrollRecordMs < 32L) return
+            lastScrollRecordMs = now
+        }
         if (!recordSource()) return
         for (bar in bars) {
             // A minimized (INVISIBLE) bar draws nothing; skip it until it is shown again.
@@ -208,6 +214,10 @@ internal data class SlabLook(
  */
 @RequiresApi(Build.VERSION_CODES.S)
 class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
+    /** Crisp vibrant base layer drawn first when progressive blur feathers toward a page edge. */
+    private val sharpNode = RenderNode("PetalGlassBarSharp")
+    /** Mid-strength blur layer used on API 33+ for multi-band progressive blur. */
+    private val midBlurNode = RenderNode("PetalGlassBarMid")
     /** The backdrop, blurred and lensed, with a margin around the bar for the blur. */
     private val glassNode = RenderNode("PetalGlassBarGlass")
     /** The finished bar: glass, tint, highlight and rim, clipped to its shape. */
@@ -251,22 +261,66 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
         this.direction = direction
         outline = Path().apply { addOutline(shape.createOutline(size, direction, density)) }.asAndroidPath()
         radii = cornerRadii(shape, size, direction, density)
-        val key = listOf(size, radii?.toList(), look.blur, look.lensHeight, look.lensAmount, look.pad)
+        val progressive = look.fadeEdge != 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        val key = listOf(size, radii?.toList(), look.blur, look.lensHeight, look.lensAmount, look.pad, look.fadeEdge)
         if (key != effectKey) {
             effectKey = key
-            glassNode.setRenderEffect(glassEffect(size, look, radii))
+            if (progressive) {
+                sharpNode.setRenderEffect(vibrancyEffect())
+                val midBlur = glassBlurEffect(size, look.blur * 0.45f)
+                val midMask = progressiveMaskEffect(size.height, look.pad, look.fadeEdge, 0.02f, 0.46f)
+                midBlurNode.setRenderEffect(
+                    if (midMask != null) RenderEffect.createChainEffect(midMask, midBlur) else midBlur
+                )
+                val fullGlass = glassEffect(size, look, radii)
+                val fullMask = progressiveMaskEffect(size.height, look.pad, look.fadeEdge, 0.22f, 0.82f)
+                glassNode.setRenderEffect(
+                    if (fullMask != null) RenderEffect.createChainEffect(fullMask, fullGlass) else fullGlass
+                )
+            } else {
+                sharpNode.setRenderEffect(null)
+                midBlurNode.setRenderEffect(null)
+                glassNode.setRenderEffect(glassEffect(size, look, radii))
+            }
         }
-        fillPaint.color = look.fill
-        specPaint.shader = LinearGradient(
-            0f, 0f, 0f, look.specHeight, look.specular, android.graphics.Color.TRANSPARENT, Shader.TileMode.CLAMP
-        )
-        rimPaint.strokeWidth = look.rimWidth * 2
-        rimPaint.shader = LinearGradient(
-            0f, 0f, 0f, size.height, look.rimTop, look.rimBottom, Shader.TileMode.CLAMP
-        )
-        barNode.setRenderEffect(
-            if (look.fadeEdge != 0) fadeEffect(size.height, look.fadeEdge) else null
-        )
+        if (look.fadeEdge == 1) {
+            // Page touches the top edge of this bottom bar: tint ramps in softly from top to middle.
+            fillPaint.color = look.fill
+            fillPaint.shader = LinearGradient(
+                0f, 0f, 0f, (size.height * 0.58f).coerceAtLeast(1f),
+                android.graphics.Color.TRANSPARENT, look.fill, Shader.TileMode.CLAMP
+            )
+            specPaint.shader = null
+            rimPaint.strokeWidth = look.rimWidth * 2
+            rimPaint.shader = LinearGradient(
+                0f, 0f, 0f, size.height, android.graphics.Color.TRANSPARENT, look.rimBottom, Shader.TileMode.CLAMP
+            )
+        } else if (look.fadeEdge == 2) {
+            // Page touches the bottom edge of this top bar: tint fades cleanly into the page below.
+            fillPaint.color = look.fill
+            fillPaint.shader = LinearGradient(
+                0f, (size.height * 0.42f).coerceAtLeast(0f), 0f, size.height.coerceAtLeast(1f),
+                look.fill, android.graphics.Color.TRANSPARENT, Shader.TileMode.CLAMP
+            )
+            specPaint.shader = LinearGradient(
+                0f, 0f, 0f, look.specHeight, look.specular, android.graphics.Color.TRANSPARENT, Shader.TileMode.CLAMP
+            )
+            rimPaint.strokeWidth = look.rimWidth * 2
+            rimPaint.shader = LinearGradient(
+                0f, 0f, 0f, size.height, look.rimTop, android.graphics.Color.TRANSPARENT, Shader.TileMode.CLAMP
+            )
+        } else {
+            fillPaint.shader = null
+            fillPaint.color = look.fill
+            specPaint.shader = LinearGradient(
+                0f, 0f, 0f, look.specHeight, look.specular, android.graphics.Color.TRANSPARENT, Shader.TileMode.CLAMP
+            )
+            rimPaint.strokeWidth = look.rimWidth * 2
+            rimPaint.shader = LinearGradient(
+                0f, 0f, 0f, size.height, look.rimTop, look.rimBottom, Shader.TileMode.CLAMP
+            )
+        }
+        barNode.setRenderEffect(null)
     }
 
     /** The slab's place in bar coordinates; null hides it. */
@@ -301,7 +355,6 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
 
     /** Re-records the bar and its slab from the latest backdrop and geometry. */
     internal fun record() {
-        if (GeckoGlassBackend.isScrolling) return
         if (backdrop.isRecordingBackdrop) return
         val look = look ?: return
         val outline = outline ?: return
@@ -322,6 +375,21 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
 
         val pw = ceil(w + 2 * pad).toInt()
         val ph = ceil(h + 2 * pad).toInt()
+        val progressive = look.fadeEdge != 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+        if (progressive) {
+            sharpNode.setPosition(0, 0, pw, ph)
+            sharpNode.beginRecording(pw, ph).let { c ->
+                c.translate(shift.x + pad, shift.y + pad)
+                c.drawRenderNode(backdrop.node)
+                sharpNode.endRecording()
+            }
+            midBlurNode.setPosition(0, 0, pw, ph)
+            midBlurNode.beginRecording(pw, ph).let { c ->
+                c.translate(shift.x + pad, shift.y + pad)
+                c.drawRenderNode(backdrop.node)
+                midBlurNode.endRecording()
+            }
+        }
         glassNode.setPosition(0, 0, pw, ph)
         glassNode.beginRecording(pw, ph).let { c ->
             c.translate(shift.x + pad, shift.y + pad)
@@ -336,10 +404,16 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
             val save = c.save()
             c.clipPath(outline)
             c.translate(-pad, -pad)
+            if (progressive) {
+                c.drawRenderNode(sharpNode)
+                c.drawRenderNode(midBlurNode)
+            }
             c.drawRenderNode(glassNode)
             c.translate(pad, pad)
             c.drawRect(0f, 0f, w, h, fillPaint)
-            c.drawRect(0f, 0f, w, look.specHeight, specPaint)
+            if (look.fadeEdge != 1) {
+                c.drawRect(0f, 0f, w, look.specHeight, specPaint)
+            }
             c.drawPath(outline, rimPaint)
             c.restoreToCount(save)
             barNode.endRecording()
@@ -400,44 +474,66 @@ class GlassBar internal constructor(private val backdrop: GlassBackdrop) {
 /** How much larger things look through the selection slab. */
 const val SLAB_MAGNIFY = 1.12f
 
+@RequiresApi(Build.VERSION_CODES.S)
+private fun vibrancyEffect(): RenderEffect =
+    RenderEffect.createColorFilterEffect(
+        ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.5f) })
+    )
+
+@RequiresApi(Build.VERSION_CODES.S)
+private fun glassBlurEffect(size: Size, blurPx: Float): RenderEffect {
+    val vibrancy = vibrancyEffect()
+    return if (blurPx >= 0.5f) {
+        RenderEffect.createBlurEffect(blurPx, blurPx, vibrancy, Shader.TileMode.CLAMP)
+    } else vibrancy
+}
+
 /** Vibrancy, then blur, then (Android 13+) the lens — the order Stride and Vyxel chain them. */
 @RequiresApi(Build.VERSION_CODES.S)
 private fun glassEffect(size: Size, look: GlassLook, radii: FloatArray?): RenderEffect {
-    val vibrancy = RenderEffect.createColorFilterEffect(
-        ColorMatrixColorFilter(ColorMatrix().apply { setSaturation(1.5f) })
-    )
-    val blurred = if (look.blur >= 0.5f) {
-        RenderEffect.createBlurEffect(look.blur, look.blur, vibrancy, Shader.TileMode.CLAMP)
-    } else vibrancy
+    val blurred = glassBlurEffect(size, look.blur)
     val lens = radii?.let { lensEffect(size, look.pad, it, look.lensHeight, look.lensAmount) } ?: return blurred
     return RenderEffect.createChainEffect(lens, blurred)
 }
 
 /**
- * Progressive blur (Kyant's alpha-masked blur): the finished glass fades to nothing toward the
- * page-facing edge, so the page goes from sharp to frosted with no visible seam. Null below
- * Android 13, where the bar simply stays uniform.
+ * Progressive blur mask: masks a blurred layer from transparent (0) at the page-facing edge to
+ * opaque (1) inside the bar so blur scales smoothly from sharp page to frosted glass.
  */
-internal fun fadeEffect(height: Float, edge: Int): RenderEffect? {
-    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || height <= 0f) return null
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun progressiveMaskEffect(
+    height: Float,
+    pad: Float,
+    edge: Int,
+    fadeStart: Float,
+    fadeEnd: Float
+): RenderEffect? {
+    if (height <= 0f) return null
     return try {
-        val shader = RuntimeShader(FADE_MASK)
+        val shader = RuntimeShader(PROGRESSIVE_MASK_AGSL)
         shader.setFloatUniform("height", height)
+        shader.setFloatUniform("pad", pad)
         shader.setFloatUniform("edge", edge.toFloat())
+        shader.setFloatUniform("fadeStart", fadeStart)
+        shader.setFloatUniform("fadeEnd", fadeEnd)
         RenderEffect.createRuntimeShaderEffect(shader, "content")
     } catch (_: Throwable) {
         null
     }
 }
 
-private const val FADE_MASK = """
+private const val PROGRESSIVE_MASK_AGSL = """
 uniform shader content;
 uniform float height;
+uniform float pad;
 uniform float edge;
+uniform float fadeStart;
+uniform float fadeEnd;
 
 half4 main(float2 coord) {
-    float t = clamp(coord.y / height, 0.0, 1.0);
-    float a = edge > 1.5 ? smoothstep(1.0, 0.35, t) : smoothstep(0.0, 0.65, t);
+    float t = clamp((coord.y - pad) / max(height, 1.0), 0.0, 1.0);
+    float d = (edge > 1.5) ? (1.0 - t) : t;
+    float a = smoothstep(fadeStart, fadeEnd, d);
     return content.eval(coord) * a;
 }
 """

@@ -695,6 +695,10 @@ fun PetalHomeScreen(
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
+                                .then(
+                                    if (isGlassEnabled) Modifier.captureGlassWallpaper(glassWallpaper)
+                                    else Modifier
+                                )
                                 .background(if (isAmoled) Color.Black else MaterialTheme.colorScheme.background)
                         )
                     }

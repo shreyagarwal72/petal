@@ -216,7 +216,7 @@ fun ComposeEngineViewport(
     // Create and retain an EngineView instance across recompositions
     val engineView = remember(context) {
         PetalEngineStore.createEngineView(context).also { ev ->
-            ev.asView().id = com.petal.browser.R.id.main_content
+            ev.asView().id = com.petal.browser.R.id.gecko_engine_content
             ev.asView().background = null
             ev.asView().isNestedScrollingEnabled = true
             findGeckoView(ev.asView())?.let { gv ->

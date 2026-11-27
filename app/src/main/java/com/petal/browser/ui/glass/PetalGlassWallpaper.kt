@@ -49,12 +49,16 @@ import kotlin.math.ceil
  * The shared frost: a light 7 dp blur, as documented in docs/liquid-glass.md. Heavier blur
  * flattens the image before the lens bends it, which hides the refraction.
  */
-private const val FROST_BLUR_DP = 7f
+private const val DEFAULT_FROST_BLUR_DP = 7f
+private const val AMBIENT_LIVE_RECORD_MIN_INTERVAL_NS = 66_000_000L // ~15 fps for ambient shaders/Bloom
+private const val LIVE_RECORD_MIN_INTERVAL_NS = 32_000_000L // ~30 fps for live menus/dialogs
 
-private fun frostEffect(density: androidx.compose.ui.unit.Density): androidx.compose.ui.graphics.RenderEffect? {
+private fun frostEffect(density: androidx.compose.ui.unit.Density, blurDp: Float): androidx.compose.ui.graphics.RenderEffect? {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return null
+    val effectiveDp = blurDp.coerceIn(0f, 32f)
+    if (effectiveDp < 0.25f) return null
     return try {
-        val px = with(density) { FROST_BLUR_DP.dp.toPx() }
+        val px = with(density) { effectiveDp.dp.toPx() }
         android.graphics.RenderEffect.createBlurEffect(px, px, android.graphics.Shader.TileMode.CLAMP)
             .asComposeRenderEffect()
     } catch (_: Throwable) { null }
@@ -71,7 +75,10 @@ class PetalGlassWallpaper(val sharp: GraphicsLayer, val frosted: GraphicsLayer) 
     var origin by mutableStateOf(Offset.Zero)
     var ready by mutableStateOf(false)
     var frameVersion by mutableLongStateOf(0L)
+    var blurDp by mutableFloatStateOf(DEFAULT_FROST_BLUR_DP)
+    @Volatile var appliedBlurDp: Float = -1f
     @Volatile var hasRecorded: Boolean = false
+    @Volatile var isRecordingLive: Boolean = false
 }
 
 val LocalPetalGlassWallpaper = staticCompositionLocalOf<PetalGlassWallpaper?> { null }
@@ -86,9 +93,17 @@ val LocalPetalGlassSource = staticCompositionLocalOf<android.view.View?> { null 
 
 @Composable
 fun rememberPetalGlassWallpaper(): PetalGlassWallpaper {
+    LocalPetalGlassRevision.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    val targetBlur = readGlassBlurDp(sp) ?: DEFAULT_FROST_BLUR_DP
     val sharp = rememberGraphicsLayer()
     val frosted = rememberGraphicsLayer()
-    return remember(sharp, frosted) { PetalGlassWallpaper(sharp, frosted) }
+    val wp = remember(sharp, frosted) { PetalGlassWallpaper(sharp, frosted) }
+    if (wp.blurDp != targetBlur) {
+        wp.blurDp = targetBlur
+    }
+    return wp
 }
 
 /** Apply only to the background sibling, never to a container holding glass cards. */
@@ -103,13 +118,18 @@ fun Modifier.captureGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
             // Keep the last good state; flipping ready off for a frame shows flat fill.
         }
     }.drawWithCache {
-        wallpaper.frosted.renderEffect = frostEffect(this)
         var lastRecordNs = 0L
         onDrawWithContent {
+            val activeBlur = wallpaper.blurDp
+            val blurChanged = wallpaper.appliedBlurDp != activeBlur
+            if (blurChanged) {
+                wallpaper.appliedBlurDp = activeBlur
+                wallpaper.frosted.renderEffect = frostEffect(this, activeBlur)
+            }
             try {
                 if (size.width > 0f && size.height > 0f) {
                     val nowNs = System.nanoTime()
-                    if (!wallpaper.hasRecorded || (nowNs - lastRecordNs >= LIVE_RECORD_MIN_INTERVAL_NS)) {
+                    if (!wallpaper.hasRecorded || blurChanged || (nowNs - lastRecordNs >= LIVE_RECORD_MIN_INTERVAL_NS)) {
                         lastRecordNs = nowNs
                         try {
                             wallpaper.sharp.record {
@@ -160,20 +180,27 @@ fun Modifier.captureGlassWallpaperLive(
             // Keep the last good state; flipping ready off for a frame shows flat fill.
         }
     }.drawWithCache {
-        wallpaper.frosted.renderEffect = frostEffect(this)
+        var lastAmbientNs = 0L
         onDrawWithContent {
-            tick() // reading per-frame state makes this block run (and re-record) each frame
-            try {
-                if (size.width > 0f && size.height > 0f) {
-                    try {
+            tick() // reading per-frame state makes this block run when animated
+            val activeBlur = wallpaper.blurDp
+            val blurChanged = wallpaper.appliedBlurDp != activeBlur
+            if (blurChanged) {
+                wallpaper.appliedBlurDp = activeBlur
+                wallpaper.frosted.renderEffect = frostEffect(this, activeBlur)
+            }
+            val nowNs = System.nanoTime()
+            if (!wallpaper.hasRecorded || blurChanged || (nowNs - lastAmbientNs >= AMBIENT_LIVE_RECORD_MIN_INTERVAL_NS)) {
+                lastAmbientNs = nowNs
+                try {
+                    if (size.width > 0f && size.height > 0f) {
                         wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
                         wallpaper.frosted.record { drawLayer(wallpaper.sharp) }
                         wallpaper.hasRecorded = true
                         wallpaper.frameVersion++
-                    } catch (_: Throwable) {
                     }
-                }
-            } catch (_: Throwable) {}
+                } catch (_: Throwable) {}
+            }
             try {
                 this@onDrawWithContent.drawContent()
             } catch (_: Throwable) {}
@@ -196,8 +223,12 @@ fun Modifier.recordGlassWallpaper(wallpaper: PetalGlassWallpaper): Modifier =
             // Keep the last good state; flipping ready off for a frame shows flat fill.
         }
     }.drawWithCache {
-        wallpaper.frosted.renderEffect = frostEffect(this)
         onDrawWithContent {
+            val activeBlur = wallpaper.blurDp
+            if (wallpaper.appliedBlurDp != activeBlur) {
+                wallpaper.appliedBlurDp = activeBlur
+                wallpaper.frosted.renderEffect = frostEffect(this, activeBlur)
+            }
             try {
                 if (size.width > 0f && size.height > 0f) {
                     wallpaper.sharp.record { this@onDrawWithContent.drawContent() }
@@ -227,9 +258,6 @@ fun Modifier.liveGlassWallpaper(
     return liveGlassWallpaperImpl(wallpaper, source, tick, FloatArray(2), host)
 }
 
-private var isRecordingLiveWallpaper = false
-private const val LIVE_RECORD_MIN_INTERVAL_NS = 32_000_000L // ~30 fps
-
 private fun Modifier.liveGlassWallpaperImpl(
     wallpaper: PetalGlassWallpaper,
     source: android.view.View,
@@ -250,21 +278,21 @@ private fun Modifier.liveGlassWallpaperImpl(
             // Keep the last good state; flipping ready off for a frame shows flat fill.
         }
     }.drawWithCache {
-        wallpaper.frosted.renderEffect = frostEffect(this)
         val srcLoc = IntArray(2)
         var lastLiveRecordNs = 0L
         onDrawWithContent {
             tick() // reading per-frame state redraws (and re-records) every frame
-            // The ANR trace shows the UI thread stuck waiting on the render thread. Capturing the
-            // whole window and re-blurring it at 90/120 Hz is the heaviest thing this app draws, so:
-            //  - never faster than ~30 fps, and
-            //  - while a transition is moving, keep the last captured frame (glass stays on, no flat
-            //    flash) instead of re-capturing. The very first capture is always allowed.
+            val activeBlur = wallpaper.blurDp
+            val blurChanged = wallpaper.appliedBlurDp != activeBlur
+            if (blurChanged) {
+                wallpaper.appliedBlurDp = activeBlur
+                wallpaper.frosted.renderEffect = frostEffect(this, activeBlur)
+            }
             val nowNs = System.nanoTime()
-            if (wallpaper.hasRecorded) {
+            if (wallpaper.hasRecorded && !blurChanged) {
                 if (nowNs - lastLiveRecordNs < LIVE_RECORD_MIN_INTERVAL_NS) return@onDrawWithContent
             }
-            if (isRecordingLiveWallpaper || (host != null && isAncestor(source, host))) {
+            if (wallpaper.isRecordingLive || (host != null && isAncestor(source, host))) {
                 // Prevent recursive re-entry if source hierarchy includes the calling view
                 return@onDrawWithContent
             }
@@ -274,7 +302,7 @@ private fun Modifier.liveGlassWallpaperImpl(
                     val dx = srcLoc[0] - boxOnScreen[0]
                     val dy = srcLoc[1] - boxOnScreen[1]
                     try {
-                        isRecordingLiveWallpaper = true
+                        wallpaper.isRecordingLive = true
                         wallpaper.sharp.record {
                             drawIntoCanvas { c ->
                                 val nc = c.nativeCanvas
@@ -290,7 +318,7 @@ private fun Modifier.liveGlassWallpaperImpl(
                         lastLiveRecordNs = nowNs
                     } catch (_: Throwable) {
                     } finally {
-                        isRecordingLiveWallpaper = false
+                        wallpaper.isRecordingLive = false
                     }
                 } catch (_: Throwable) {}
             }

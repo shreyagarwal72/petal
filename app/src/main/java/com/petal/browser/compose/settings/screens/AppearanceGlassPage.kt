@@ -362,9 +362,6 @@ fun AppearanceGlassPage(
                                     liveBlur = it
                                     sp.edit().putFloat("sp_liquid_glass_blur", it).apply()
                                 },
-                                onValueChangeFinished = {
-                                    try { com.petal.browser.widget.liquidglass.PetalWallpaperBlurHelper.rebakeAllFromWallpaper(context) } catch (_: Throwable) {}
-                                },
                                 valueRange = 0f..32f,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -486,7 +483,6 @@ fun AppearanceGlassPage(
                                 onLiquidGlassSheenChange(0.60f)
                                 onLiquidGlassRefractionChange(1f)
                                 onLiquidGlassRefractionWidthChange(1f)
-                                try { com.petal.browser.widget.liquidglass.PetalWallpaperBlurHelper.rebakeAllFromWallpaper(context) } catch (_: Throwable) {}
                             },
                             modifier = Modifier.align(Alignment.End)
                         ) { Text("Reset glass tuning") }
@@ -553,7 +549,7 @@ fun AppearanceGlassPage(
                                 }
                                 com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                     title = "Progressive Blur",
-                                    subtitle = "Docked bottom bar fades from sharp page to frosted glass (Android 13+)",
+                                    subtitle = "Docked edge bars feather smoothly from sharp page to frosted glass (Android 13+)",
                                     icon = Icons.Rounded.BlurOn,
                                     checked = progressiveBlur,
                                     position = com.petal.browser.ui.containment.PetalGroupPosition.BOTTOM,
