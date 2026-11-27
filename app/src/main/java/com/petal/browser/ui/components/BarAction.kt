@@ -105,7 +105,7 @@ enum class BarAction(
         id = "AI_RESEARCH",
         label = "AI Research",
         icon = Icons.Rounded.AutoAwesome,
-        isAvailable = true,
+        isAvailable = false, // Legacy alias migrated to AI in fromId(); hidden from picker to prevent duplicate selection.
         supportsBadge = false,
         supportsLongPress = false
     ),

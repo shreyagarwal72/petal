@@ -73,6 +73,8 @@ import androidx.compose.material3.Icon
 
 private val PixelNavOrderWithAi = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
 private val PixelNavOrderNoAi = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.TABS, PetalNavTab.MENU)
+private val PixelNavOrderWithSearch = listOf(PetalNavTab.HOME, PetalNavTab.NEW_TAB, PetalNavTab.SEARCH, PetalNavTab.TABS, PetalNavTab.MENU)
+private val PixelNavOrderFull = listOf(PetalNavTab.HOME, PetalNavTab.AI, PetalNavTab.NEW_TAB, PetalNavTab.SEARCH, PetalNavTab.TABS, PetalNavTab.MENU)
 
 /**
  * Material 3 Expressive floating nav pill in PixelMusic's style (used when liquid glass is off).
@@ -95,16 +97,33 @@ internal fun PetalPixelNavPill(
     onSwipeTabLeft: () -> Unit,
     onSwipeTabRight: () -> Unit,
     modifier: Modifier = Modifier,
+    onSearchClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
     onBookmarksClick: () -> Unit = {},
+    onDownloadsClick: () -> Unit = {},
+    includeSearch: Boolean = false,
     includeAi: Boolean = true,
+    swipeTabsEnabled: Boolean = true,
+    midSlot: NavMidSlot = NavMidSlot.NEW_TAB,
     enabled: Boolean = true,
     showLabels: Boolean = true,
 ) {
     val scheme = MaterialTheme.colorScheme
-    val PixelNavOrder = if (includeAi) PixelNavOrderWithAi else PixelNavOrderNoAi
+    val PixelNavOrder = when {
+        includeAi && includeSearch -> PixelNavOrderFull
+        includeAi -> PixelNavOrderWithAi
+        includeSearch -> PixelNavOrderWithSearch
+        else -> PixelNavOrderNoAi
+    }
+    val midSlotSpec = resolveNavMidSlot(
+        slot = midSlot,
+        onNewTabClick = onNewTabClick,
+        onBookmarksClick = onBookmarksClick,
+        onHistoryClick = onHistoryClick,
+        onDownloadsClick = onDownloadsClick
+    )
 
-    // Swiping along the pill switches tabs; the pill follows the finger with resistance.
+    // Swiping along the pill switches tabs when enabled; the pill follows the finger with resistance.
     var dragAccumulator by remember { mutableFloatStateOf(0f) }
     var isDragging by remember { mutableStateOf(false) }
     val maxDragPx = with(LocalDensity.current) { 28.dp.toPx() }
@@ -117,7 +136,7 @@ internal fun PetalPixelNavPill(
     // Read through updated state so the long-lived pointerInput never calls a stale lambda.
     val currentSwipeLeft by androidx.compose.runtime.rememberUpdatedState(onSwipeTabLeft)
     val currentSwipeRight by androidx.compose.runtime.rememberUpdatedState(onSwipeTabRight)
-    val currentEnabled by androidx.compose.runtime.rememberUpdatedState(enabled)
+    val currentEnabled by androidx.compose.runtime.rememberUpdatedState(enabled && swipeTabsEnabled)
 
     Surface(
         shape = RoundedCornerShape(32.dp),
@@ -128,7 +147,8 @@ internal fun PetalPixelNavPill(
         modifier = modifier
             .height(64.dp)
             .graphicsLayer { translationX = dragOffsetPx }
-            .pointerInput(Unit) {
+            .pointerInput(swipeTabsEnabled) {
+                if (!swipeTabsEnabled) return@pointerInput
                 detectHorizontalDragGestures(
                     onDragStart = { if (currentEnabled) isDragging = true },
                     onDragEnd = {
@@ -206,21 +226,24 @@ internal fun PetalPixelNavPill(
                     val label = when (tab) {
                         PetalNavTab.HOME -> stringResource(R.string.bar_home)
                         PetalNavTab.AI -> stringResource(R.string.bar_ai)
-                        PetalNavTab.NEW_TAB -> stringResource(R.string.bar_new)
+                        PetalNavTab.NEW_TAB -> stringResource(midSlotSpec.labelRes)
+                        PetalNavTab.SEARCH -> stringResource(R.string.bar_search)
                         PetalNavTab.TABS -> stringResource(R.string.bar_tabs)
                         else -> stringResource(R.string.bar_menu)
                     }
                     val contentLabel = if (tab == PetalNavTab.TABS) stringResource(R.string.bar_tabs_count, tabCount) else label
                     val onLongClick: (() -> Unit)? = when (tab) {
                         PetalNavTab.HOME -> onHistoryClick
-                        PetalNavTab.NEW_TAB, PetalNavTab.TABS -> onNewTabClick
+                        PetalNavTab.NEW_TAB -> midSlotSpec.onLongClick
+                        PetalNavTab.TABS -> onNewTabClick
                         PetalNavTab.MENU -> onBookmarksClick
                         else -> null
                     }
                     val onClick = when (tab) {
                         PetalNavTab.HOME -> onHomeClick
                         PetalNavTab.AI -> onAiClick
-                        PetalNavTab.NEW_TAB -> onNewTabClick
+                        PetalNavTab.NEW_TAB -> midSlotSpec.onClick
+                        PetalNavTab.SEARCH -> onSearchClick
                         PetalNavTab.TABS -> onTabsClick
                         else -> onMenuClick
                     }
@@ -276,7 +299,12 @@ internal fun PetalPixelNavPill(
                                         modifier = Modifier.size(24.dp)
                                     )
                                     PetalNavTab.NEW_TAB -> Icon(
-                                        Icons.Rounded.Add, contentDescription = null, tint = tint,
+                                        midSlotSpec.icon, contentDescription = null, tint = tint,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                    PetalNavTab.SEARCH -> Icon(
+                                        painter = painterResource(R.drawable.ic_petal_search),
+                                        contentDescription = null, tint = tint,
                                         modifier = Modifier.size(24.dp)
                                     )
                                     PetalNavTab.TABS -> TabCountBadge(color = tint, count = tabCount, scale = badgeScale)

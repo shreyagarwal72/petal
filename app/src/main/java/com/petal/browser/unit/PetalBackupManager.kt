@@ -157,6 +157,9 @@ object PetalBackupManager {
                 "sp_address_bar_style" == key || "sp_merge_leading" == key ||
                 "sp_merge_trailing" == key || "sp_merge_layout" == key ||
                 "sp_bar_collapse_style" == key ||
+                "sp_address_bar_url_display" == key || "sp_address_bar_progress_style" == key ||
+                "sp_classic_outer_action" == key || "sp_nav_search_style" == key ||
+                "sp_nav_mid_slot" == key ||
                 "sp_liquid_glass_bg_mode" == key || "sp_liquid_glass_bg_image_uri" == key ||
                 "sp_liquid_glass_tint" == key || "sp_blur_method" == key ||
                 "sp_adblock_protection_mode" == key ||

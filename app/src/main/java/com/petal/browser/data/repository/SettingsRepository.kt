@@ -123,6 +123,17 @@ interface SettingsRepository {
     val mergeTrailing: Flow<String>
     val mergeLayout: Flow<String>
     val barCollapseStyle: Flow<String>
+    val hideBarsOnScroll: Flow<Boolean>
+    val addressBarExtensionChips: Flow<Boolean>
+    val showNavLabels: Flow<Boolean>
+    val urlDisplayMode: Flow<String>
+    val barProgressStyle: Flow<String>
+    val classicOuterAction: Flow<String>
+    val classicShowReload: Flow<Boolean>
+    val navSearchStyle: Flow<String>
+    val navSwipeTabs: Flow<Boolean>
+    val navShowOnPages: Flow<Boolean>
+    val navMidSlot: Flow<String>
 
     // Miscellaneous
     val appLanguage: Flow<String>
@@ -271,6 +282,17 @@ interface SettingsRepository {
     suspend fun setMergeTrailing(trailing: String)
     suspend fun setMergeLayout(layout: String)
     suspend fun setBarCollapseStyle(style: String)
+    suspend fun setHideBarsOnScroll(enabled: Boolean)
+    suspend fun setAddressBarExtensionChips(enabled: Boolean)
+    suspend fun setShowNavLabels(enabled: Boolean)
+    suspend fun setUrlDisplayMode(mode: String)
+    suspend fun setBarProgressStyle(style: String)
+    suspend fun setClassicOuterAction(action: String)
+    suspend fun setClassicShowReload(enabled: Boolean)
+    suspend fun setNavSearchStyle(style: String)
+    suspend fun setNavSwipeTabs(enabled: Boolean)
+    suspend fun setNavShowOnPages(enabled: Boolean)
+    suspend fun setNavMidSlot(slot: String)
 
     suspend fun setAppLanguage(language: String)
     suspend fun setMatchWebsiteLanguage(enabled: Boolean)

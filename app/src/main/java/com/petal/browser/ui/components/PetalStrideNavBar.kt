@@ -105,14 +105,24 @@ internal fun PetalStrideNavBar(
     modifier: Modifier = Modifier,
     onHistoryClick: () -> Unit = {},
     onBookmarksClick: () -> Unit = {},
+    onDownloadsClick: () -> Unit = {},
     compact: Boolean = false,
     includeSearch: Boolean = false,
     includeAi: Boolean = true,
+    swipeTabsEnabled: Boolean = true,
+    midSlot: NavMidSlot = NavMidSlot.NEW_TAB,
     enabled: Boolean = true,
     showLabels: Boolean = true,
     collapseAlphaProvider: () -> Float = { 1f },
     onSearchClick: () -> Unit = {}
 ) {
+    val midSlotSpec = resolveNavMidSlot(
+        slot = midSlot,
+        onNewTabClick = onNewTabClick,
+        onBookmarksClick = onBookmarksClick,
+        onHistoryClick = onHistoryClick,
+        onDownloadsClick = onDownloadsClick
+    )
     val NavOrder = when {
         includeAi && includeSearch -> NavOrder5
         includeAi -> NavOrder4
@@ -149,7 +159,7 @@ internal fun PetalStrideNavBar(
     // Read through updated state so the long-lived pointerInput never calls a stale lambda.
     val currentSwipeLeft by androidx.compose.runtime.rememberUpdatedState(onSwipeTabLeft)
     val currentSwipeRight by androidx.compose.runtime.rememberUpdatedState(onSwipeTabRight)
-    val currentEnabled by androidx.compose.runtime.rememberUpdatedState(enabled)
+    val currentEnabled by androidx.compose.runtime.rememberUpdatedState(enabled && swipeTabsEnabled)
 
     val isLiquidGlassActive = glassSupported && (glassBar != null || themeGlass)
     // Kyant's interaction effects: the bar swells under the finger, a light follows it, and
@@ -169,7 +179,8 @@ internal fun PetalStrideNavBar(
                 alphaProvider = collapseAlphaProvider
             )
             .then(if (isLiquidGlassActive) Modifier.glassPressOverlay(glassPress, pill) else Modifier)
-            .pointerInput(Unit) {
+            .pointerInput(swipeTabsEnabled) {
+                if (!swipeTabsEnabled) return@pointerInput
                 detectHorizontalDragGestures(
                     onDragStart = { if (currentEnabled) isDragging = true },
                     onDragEnd = {
@@ -234,7 +245,7 @@ internal fun PetalStrideNavBar(
                 val label = when (tab) {
                     PetalNavTab.HOME -> stringResource(R.string.bar_home)
                     PetalNavTab.AI -> stringResource(R.string.bar_ai)
-                    PetalNavTab.NEW_TAB -> stringResource(R.string.bar_new)
+                    PetalNavTab.NEW_TAB -> stringResource(midSlotSpec.labelRes)
                     PetalNavTab.TABS -> stringResource(R.string.bar_tabs)
                     PetalNavTab.MENU -> stringResource(R.string.bar_menu)
                     PetalNavTab.SEARCH -> stringResource(R.string.bar_search)
@@ -242,14 +253,15 @@ internal fun PetalStrideNavBar(
                 val contentLabel = if (tab == PetalNavTab.TABS) stringResource(R.string.bar_tabs_count, tabCount) else label
                 val onLongClick: (() -> Unit)? = when (tab) {
                     PetalNavTab.HOME -> onHistoryClick
-                    PetalNavTab.NEW_TAB, PetalNavTab.TABS -> onNewTabClick
+                    PetalNavTab.NEW_TAB -> midSlotSpec.onLongClick
+                    PetalNavTab.TABS -> onNewTabClick
                     PetalNavTab.MENU -> onBookmarksClick
                     else -> null
                 }
                 val onClick = when (tab) {
                     PetalNavTab.HOME -> onHomeClick
                     PetalNavTab.AI -> onAiClick
-                    PetalNavTab.NEW_TAB -> onNewTabClick
+                    PetalNavTab.NEW_TAB -> midSlotSpec.onClick
                     PetalNavTab.TABS -> onTabsClick
                     PetalNavTab.MENU -> onMenuClick
                     PetalNavTab.SEARCH -> onSearchClick
@@ -293,7 +305,7 @@ internal fun PetalStrideNavBar(
                             modifier = Modifier.size(24.dp).navIconMotion(selected),
                             contentAlignment = Alignment.Center
                         ) {
-                            NavIcon(tab, selected, tint, tabCount, badgeScale)
+                            NavIcon(tab, selected, tint, tabCount, badgeScale, midSlotIcon = midSlotSpec.icon)
                         }
                         if (showLabels) {
                             // Opens by its item's weight: measured at full width, laid out at
@@ -329,7 +341,14 @@ internal fun PetalStrideNavBar(
 }
 
 @Composable
-private fun NavIcon(tab: PetalNavTab, selected: Boolean, tint: Color, tabCount: Int, badgeScale: Float) {
+private fun NavIcon(
+    tab: PetalNavTab,
+    selected: Boolean,
+    tint: Color,
+    tabCount: Int,
+    badgeScale: Float,
+    midSlotIcon: androidx.compose.ui.graphics.vector.ImageVector = Icons.Rounded.Add
+) {
     when (tab) {
         PetalNavTab.HOME -> Icon(
             painter = painterResource(
@@ -340,7 +359,7 @@ private fun NavIcon(tab: PetalNavTab, selected: Boolean, tint: Color, tabCount: 
             modifier = Modifier.size(24.dp)
         )
         PetalNavTab.AI -> Icon(Icons.Rounded.AutoAwesome, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
-        PetalNavTab.NEW_TAB -> Icon(Icons.Rounded.Add, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+        PetalNavTab.NEW_TAB -> Icon(midSlotIcon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
         PetalNavTab.TABS -> TabCountBadge(color = tint, count = tabCount, scale = badgeScale)
         PetalNavTab.MENU -> Icon(Icons.Rounded.MoreVert, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
         PetalNavTab.SEARCH -> Icon(painterResource(com.petal.browser.R.drawable.ic_petal_search), contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))

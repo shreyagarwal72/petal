@@ -108,19 +108,20 @@ fun PetalMinimizedPill(
     glassBar: GlassBar? = null,
     progress: Float = 0f,
     isLoading: Boolean = false,
+    isPreview: Boolean = false,
     onPillClick: (() -> Unit)? = null,
     onExpand: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val pillShape = RoundedCornerShape(20.dp)
-    val isGlass = isLiquidGlass && !isIncognito
-    val resolvedGlassBar = glassBar ?: rememberGlassBar(if (isGlass) glassSource else null)
+    val isGlass = isLiquidGlass && !isIncognito && !isPreview
+    val resolvedGlassBar = if (isPreview) null else (glassBar ?: rememberGlassBar(if (isGlass) glassSource else null))
     val baseGlassColor = MaterialTheme.colorScheme.surfaceContainerHigh
 
-    val statusBarTopInset = WindowInsets.statusBars.union(WindowInsets.displayCutout)
+    val statusBarTopInset = if (isPreview) 0.dp else WindowInsets.statusBars.union(WindowInsets.displayCutout)
         .asPaddingValues().calculateTopPadding()
-    val navBarBottomInset = WindowInsets.navigationBars
+    val navBarBottomInset = if (isPreview) 0.dp else WindowInsets.navigationBars
         .asPaddingValues().calculateBottomPadding()
 
     val containerColor = when {

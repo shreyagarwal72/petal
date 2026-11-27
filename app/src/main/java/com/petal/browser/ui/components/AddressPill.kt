@@ -137,6 +137,7 @@ fun AddressPill(
     )
 
     val searchHint = stringResource(R.string.bar_search_or_type_url)
+    val urlDisplayMode = settings.urlDisplayMode
     val colors = MaterialTheme.colorScheme
     val formattedUrl: AnnotatedString = if (urlParts == null) {
         buildAnnotatedString {
@@ -147,8 +148,10 @@ fun AddressPill(
     } else {
         val muted = SpanStyle(color = colors.onSurfaceVariant.copy(alpha = 0.7f), fontWeight = FontWeight.Normal)
         buildAnnotatedString {
-            // Text before an '@' is login info, never the domain: keep it muted.
-            if (urlParts.userInfo.isNotEmpty()) withStyle(muted) { append(urlParts.userInfo) }
+            // Text before an '@' is login info, never the domain: keep it muted (shown in FULL mode only).
+            if (urlDisplayMode == UrlDisplayMode.FULL && urlParts.userInfo.isNotEmpty()) {
+                withStyle(muted) { append(urlParts.userInfo) }
+            }
             // Only the real host is bold. Punycode hosts stay in their raw xn-- form and are tinted.
             withStyle(
                 SpanStyle(
@@ -156,7 +159,9 @@ fun AddressPill(
                     fontWeight = FontWeight.SemiBold
                 )
             ) { append(urlParts.host) }
-            if (urlParts.rest.isNotEmpty()) withStyle(muted) { append(urlParts.rest) }
+            if (urlDisplayMode == UrlDisplayMode.FULL && urlParts.rest.isNotEmpty()) {
+                withStyle(muted) { append(urlParts.rest) }
+            }
         }
     }
 
@@ -267,6 +272,10 @@ fun AddressPill(
                 }
 
                 val securityWidth = when {
+                    urlDisplayMode == UrlDisplayMode.DOMAIN_ONLY -> when {
+                        isHttp || isPunycode -> 20.dp
+                        else -> 0.dp
+                    }
                     isHttp -> if (isPunycode) 88.dp else 72.dp
                     isHttps -> if (isPunycode) 34.dp else 18.dp
                     else -> 0.dp
@@ -276,7 +285,8 @@ fun AddressPill(
                 val minUrlWidth = minOf(120.dp, (maxWidth - leftFixedWidth).coerceAtLeast(48.dp))
                 val chipBudget = (maxWidth - leftFixedWidth - minUrlWidth).coerceAtLeast(0.dp)
 
-                val showRightAction = !isBlankOrSearch && when (addressBarAction.uppercase()) {
+                // Classic right-side action is exclusively for Classic split mode; Merge Bar configures AI/Bookmark directly.
+                val showRightAction = !inMergedBar && !isBlankOrSearch && when (addressBarAction.uppercase()) {
                     "AI" -> isProperSite
                     "BOOKMARK" -> true
                     else -> false
@@ -532,10 +542,14 @@ fun AddressPill(
                         }
                     }
 
-                    // Always-visible security indicator: lock for HTTPS, "Not secure" for HTTP.
-                    if (isHttps || isHttp) {
+                    // Security indicator: hidden on clean HTTPS when Domain-Only mode is selected, always warns on HTTP or punycode.
+                    if ((isHttp || isPunycode) || (isHttps && urlDisplayMode != UrlDisplayMode.DOMAIN_ONLY)) {
                         Spacer(modifier = Modifier.width(2.dp))
-                        SecurityIndicator(isHttps = isHttps, isPunycode = isPunycode)
+                        SecurityIndicator(
+                            isHttps = isHttps,
+                            isPunycode = isPunycode,
+                            compact = urlDisplayMode == UrlDisplayMode.DOMAIN_ONLY
+                        )
                     }
 
                     if (hasActiveSensors) {
@@ -613,7 +627,7 @@ fun AddressPill(
 
             // Material 3 Expressive integrated loading progress line
             val isStackedMerged = inMergedBar && (settings.mergeLayout == MergeLayout.STACKED)
-            if (!isStackedMerged && isLoading && progress > 0f && progress < 1f) {
+            if (settings.progressStyle == BarProgressStyle.LINE && !isStackedMerged && isLoading && progress > 0f && progress < 1f) {
                 Material3ExpressiveProgressIndicator(
                     progress = progress,
                     visible = isLoading,
@@ -882,7 +896,7 @@ private class PillChipEntry(
 
 /** Small lock (HTTPS) or "Not secure" label (HTTP). Punycode lookalike hosts add a warning glyph. */
 @Composable
-private fun SecurityIndicator(isHttps: Boolean, isPunycode: Boolean) {
+private fun SecurityIndicator(isHttps: Boolean, isPunycode: Boolean, compact: Boolean = false) {
     val secureDesc = stringResource(R.string.bar_secure_connection)
     val notSecure = stringResource(R.string.bar_not_secure)
     val lookalike = stringResource(R.string.bar_lookalike_warning)
@@ -897,17 +911,19 @@ private fun SecurityIndicator(isHttps: Boolean, isPunycode: Boolean) {
         } else {
             Icon(
                 imageVector = Icons.Rounded.LockOpen,
-                contentDescription = null,
+                contentDescription = if (compact) notSecure else null,
                 tint = MaterialTheme.colorScheme.error,
                 modifier = Modifier.size(14.dp)
             )
-            Spacer(Modifier.width(3.dp))
-            Text(
-                text = notSecure,
-                style = PetalText.badge,
-                color = MaterialTheme.colorScheme.error,
-                maxLines = 1
-            )
+            if (!compact) {
+                Spacer(Modifier.width(3.dp))
+                Text(
+                    text = notSecure,
+                    style = PetalText.badge,
+                    color = MaterialTheme.colorScheme.error,
+                    maxLines = 1
+                )
+            }
         }
         if (isPunycode) {
             Spacer(Modifier.width(3.dp))

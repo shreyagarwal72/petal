@@ -476,6 +476,50 @@ class SettingsRepositoryImpl @Inject constructor(
         sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_BAR_COLLAPSE_STYLE, com.petal.browser.ui.components.BarPrefs.COLLAPSE_PILL) ?: com.petal.browser.ui.components.BarPrefs.COLLAPSE_PILL
     }
 
+    override val hideBarsOnScroll: Flow<Boolean> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_HIDE_BARS_ON_SCROLL) {
+        sp.getBoolean(com.petal.browser.ui.components.BarPrefs.KEY_HIDE_BARS_ON_SCROLL, true)
+    }
+
+    override val addressBarExtensionChips: Flow<Boolean> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_EXTENSION_CHIPS) {
+        sp.getBoolean(com.petal.browser.ui.components.BarPrefs.KEY_EXTENSION_CHIPS, true)
+    }
+
+    override val showNavLabels: Flow<Boolean> = preferenceFlow(com.petal.browser.ui.components.BarSettings.KEY_SHOW_NAV_LABELS) {
+        sp.getBoolean(com.petal.browser.ui.components.BarSettings.KEY_SHOW_NAV_LABELS, true)
+    }
+
+    override val urlDisplayMode: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_URL_DISPLAY_MODE) {
+        com.petal.browser.ui.components.UrlDisplayMode.fromPref(sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_URL_DISPLAY_MODE, null)).pref
+    }
+
+    override val barProgressStyle: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_PROGRESS_STYLE) {
+        com.petal.browser.ui.components.BarProgressStyle.fromPref(sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_PROGRESS_STYLE, null)).pref
+    }
+
+    override val classicOuterAction: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_CLASSIC_OUTER_ACTION) {
+        com.petal.browser.ui.components.ClassicOuterAction.fromPref(sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_CLASSIC_OUTER_ACTION, null)).pref
+    }
+
+    override val classicShowReload: Flow<Boolean> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_CLASSIC_SHOW_RELOAD) {
+        sp.getBoolean(com.petal.browser.ui.components.BarPrefs.KEY_CLASSIC_SHOW_RELOAD, true)
+    }
+
+    override val navSearchStyle: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_NAV_SEARCH_STYLE) {
+        com.petal.browser.ui.components.NavSearchButtonStyle.fromPref(sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_NAV_SEARCH_STYLE, null)).pref
+    }
+
+    override val navSwipeTabs: Flow<Boolean> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_NAV_SWIPE_TABS) {
+        sp.getBoolean(com.petal.browser.ui.components.BarPrefs.KEY_NAV_SWIPE_TABS, true)
+    }
+
+    override val navShowOnPages: Flow<Boolean> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_NAV_SHOW_ON_PAGES) {
+        sp.getBoolean(com.petal.browser.ui.components.BarPrefs.KEY_NAV_SHOW_ON_PAGES, true)
+    }
+
+    override val navMidSlot: Flow<String> = preferenceFlow(com.petal.browser.ui.components.BarPrefs.KEY_NAV_MID_SLOT) {
+        com.petal.browser.ui.components.NavMidSlot.fromPref(sp.getString(com.petal.browser.ui.components.BarPrefs.KEY_NAV_MID_SLOT, null)).pref
+    }
+
     // ── Miscellaneous ──────────────────────────────────────────
     override val appLanguage: Flow<String> = preferenceFlow("sp_app_language") {
         sp.getString("sp_app_language", "system") ?: "system"
@@ -1130,6 +1174,50 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setBarCollapseStyle(style: String) {
         sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_BAR_COLLAPSE_STYLE, style).apply()
+    }
+
+    override suspend fun setHideBarsOnScroll(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.ui.components.BarPrefs.KEY_HIDE_BARS_ON_SCROLL, enabled).apply()
+    }
+
+    override suspend fun setAddressBarExtensionChips(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.ui.components.BarPrefs.KEY_EXTENSION_CHIPS, enabled).apply()
+    }
+
+    override suspend fun setShowNavLabels(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.ui.components.BarSettings.KEY_SHOW_NAV_LABELS, enabled).apply()
+    }
+
+    override suspend fun setUrlDisplayMode(mode: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_URL_DISPLAY_MODE, mode).apply()
+    }
+
+    override suspend fun setBarProgressStyle(style: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_PROGRESS_STYLE, style).apply()
+    }
+
+    override suspend fun setClassicOuterAction(action: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_CLASSIC_OUTER_ACTION, action).apply()
+    }
+
+    override suspend fun setClassicShowReload(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.ui.components.BarPrefs.KEY_CLASSIC_SHOW_RELOAD, enabled).apply()
+    }
+
+    override suspend fun setNavSearchStyle(style: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_NAV_SEARCH_STYLE, style).apply()
+    }
+
+    override suspend fun setNavSwipeTabs(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.ui.components.BarPrefs.KEY_NAV_SWIPE_TABS, enabled).apply()
+    }
+
+    override suspend fun setNavShowOnPages(enabled: Boolean) {
+        sp.edit().putBoolean(com.petal.browser.ui.components.BarPrefs.KEY_NAV_SHOW_ON_PAGES, enabled).apply()
+    }
+
+    override suspend fun setNavMidSlot(slot: String) {
+        sp.edit().putString(com.petal.browser.ui.components.BarPrefs.KEY_NAV_MID_SLOT, slot).apply()
     }
 
     override suspend fun setAppLanguage(language: String) {

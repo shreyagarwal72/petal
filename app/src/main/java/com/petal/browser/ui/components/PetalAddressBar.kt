@@ -1,11 +1,16 @@
 package com.petal.browser.ui.components
 
 import android.graphics.Bitmap
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Bookmarks
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.FindInPage
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.*
@@ -34,7 +39,7 @@ import com.petal.browser.ui.glass.rememberGlassBar
  * - Far right: Share icon button
  * - Supports Chrome-style scroll morphing into [PetalMinimizedPill]
  */
-@OptIn(ExperimentalMaterial3Api::class, com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalMaterial3Api::class, com.petal.browser.ui.theme.ExperimentalMaterial3ExpressiveApi::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun PetalAddressBar(
     url: String,
@@ -49,6 +54,12 @@ fun PetalAddressBar(
     onStopClick: () -> Unit = {},
     onShareClick: () -> Unit,
     onAddressClick: () -> Unit,
+    onNewTabClick: () -> Unit = {},
+    onBookmarksClick: () -> Unit = {},
+    onFindInPageClick: () -> Unit = {},
+    onDownloadsClick: () -> Unit = {},
+    onHistoryClick: () -> Unit = {},
+    onCustomizeClick: () -> Unit = {},
     onAiResearchClick: () -> Unit = {},
     onMediaClick: () -> Unit = {},
     onSwipeNextTab: () -> Unit = {},
@@ -116,7 +127,7 @@ fun PetalAddressBar(
                     .then(
                         if (resolvedIsBottom) {
                             if (isFloatingBar) {
-                                Modifier.padding(start = 12.dp, end = 12.dp, bottom = if (hasBottomNav) 0.dp else 4.dp)
+                                Modifier.padding(start = 12.dp, end = 12.dp, bottom = if (hasBottomNav) 6.dp else 4.dp)
                             } else {
                                 Modifier.padding(horizontal = 0.dp, vertical = 0.dp)
                             }
@@ -148,6 +159,13 @@ fun PetalAddressBar(
                         scaleY = v.fullBarScaleY
                         translationY = v.fullBarTranslationDp.dp.toPx()
                     }
+                    .combinedClickable(
+                        onClick = {},
+                        onLongClick = {
+                            com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
+                            onCustomizeClick()
+                        }
+                    )
             ) {
                 Box(
                     modifier = Modifier
@@ -167,17 +185,22 @@ fun PetalAddressBar(
                                 .padding(horizontal = 4.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            // Far left: Back. Long-press opens this tab's back/forward history popup.
+                            // Far left: Back. Long-press opens this tab's back/forward history popup (or History when at root).
                             val backDesc = stringResource(R.string.bar_back)
                             BarIconButton(
                                 icon = Icons.Rounded.ArrowBack,
                                 contentDescription = backDesc,
                                 enabled = canGoBack,
                                 visualWidth = btnWidth,
+                                allowLongClickWhenDisabled = true,
                                 onClick = onBackClick,
                                 onLongClick = {
                                     com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
-                                    com.petal.browser.browser.PetalTabHistoryState.requestOpen()
+                                    if (canGoBack) {
+                                        com.petal.browser.browser.PetalTabHistoryState.requestOpen()
+                                    } else {
+                                        onHistoryClick()
+                                    }
                                 },
                                 modifier = Modifier.graphicsLayer {
                                     val v = chrome.currentVisuals()
@@ -216,29 +239,42 @@ fun PetalAddressBar(
 
                             Spacer(modifier = Modifier.width(2.dp))
 
-                            // Reload, which swaps to Stop while the page loads.
-                            val reloadDesc = stringResource(if (isLoading) R.string.bar_stop_loading else R.string.bar_reload)
-                            BarIconButton(
-                                icon = if (isLoading) Icons.Rounded.Close else Icons.Rounded.Refresh,
-                                contentDescription = reloadDesc,
-                                visualWidth = btnWidth,
-                                onClick = if (isLoading) onStopClick else onReloadClick,
-                                onLongClick = if (isLoading) null else onHardRefresh,
-                                modifier = Modifier.graphicsLayer {
-                                    val v = chrome.currentVisuals()
-                                    alpha = v.sideButtonAlpha
-                                    scaleX = v.sideButtonScale
-                                    scaleY = v.sideButtonScale
-                                    translationX = v.rightButtonOffsetDp.dp.toPx()
-                                }
-                            )
+                            // Reload/Stop button (toggleable in Address Bar settings)
+                            if (settings.classicShowReload) {
+                                val reloadDesc = stringResource(if (isLoading) R.string.bar_stop_loading else R.string.bar_reload)
+                                BarIconButton(
+                                    icon = if (isLoading) Icons.Rounded.Close else Icons.Rounded.Refresh,
+                                    contentDescription = reloadDesc,
+                                    visualWidth = btnWidth,
+                                    onClick = if (isLoading) onStopClick else onReloadClick,
+                                    onLongClick = if (isLoading) null else onHardRefresh,
+                                    modifier = Modifier.graphicsLayer {
+                                        val v = chrome.currentVisuals()
+                                        alpha = v.sideButtonAlpha
+                                        scaleX = v.sideButtonScale
+                                        scaleY = v.sideButtonScale
+                                        translationX = v.rightButtonOffsetDp.dp.toPx()
+                                    }
+                                )
+                            }
 
-                            // Far right: Share
+                            // Customizable Far-Right Utility Action (Share, New Tab, Bookmarks, Find, Downloads)
+                            val (outerIcon, outerDesc, outerClick) = when (settings.classicOuterAction) {
+                                ClassicOuterAction.SHARE -> Triple(Icons.Rounded.Share, stringResource(R.string.bar_share), onShareClick)
+                                ClassicOuterAction.NEW_TAB -> Triple(Icons.Rounded.Add, stringResource(R.string.bar_new_tab), onNewTabClick)
+                                ClassicOuterAction.BOOKMARKS -> Triple(Icons.Rounded.Bookmarks, stringResource(R.string.bar_bookmark), onBookmarksClick)
+                                ClassicOuterAction.FIND_IN_PAGE -> Triple(Icons.Rounded.FindInPage, stringResource(R.string.bar_find_in_page), onFindInPageClick)
+                                ClassicOuterAction.DOWNLOADS -> Triple(Icons.Rounded.Download, stringResource(R.string.bar_downloads), onDownloadsClick)
+                            }
                             BarIconButton(
-                                icon = Icons.Rounded.Share,
-                                contentDescription = stringResource(R.string.bar_share),
+                                icon = outerIcon,
+                                contentDescription = outerDesc,
                                 visualWidth = btnWidth,
-                                onClick = onShareClick,
+                                onClick = outerClick,
+                                onLongClick = {
+                                    com.petal.browser.haptics.PetalHapticEngine.getInstance(context).thresholdCrossed(context)
+                                    onCustomizeClick()
+                                },
                                 modifier = Modifier.graphicsLayer {
                                     val v = chrome.currentVisuals()
                                     alpha = v.sideButtonAlpha

@@ -421,7 +421,8 @@ fun PetalRootApp(
             pendingExtensionPopup != null
 
     val isImeVisible = WindowInsets.ime.getBottom(density) > WindowInsets.navigationBars.getBottom(density)
-    val isBottomBarVisible = !isFullscreen && !isOverlayShowing && (!isMerge || isHome) && !(isImeVisible && !isHome)
+    val navAllowedOnSurface = isHome || barSettings.navShowOnPages
+    val isBottomBarVisible = !isFullscreen && !isOverlayShowing && navAllowedOnSurface && (!isMerge || isHome) && !(isImeVisible && !isHome)
 
     // Live underlay: while a full-screen overlay (Settings, History, Account...) is dragged away, the
     // real page below animates with it (parallax, dim, depth blur) instead of relying on a snapshot,
@@ -1034,6 +1035,7 @@ fun PetalRootApp(
                                     onSwipePrevTab = { viewModel.switchToPreviousTab() },
                                     onSwipeUp = { viewModel.toggleTabSwitcher() },
                                     onHardRefresh = { viewModel.reload() },
+                                    onPasteAndGo = { clip -> viewModel.loadUrl(clip) },
                                     onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
                                     onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
                                     isBottom = false,
@@ -1059,12 +1061,19 @@ fun PetalRootApp(
                                         activity?.startActivity(android.content.Intent.createChooser(shareIntent, context.getString(R.string.bar_share_link)))
                                     },
                                     onAddressClick = { viewModel.openOmnibox() },
+                                    onNewTabClick = { viewModel.openNewTab(selectTab = true, private = isIncognito) },
+                                    onBookmarksClick = { viewModel.openBookmarks() },
+                                    onFindInPageClick = { viewModel.openFindInPage() },
+                                    onDownloadsClick = { viewModel.openDownloads() },
+                                    onHistoryClick = { viewModel.openHistory() },
+                                    onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
                                     onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
                                     onMediaClick = {
                                         com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
                                     },
                                     onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
                                     onHardRefresh = { viewModel.reload() },
+                                    onPasteAndGo = { clip -> viewModel.loadUrl(clip) },
                                     onSwipeNextTab = { viewModel.switchToNextTab() },
                                     onSwipePrevTab = { viewModel.switchToPreviousTab() },
                                     onSwipeUp = { viewModel.toggleTabSwitcher() },
@@ -1124,6 +1133,7 @@ fun PetalRootApp(
                             onSwipePrevTab = { viewModel.switchToPreviousTab() },
                             onSwipeUp = { viewModel.toggleTabSwitcher() },
                             onHardRefresh = { viewModel.reload() },
+                            onPasteAndGo = { clip -> viewModel.loadUrl(clip) },
                             onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
                             onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
                             isBottom = isBottomAddressBar,
@@ -1162,12 +1172,19 @@ fun PetalRootApp(
                                 activity?.startActivity(android.content.Intent.createChooser(shareIntent, context.getString(R.string.bar_share_link)))
                             },
                             onAddressClick = { viewModel.openOmnibox() },
+                            onNewTabClick = { viewModel.openNewTab(selectTab = true, private = isIncognito) },
+                            onBookmarksClick = { viewModel.openBookmarks() },
+                            onFindInPageClick = { viewModel.openFindInPage() },
+                            onDownloadsClick = { viewModel.openDownloads() },
+                            onHistoryClick = { viewModel.openHistory() },
+                            onCustomizeClick = { viewModel.openSettings(com.petal.browser.compose.settings.SettingsCategory.ADDRESS_BAR) },
                             onAiResearchClick = { viewModel.openAiSheet(activeTitle) },
                             onMediaClick = {
                                 com.petal.browser.media.sniffer.PetalMediaSnifferOverlayBridge.openMediaSheet()
                             },
                             onReaderClick = { (activity as? MainActivity)?.showReaderMode() },
                             onHardRefresh = { viewModel.reload() },
+                            onPasteAndGo = { clip -> viewModel.loadUrl(clip) },
                             onSwipeNextTab = { viewModel.switchToNextTab() },
                             onSwipePrevTab = { viewModel.switchToPreviousTab() },
                             onSwipeUp = { viewModel.toggleTabSwitcher() },
@@ -1235,6 +1252,7 @@ fun PetalRootApp(
                 onSearchClick = navSearchClick,
                 onHistoryClick = navHistoryClick,
                 onBookmarksClick = navBookmarksClick,
+                onDownloadsClick = { viewModel.openDownloads() },
                 onSwipeTabLeft = navSwipeLeftClick,
                 onSwipeTabRight = navSwipeRightClick,
                 showSearch = true,

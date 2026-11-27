@@ -8,7 +8,12 @@ import com.petal.browser.ui.components.AddressBarPosition
 import com.petal.browser.ui.components.AddressBarStyle
 import com.petal.browser.ui.components.BarCollapseStyle
 import com.petal.browser.ui.components.BarPrefs
+import com.petal.browser.ui.components.BarProgressStyle
+import com.petal.browser.ui.components.ClassicOuterAction
 import com.petal.browser.ui.components.MergeLayout
+import com.petal.browser.ui.components.NavMidSlot
+import com.petal.browser.ui.components.NavSearchButtonStyle
+import com.petal.browser.ui.components.UrlDisplayMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -49,6 +54,37 @@ class AddressBarSettingsViewModel @Inject constructor(
         .map { BarCollapseStyle.fromPref(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BarCollapseStyle.PILL)
 
+    val floatingTabBar: StateFlow<Boolean> = settingsRepository.floatingTabBar
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val showNavLabels: StateFlow<Boolean> = settingsRepository.showNavLabels
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val hideBarsOnScroll: StateFlow<Boolean> = settingsRepository.hideBarsOnScroll
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val extensionChips: StateFlow<Boolean> = settingsRepository.addressBarExtensionChips
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+
+    val urlDisplayMode: StateFlow<UrlDisplayMode> = settingsRepository.urlDisplayMode
+        .map { UrlDisplayMode.fromPref(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), UrlDisplayMode.FULL)
+    val progressStyle: StateFlow<BarProgressStyle> = settingsRepository.barProgressStyle
+        .map { BarProgressStyle.fromPref(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BarProgressStyle.LINE)
+    val classicOuterAction: StateFlow<ClassicOuterAction> = settingsRepository.classicOuterAction
+        .map { ClassicOuterAction.fromPref(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), ClassicOuterAction.SHARE)
+    val classicShowReload: StateFlow<Boolean> = settingsRepository.classicShowReload
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val navSearchStyle: StateFlow<NavSearchButtonStyle> = settingsRepository.navSearchStyle
+        .map { NavSearchButtonStyle.fromPref(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavSearchButtonStyle.SEPARATE)
+    val navSwipeTabs: StateFlow<Boolean> = settingsRepository.navSwipeTabs
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val navShowOnPages: StateFlow<Boolean> = settingsRepository.navShowOnPages
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), true)
+    val navMidSlot: StateFlow<NavMidSlot> = settingsRepository.navMidSlot
+        .map { NavMidSlot.fromPref(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), NavMidSlot.NEW_TAB)
+
     fun setPosition(value: AddressBarPosition) = viewModelScope.launch { settingsRepository.setAddressBarPosition(value.pref) }
     fun setHeight(value: AddressBarHeight) = viewModelScope.launch { settingsRepository.setAddressBarHeight(value.pref) }
     fun setAction(value: String) = viewModelScope.launch { settingsRepository.setAddressBarAction(value) }
@@ -60,4 +96,17 @@ class AddressBarSettingsViewModel @Inject constructor(
     fun setMergeTrailing(value: String) = viewModelScope.launch { settingsRepository.setMergeTrailing(value) }
     fun setMergeLayout(value: MergeLayout) = viewModelScope.launch { settingsRepository.setMergeLayout(value.pref) }
     fun setCollapseStyle(value: BarCollapseStyle) = viewModelScope.launch { settingsRepository.setBarCollapseStyle(value.pref) }
+
+    fun setFloatingTabBar(enabled: Boolean) = viewModelScope.launch { settingsRepository.setFloatingTabBar(enabled) }
+    fun setShowNavLabels(enabled: Boolean) = viewModelScope.launch { settingsRepository.setShowNavLabels(enabled) }
+    fun setHideBarsOnScroll(enabled: Boolean) = viewModelScope.launch { settingsRepository.setHideBarsOnScroll(enabled) }
+    fun setExtensionChips(enabled: Boolean) = viewModelScope.launch { settingsRepository.setAddressBarExtensionChips(enabled) }
+    fun setUrlDisplayMode(mode: UrlDisplayMode) = viewModelScope.launch { settingsRepository.setUrlDisplayMode(mode.pref) }
+    fun setProgressStyle(style: BarProgressStyle) = viewModelScope.launch { settingsRepository.setBarProgressStyle(style.pref) }
+    fun setClassicOuterAction(action: ClassicOuterAction) = viewModelScope.launch { settingsRepository.setClassicOuterAction(action.pref) }
+    fun setClassicShowReload(enabled: Boolean) = viewModelScope.launch { settingsRepository.setClassicShowReload(enabled) }
+    fun setNavSearchStyle(style: NavSearchButtonStyle) = viewModelScope.launch { settingsRepository.setNavSearchStyle(style.pref) }
+    fun setNavSwipeTabs(enabled: Boolean) = viewModelScope.launch { settingsRepository.setNavSwipeTabs(enabled) }
+    fun setNavShowOnPages(enabled: Boolean) = viewModelScope.launch { settingsRepository.setNavShowOnPages(enabled) }
+    fun setNavMidSlot(slot: NavMidSlot) = viewModelScope.launch { settingsRepository.setNavMidSlot(slot.pref) }
 }

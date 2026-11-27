@@ -297,7 +297,7 @@ fun PetalMergedBar(
                         )
 
                         // Material 3 Expressive Progress Bar (between AddressPill and Action Buttons)
-                        if (isLoading && progress > 0f) {
+                        if (settings.progressStyle == BarProgressStyle.LINE && isLoading && progress > 0f) {
                             Material3ExpressiveProgressIndicator(
                                 progress = progress,
                                 visible = isLoading,

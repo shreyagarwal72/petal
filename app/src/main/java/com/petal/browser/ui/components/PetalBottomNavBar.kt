@@ -58,8 +58,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Bookmarks
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Share
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import com.petal.browser.ui.kit.IconButton
@@ -130,7 +134,29 @@ private class PetalNavCallbacks(
     val onSearchClick: () -> Unit,
     val onHistoryClick: () -> Unit,
     val onBookmarksClick: () -> Unit,
+    val onDownloadsClick: () -> Unit,
 )
+
+internal data class NavMidSlotSpec(
+    val icon: ImageVector,
+    val labelRes: Int,
+    val isAddSlot: Boolean,
+    val onClick: () -> Unit,
+    val onLongClick: (() -> Unit)? = null
+)
+
+internal fun resolveNavMidSlot(
+    slot: NavMidSlot,
+    onNewTabClick: () -> Unit,
+    onBookmarksClick: () -> Unit,
+    onHistoryClick: () -> Unit,
+    onDownloadsClick: () -> Unit
+): NavMidSlotSpec = when (slot) {
+    NavMidSlot.NEW_TAB -> NavMidSlotSpec(Icons.Rounded.Add, R.string.bar_new, true, onNewTabClick, onNewTabClick)
+    NavMidSlot.BOOKMARKS -> NavMidSlotSpec(Icons.Rounded.Bookmarks, R.string.bar_bookmark, false, onBookmarksClick, onNewTabClick)
+    NavMidSlot.HISTORY -> NavMidSlotSpec(Icons.Rounded.History, R.string.bar_history, false, onHistoryClick, onNewTabClick)
+    NavMidSlot.DOWNLOADS -> NavMidSlotSpec(Icons.Rounded.Download, R.string.bar_downloads, false, onDownloadsClick, onNewTabClick)
+}
 
 // -------------------------------------------------------------------------------------------------
 // Modern Floating Bottom Navigation Bar (Unified Normal & Incognito Architecture with Rich Motion)
@@ -165,8 +191,10 @@ fun PetalBottomNavBar(
     onSearchClick: () -> Unit = {},
     onHistoryClick: () -> Unit = {},
     onBookmarksClick: () -> Unit = {},
+    onDownloadsClick: () -> Unit = {},
     showSearch: Boolean = true,
     isOmniboxOpen: Boolean = false,
+    isPreview: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -181,6 +209,7 @@ fun PetalBottomNavBar(
     val currentSearch by rememberUpdatedState(onSearchClick)
     val currentHistory by rememberUpdatedState(onHistoryClick)
     val currentBookmarks by rememberUpdatedState(onBookmarksClick)
+    val currentDownloads by rememberUpdatedState(onDownloadsClick)
     val callbacks = remember {
         PetalNavCallbacks(
             onHomeClick = { currentHome() },
@@ -193,6 +222,7 @@ fun PetalBottomNavBar(
             onSearchClick = { currentSearch() },
             onHistoryClick = { currentHistory() },
             onBookmarksClick = { currentBookmarks() },
+            onDownloadsClick = { currentDownloads() },
         )
     }
 
@@ -230,69 +260,82 @@ fun PetalBottomNavBar(
         }
     }
 
-    val newTabLabel = stringResource(R.string.bar_new)
+    val midSlot = barSettings.navMidSlot
+    val midSlotSpec = resolveNavMidSlot(
+        slot = midSlot,
+        onNewTabClick = callbacks.onNewTabClick,
+        onBookmarksClick = callbacks.onBookmarksClick,
+        onHistoryClick = callbacks.onHistoryClick,
+        onDownloadsClick = callbacks.onDownloadsClick
+    )
+    val newTabLabel = stringResource(midSlotSpec.labelRes)
+    val navSearchStyle = barSettings.navSearchStyle
+    val navSwipeEnabled = barSettings.navSwipeTabs && !isPreview
 
     val isHomeTab = selectedTab == PetalNavTab.HOME
-    // AI lives on the home page only; the Search button is for every other page.
+    // AI lives on the home page only; the Search button is for every other page (unless hidden).
     val onHomePage = selectedTab == PetalNavTab.HOME || selectedTab == PetalNavTab.AI
-    val searchAllowed = showSearch && !onHomePage
+    val searchAllowed = showSearch && !onHomePage && navSearchStyle != NavSearchButtonStyle.HIDDEN
     val aiShift = if (onHomePage) 1 else 0
     val ambientGlassSource = com.petal.browser.ui.glass.LocalPetalGlassSource.current
-    val resolvedGlassSource = if (isHomeTab) null else (glassSource ?: ambientGlassSource ?: (context as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
+    val resolvedGlassSource = if (isHomeTab || isPreview) null else (glassSource ?: ambientGlassSource ?: (context as? android.app.Activity)?.findViewById<android.view.View>(com.petal.browser.R.id.main_content))
 
     val effectiveFloating = isFloatingStyle && !isBottomAddressBar
     com.petal.browser.ui.glass.LocalPetalGlassRevision.current
     val glassSupported = remember(context) {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !com.petal.browser.motion.MotionGate.isLowEndDevice(context)
     }
-    val themeGlassNav = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") && glassSupported
+    val themeGlassNav = !isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") && glassSupported
     val glassNavOn = themeGlassNav
-    // Liquid glass + floating: search is its own glass button on the right.
-    // Everything else (Material 3 Expressive floating/docked, glass docked): search sits in the centre.
-    val separateSearch = searchAllowed && effectiveFloating && glassNavOn
-    // Material 3 Expressive floating (glass off): PixelMusic-style pill + separate ghost-shaped search.
+    // Liquid glass + floating + SEPARATE: search is its own glass button on the right.
+    val separateSearch = searchAllowed && effectiveFloating && glassNavOn && navSearchStyle == NavSearchButtonStyle.SEPARATE
+    // Material 3 Expressive floating (glass off): PixelMusic-style pill + optional separate ghost-shaped search.
     val pixelStyle = effectiveFloating && !glassNavOn
-    val pixelSearch = searchAllowed && pixelStyle
+    val pixelSearch = searchAllowed && pixelStyle && navSearchStyle == NavSearchButtonStyle.SEPARATE
     val centerSearch = searchAllowed && !separateSearch && !pixelSearch
     // The docked bar (glass or solid) runs through the gesture-bar area like Brave's, so no
     // gap shows between the bar and the screen edge and no page shows unblurred under it.
-    val flatNavInset = if (!effectiveFloating) {
+    val flatNavInset = if (!effectiveFloating && !isPreview) {
         with(LocalDensity.current) { WindowInsets.navigationBars.getBottom(this).toDp() }
     } else 0.dp
 
     // Derived booleans flip only when visibility crosses threshold — scrolling never recomposes the nav.
-    val collapseFractionProvider: () -> Float = remember { { BarCollapseState.collapsedFraction } }
-    val collapseAlphaProvider: () -> Float = remember(barSettings.collapseStyle, isBottomAddressBar) {
-        {
+    val collapseFractionProvider: () -> Float = remember(isPreview) {
+        if (isPreview) ({ 0f }) else ({ BarCollapseState.collapsedFraction })
+    }
+    val collapseAlphaProvider: () -> Float = remember(barSettings.collapseStyle, isBottomAddressBar, isPreview) {
+        if (isPreview) ({ 1f }) else ({
             BarCollapseMath.compute(
                 barSettings.collapseStyle,
                 collapseFractionProvider(),
                 isBottomAddressBar
             ).navAlpha
-        }
+        })
     }
-    val navInteractive by remember(barSettings.collapseStyle, isBottomAddressBar) {
+    val navInteractive by remember(barSettings.collapseStyle, isBottomAddressBar, isPreview) {
         derivedStateOf {
-            BarCollapseMath.compute(
+            isPreview || BarCollapseMath.compute(
                 barSettings.collapseStyle,
                 collapseFractionProvider(),
                 isBottomAddressBar
             ).navVisible
         }
     }
-    val navMounted by remember(barSettings.collapseStyle, isBottomAddressBar) {
+    val navMounted by remember(barSettings.collapseStyle, isBottomAddressBar, isPreview) {
         derivedStateOf {
-            val v = BarCollapseMath.compute(
-                barSettings.collapseStyle,
-                collapseFractionProvider(),
-                isBottomAddressBar
-            )
-            v.navVisible && v.navAlpha >= 0.05f
+            if (isPreview) true else {
+                val v = BarCollapseMath.compute(
+                    barSettings.collapseStyle,
+                    collapseFractionProvider(),
+                    isBottomAddressBar
+                )
+                v.navVisible && v.navAlpha >= 0.05f
+            }
         }
     }
     if (!navMounted) return
     val showLabels = barSettings.showNavLabels
-    val activeGlassSource = if (BarCollapseState.isPageScrolling) null else resolvedGlassSource
+    val activeGlassSource = if (BarCollapseState.isPageScrolling || isPreview) null else resolvedGlassSource
 
     if (effectiveFloating) {
         // Stride's floating glass nav bar (see PetalStrideNavBar): the tab pill sits in the
@@ -314,8 +357,8 @@ fun PetalBottomNavBar(
                     }
                 }
                 .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(bottom = 10.dp, start = 8.dp, end = 8.dp),
+                .then(if (!isPreview) Modifier.navigationBarsPadding() else Modifier)
+                .padding(bottom = if (isPreview) 6.dp else 10.dp, start = 8.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
@@ -341,13 +384,18 @@ fun PetalBottomNavBar(
                         onHomeClick = callbacks.onHomeClick,
                         onAiClick = callbacks.onAiClick,
                         onNewTabClick = callbacks.onNewTabClick,
+                        onSearchClick = launchSearch,
                         onTabsClick = callbacks.onTabsClick,
                         onMenuClick = callbacks.onMenuClick,
                         onSwipeTabLeft = callbacks.onSwipeTabLeft,
                         onSwipeTabRight = callbacks.onSwipeTabRight,
                         onHistoryClick = callbacks.onHistoryClick,
                         onBookmarksClick = callbacks.onBookmarksClick,
+                        onDownloadsClick = callbacks.onDownloadsClick,
+                        includeSearch = centerSearch,
                         includeAi = onHomePage,
+                        swipeTabsEnabled = navSwipeEnabled,
+                        midSlot = midSlot,
                         enabled = navInteractive,
                         showLabels = showLabels,
                         modifier = Modifier.fillMaxWidth()
@@ -367,9 +415,12 @@ fun PetalBottomNavBar(
                         onSwipeTabRight = callbacks.onSwipeTabRight,
                         onHistoryClick = callbacks.onHistoryClick,
                         onBookmarksClick = callbacks.onBookmarksClick,
+                        onDownloadsClick = callbacks.onDownloadsClick,
                         compact = separateSearch,
                         includeSearch = centerSearch,
                         includeAi = onHomePage,
+                        swipeTabsEnabled = navSwipeEnabled,
+                        midSlot = midSlot,
                         enabled = navInteractive,
                         showLabels = showLabels,
                         collapseAlphaProvider = collapseAlphaProvider,
@@ -407,10 +458,30 @@ fun PetalBottomNavBar(
             }
         }
     } else {
-        // Material 3 Expressive Non-Floating Bottom Navigation Bar
+        // Material 3 Expressive Non-Floating Bottom Navigation Bar (now supports horizontal tab swipe too)
+        var dockedDrag by remember { androidx.compose.runtime.mutableFloatStateOf(0f) }
+        val currentNavSwipeEnabled by rememberUpdatedState(navSwipeEnabled && navInteractive)
         Box(
             modifier = modifier
                 .onGloballyPositioned { navBarBounds[0] = it.boundsInWindow() }
+                .pointerInput(navSwipeEnabled) {
+                    if (!navSwipeEnabled) return@pointerInput
+                    detectHorizontalDragGestures(
+                        onDragStart = { dockedDrag = 0f },
+                        onDragEnd = {
+                            if (currentNavSwipeEnabled) {
+                                val threshold = 90.dp.toPx()
+                                if (dockedDrag > threshold) callbacks.onSwipeTabLeft()
+                                else if (dockedDrag < -threshold) callbacks.onSwipeTabRight()
+                            }
+                            dockedDrag = 0f
+                        },
+                        onDragCancel = { dockedDrag = 0f },
+                        onHorizontalDrag = { _, dragAmount ->
+                            if (currentNavSwipeEnabled) dockedDrag += dragAmount
+                        }
+                    )
+                }
                 .graphicsLayer {
                     val v = BarCollapseMath.compute(
                         barSettings.collapseStyle,
@@ -433,7 +504,7 @@ fun PetalBottomNavBar(
             // no window background or black overlay is exposed at the corners.
             val navBarShape = RoundedCornerShape(0.dp)
             com.petal.browser.ui.glass.LocalPetalGlassRevision.current
-            val isLiquidGlass = com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") && glassSupported
+            val isLiquidGlass = !isPreview && com.petal.browser.ui.containment.isLiquidGlassEnabled("sp_liquid_glass_bottom_nav") && glassSupported
             val glassBar = com.petal.browser.ui.glass.rememberGlassBar(if (isLiquidGlass) activeGlassSource else null)
             val baseContainer = if (isIncognito) com.petal.browser.ui.theme.IncognitoSurfaceContainer else MaterialTheme.colorScheme.surfaceContainerHigh
 
@@ -553,7 +624,7 @@ fun PetalBottomNavBar(
                             .onGloballyPositioned { newTabButtonBounds[0] = it.boundsInWindow() },
                         icon = { isSelected, tint ->
                             val rotationAngle by animateFloatAsState(
-                                targetValue = if (isSelected) 90f else 0f,
+                                targetValue = if (isSelected && midSlotSpec.isAddSlot) 90f else 0f,
                                 animationSpec = PetalSpring.calm(),
                                 label = "add_expressive_rotation"
                             )
@@ -563,7 +634,7 @@ fun PetalBottomNavBar(
                                 label = "add_expressive_scale"
                             )
                             Icon(
-                                imageVector = Icons.Rounded.Add,
+                                imageVector = midSlotSpec.icon,
                                 contentDescription = null,
                                 tint = tint,
                                 modifier = Modifier
@@ -576,16 +647,18 @@ fun PetalBottomNavBar(
                             )
                         },
                         onClick = {
-                            val bounds = newTabButtonBounds[0] ?: navBarBounds[0]
-                            val rad = if (bounds != null) bounds.height / 2f else 24f
-                            PetalNewTabOrigin.mark(bounds, rad)
-                            callbacks.onNewTabClick()
+                            if (midSlotSpec.isAddSlot) {
+                                val bounds = newTabButtonBounds[0] ?: navBarBounds[0]
+                                val rad = if (bounds != null) bounds.height / 2f else 24f
+                                PetalNewTabOrigin.mark(bounds, rad)
+                            }
+                            midSlotSpec.onClick()
                         },
                         onLongClick = {
                             val bounds = newTabButtonBounds[0] ?: navBarBounds[0]
                             val rad = if (bounds != null) bounds.height / 2f else 24f
                             PetalNewTabOrigin.mark(bounds, rad)
-                            callbacks.onNewTabClick()
+                            (midSlotSpec.onLongClick ?: callbacks.onNewTabClick).invoke()
                         }
                     )
 

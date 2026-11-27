@@ -32,10 +32,12 @@ fun BarIconButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     visualWidth: Dp = 48.dp,
+    allowLongClickWhenDisabled: Boolean = false,
     onLongClick: (() -> Unit)? = null
 ) {
     val tint = if (enabled) MaterialTheme.colorScheme.onSurface
     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+    val clickableEnabled = enabled || (allowLongClickWhenDisabled && onLongClick != null)
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier
@@ -43,11 +45,11 @@ fun BarIconButton(
             .heightIn(min = 48.dp)
             .clip(CircleShape)
             .combinedClickable(
-                enabled = enabled,
+                enabled = clickableEnabled,
                 role = Role.Button,
                 indication = ripple(bounded = true),
                 interactionSource = remember { MutableInteractionSource() },
-                onClick = onClick,
+                onClick = { if (enabled) onClick() },
                 onLongClick = onLongClick
             )
     ) {

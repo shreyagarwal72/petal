@@ -62,8 +62,20 @@ fun AddressBarSettingsScreen(
     val mergeLayout by viewModel.mergeLayout.collectAsStateWithLifecycle()
     val collapseStyle by viewModel.collapseStyle.collectAsStateWithLifecycle()
 
+    val floatingTabBar by viewModel.floatingTabBar.collectAsStateWithLifecycle()
+    val showNavLabels by viewModel.showNavLabels.collectAsStateWithLifecycle()
+    val hideBarsOnScroll by viewModel.hideBarsOnScroll.collectAsStateWithLifecycle()
+    val extensionChips by viewModel.extensionChips.collectAsStateWithLifecycle()
+    val urlDisplayMode by viewModel.urlDisplayMode.collectAsStateWithLifecycle()
+    val progressStyle by viewModel.progressStyle.collectAsStateWithLifecycle()
+    val classicOuterAction by viewModel.classicOuterAction.collectAsStateWithLifecycle()
+    val classicShowReload by viewModel.classicShowReload.collectAsStateWithLifecycle()
+    val navSearchStyle by viewModel.navSearchStyle.collectAsStateWithLifecycle()
+    val navSwipeTabs by viewModel.navSwipeTabs.collectAsStateWithLifecycle()
+    val navShowOnPages by viewModel.navShowOnPages.collectAsStateWithLifecycle()
+    val navMidSlot by viewModel.navMidSlot.collectAsStateWithLifecycle()
+
     val context = LocalContext.current
-    val haptics = remember { PetalHapticEngine.getInstance(context) }
     var showPositionExplainer by remember { mutableStateOf(false) }
 
     val isMerge = style == AddressBarStyle.MERGE
@@ -77,6 +89,16 @@ fun AddressBarSettingsScreen(
     val totalButtons = leadingActions.size + trailingActions.size
 
     var showAddActionSheetForLeading by remember { mutableStateOf<Boolean?>(null) }
+
+    // Interactive live preview controls
+    var previewIsHome by remember { mutableStateOf(false) }
+    var previewIncognito by remember { mutableStateOf(false) }
+    var previewLoading by remember { mutableStateOf(false) }
+    var previewCollapsed by remember { mutableStateOf(false) }
+    var previewNavTab by remember { mutableStateOf(PetalNavTab.TABS) }
+    LaunchedEffect(previewIsHome) {
+        previewNavTab = if (previewIsHome) PetalNavTab.HOME else PetalNavTab.TABS
+    }
 
     PetalFeatureExplainerDialog(
         visible = showPositionExplainer,
@@ -120,42 +142,131 @@ fun AddressBarSettingsScreen(
                     .padding(start = 16.dp, end = 16.dp, top = topInset + 16.dp, bottom = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // ── Live Interactive Toolbar Preview ─────────────────────────────────
+                // ── Live Interactive Stage Preview (Address Bar + Bottom Navbar) ──────
                 PetalSettingsSection(
-                    title = if (isMerge) "Live Merge Bar Preview" else "Toolbar Preview",
+                    title = "Live Interactive Preview",
                     icon = Icons.Rounded.Preview,
                     cardId = "address_bar_preview"
                 ) {
                     Text(
-                        text = if (isMerge) "Real-time preview with current button layout and styling"
-                        else "Previewing standard split bar layout",
+                        text = if (isMerge) "Interactive stage showing Merge Bar + Bottom Navbar state in real time"
+                        else "Interactive stage showing Classic Address Bar + Bottom Navbar together",
                         style = PetalText.caption,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(Modifier.height(8.dp))
 
-                    Surface(
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        tonalElevation = 2.dp,
+                    ScrollFadeRow(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        if (isMerge) {
+                        FilterChip(
+                            selected = previewIsHome,
+                            onClick = { previewIsHome = !previewIsHome },
+                            label = { Text(if (previewIsHome) "Surface: Home" else "Surface: Web") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (previewIsHome) Icons.Rounded.Home else Icons.Rounded.Language,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        )
+                        FilterChip(
+                            selected = previewIncognito,
+                            onClick = { previewIncognito = !previewIncognito },
+                            label = { Text(if (previewIncognito) "Incognito" else "Normal") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = if (previewIncognito) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        )
+                        FilterChip(
+                            selected = previewLoading,
+                            onClick = { previewLoading = !previewLoading },
+                            label = { Text("Loading") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.Refresh,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        )
+                        FilterChip(
+                            selected = previewCollapsed && hideBarsOnScroll,
+                            enabled = hideBarsOnScroll && !previewIsHome,
+                            onClick = { previewCollapsed = !previewCollapsed },
+                            label = { Text(if (collapseStyle == BarCollapseStyle.PILL) "Scrolled Pill" else "Scrolled Hidden") },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Rounded.SwapVert,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        )
+                    }
+
+                    Spacer(Modifier.height(8.dp))
+
+                    val previewUrl = if (previewIsHome) "about:home" else "https://petal.browser.org/docs/guide?ref=bar"
+                    val previewTitle = if (previewIsHome) "Petal Home" else "Petal Browser — Guide"
+                    val isBottomPos = position == AddressBarPosition.BOTTOM
+                    val showPreviewNav = previewIsHome || (!isMerge && navShowOnPages)
+                    val isCollapsedNow = previewCollapsed && hideBarsOnScroll && !previewIsHome
+
+                    @Composable
+                    fun PreviewAddressBarSlot() {
+                        if (isCollapsedNow) {
+                            if (collapseStyle == BarCollapseStyle.PILL) {
+                                PetalMinimizedPill(
+                                    domain = "petal.browser.org",
+                                    isHttps = true,
+                                    isIncognito = previewIncognito,
+                                    isBottom = isBottomPos,
+                                    progress = if (previewLoading) 0.65f else 0f,
+                                    isLoading = previewLoading,
+                                    isPreview = true,
+                                    onPillClick = { previewCollapsed = false },
+                                    onExpand = { previewCollapsed = false },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            } else {
+                                Surface(
+                                    shape = RoundedCornerShape(14.dp),
+                                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                                    onClick = { previewCollapsed = false },
+                                    modifier = Modifier.padding(vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = "Bars hidden on scroll · Tap to expand",
+                                        style = PetalText.badge,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
+                                }
+                            }
+                        } else if (isMerge) {
                             PetalMergedBar(
-                                url = "https://petal.browser.org/features",
-                                title = "Petal Browser",
-                                progress = 0f,
-                                isIncognito = false,
-                                isLoading = false,
-                                canGoBack = true,
-                                canGoForward = true,
+                                url = previewUrl,
+                                title = previewTitle,
+                                progress = if (previewLoading) 0.65f else 0f,
+                                isIncognito = previewIncognito,
+                                isLoading = previewLoading,
+                                canGoBack = !previewIsHome,
+                                canGoForward = false,
                                 tabCount = 3,
                                 onBackClick = {},
                                 onForwardClick = {},
-                                onReloadClick = {},
+                                onReloadClick = { previewLoading = !previewLoading },
+                                onStopClick = { previewLoading = false },
                                 onShareClick = {},
                                 onAddressClick = {},
-                                onHomeClick = {},
+                                onHomeClick = { previewIsHome = true },
                                 onNewTabClick = {},
                                 onTabsClick = {},
                                 onMenuClick = {},
@@ -167,38 +278,133 @@ fun AddressBarSettingsScreen(
                                 onMediaClick = {},
                                 onSwipeNextTab = {},
                                 onSwipePrevTab = {},
-                                isReaderEligible = true,
-                                isBottom = position == AddressBarPosition.BOTTOM,
+                                isReaderEligible = !previewIsHome,
+                                isBottom = isBottomPos,
                                 isPreview = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         } else {
                             PetalAddressBar(
-                                url = "https://petal.browser.org/features",
-                                title = "Petal Browser",
-                                progress = 0f,
-                                isIncognito = false,
-                                isLoading = false,
-                                canGoBack = true,
+                                url = previewUrl,
+                                title = previewTitle,
+                                progress = if (previewLoading) 0.65f else 0f,
+                                isIncognito = previewIncognito,
+                                isLoading = previewLoading,
+                                canGoBack = !previewIsHome,
                                 onBackClick = {},
+                                onReloadClick = { previewLoading = !previewLoading },
+                                onStopClick = { previewLoading = false },
                                 onShareClick = {},
                                 onAddressClick = {},
+                                onNewTabClick = {},
+                                onBookmarksClick = {},
+                                onFindInPageClick = {},
+                                onDownloadsClick = {},
+                                onHistoryClick = {},
                                 onAiResearchClick = {},
                                 onMediaClick = {},
                                 onSwipeNextTab = {},
                                 onSwipePrevTab = {},
-                                isReaderEligible = true,
-                                isBottom = position == AddressBarPosition.BOTTOM,
+                                isReaderEligible = !previewIsHome,
+                                isBottom = isBottomPos,
+                                hasBottomNav = showPreviewNav,
                                 isPreview = true,
                                 modifier = Modifier.fillMaxWidth()
                             )
+                        }
+                    }
+
+                    Surface(
+                        shape = RoundedCornerShape(22.dp),
+                        color = if (previewIncognito) com.petal.browser.ui.theme.IncognitoSurfaceContainer else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        tonalElevation = 2.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (!isBottomPos) {
+                                PreviewAddressBarSlot()
+                            }
+
+                            // Mini simulated viewport content so users see contrast, rounding & stacking
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (previewIncognito) Color(0xFF1F1B24) else MaterialTheme.colorScheme.surface,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = if (previewIsHome) "Petal Home Wallpaper & Shortcuts" else "petal.browser.org — Article Viewport",
+                                            style = PetalText.badge,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                        Text(
+                                            text = buildString {
+                                                append(if (isMerge) "Merge" else "Classic")
+                                                append(" · ")
+                                                append(if (isBottomPos) "Bottom" else "Top")
+                                                append(" · ")
+                                                append(height.barDp)
+                                                append("dp")
+                                                if (showPreviewNav) {
+                                                    append(if (floatingTabBar && !isBottomPos) " · Floating Nav" else " · Docked Nav")
+                                                }
+                                            },
+                                            style = PetalText.caption,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                    Text(
+                                        text = if (isCollapsedNow) "SCROLLED" else "ACTIVE",
+                                        style = PetalText.badge,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+
+                            if (isBottomPos) {
+                                PreviewAddressBarSlot()
+                            }
+
+                            if (showPreviewNav && !isCollapsedNow) {
+                                PetalBottomNavBar(
+                                    selectedTab = previewNavTab,
+                                    tabCount = 3,
+                                    isIncognito = previewIncognito,
+                                    isFloatingStyle = floatingTabBar,
+                                    isBottomAddressBar = isBottomPos,
+                                    onHomeClick = { previewNavTab = PetalNavTab.HOME; previewIsHome = true },
+                                    onAiClick = { previewNavTab = PetalNavTab.AI },
+                                    onNewTabClick = { previewNavTab = PetalNavTab.NEW_TAB },
+                                    onTabsClick = { previewNavTab = PetalNavTab.TABS; previewIsHome = false },
+                                    onMenuClick = { previewNavTab = PetalNavTab.MENU },
+                                    onSearchClick = { previewNavTab = PetalNavTab.SEARCH },
+                                    showSearch = true,
+                                    isPreview = true,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
 
                 // ── Bar Style Selection (Classic vs Merge) ──────────────────────────
                 PetalSettingsSection(
-                    title = "Bar Style",
+                    title = "Bar Style & URL Display",
                     icon = Icons.Rounded.DashboardCustomize,
                     cardId = "address_bar_style",
                     highlightIds = listOf("address_bar"),
@@ -218,6 +424,66 @@ fun AddressBarSettingsScreen(
                         selected = style.pref,
                         onSelect = { selectedStyle ->
                             viewModel.setStyle(AddressBarStyle.fromPref(selectedStyle))
+                        }
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "Toolbar Height",
+                        style = PetalText.sectionHeader,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    PetalChoiceButtonGroup(
+                        options = listOf(
+                            PetalButtonGroupItem(AddressBarHeight.COMPACT.pref, "Compact (50dp)"),
+                            PetalButtonGroupItem(AddressBarHeight.STANDARD.pref, "Standard (56dp)")
+                        ),
+                        selected = height.pref,
+                        onSelect = { selectedH ->
+                            viewModel.setHeight(AddressBarHeight.fromPref(selectedH))
+                        }
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "URL Display Format",
+                        style = PetalText.sectionHeader,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = "Full shows full link + security label; Compact hides path; Domain Only hides path and lock icon on HTTPS.",
+                        style = PetalText.caption,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    PetalChoiceButtonGroup(
+                        options = listOf(
+                            PetalButtonGroupItem(UrlDisplayMode.FULL.pref, "Full URL"),
+                            PetalButtonGroupItem(UrlDisplayMode.COMPACT.pref, "Compact"),
+                            PetalButtonGroupItem(UrlDisplayMode.DOMAIN_ONLY.pref, "Domain Only")
+                        ),
+                        selected = urlDisplayMode.pref,
+                        onSelect = { selectedMode ->
+                            viewModel.setUrlDisplayMode(UrlDisplayMode.fromPref(selectedMode))
+                        }
+                    )
+
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        text = "Loading Progress Indicator",
+                        style = PetalText.sectionHeader,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    PetalChoiceButtonGroup(
+                        options = listOf(
+                            PetalButtonGroupItem(BarProgressStyle.LINE.pref, "Progress Line"),
+                            PetalButtonGroupItem(BarProgressStyle.HIDDEN.pref, "Hidden")
+                        ),
+                        selected = progressStyle.pref,
+                        onSelect = { selectedProg ->
+                            viewModel.setProgressStyle(BarProgressStyle.fromPref(selectedProg))
                         }
                     )
                 }
@@ -420,9 +686,10 @@ fun AddressBarSettingsScreen(
                     }
                 }
 
-                // ── Right-Side Action (Classic bar only) ──────────────────────────────
+                // ── Classic Toolbar Buttons (Classic bar only) ──────────────────────
                 if (!isMerge) {
-                    PetalSettingsSection("Right-side action", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
+                    PetalSettingsSection("Classic Toolbar Buttons", icon = Icons.Rounded.AutoAwesome, cardId = "address_bar_action", targetHighlightId = targetHighlightItemId) {
+                        Text("Pill Right Action", style = PetalText.sectionHeader, color = MaterialTheme.colorScheme.onSurface)
                         Text(stringResource(R.string.ui_choose_the_optional_action_shown), style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(4.dp))
                         PetalChoiceButtonGroup(
@@ -434,6 +701,128 @@ fun AddressBarSettingsScreen(
                             selected = action.uppercase(),
                             onSelect = { viewModel.setAction(it) }
                         )
+
+                        Spacer(Modifier.height(12.dp))
+                        Text("Far-Right Utility Button", style = PetalText.sectionHeader, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Customize the rightmost icon beside the URL pill.", style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.height(4.dp))
+                        ScrollFadeRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            listOf(
+                                ClassicOuterAction.SHARE to "Share",
+                                ClassicOuterAction.NEW_TAB to "New Tab",
+                                ClassicOuterAction.BOOKMARKS to "Bookmarks",
+                                ClassicOuterAction.FIND_IN_PAGE to "Find",
+                                ClassicOuterAction.DOWNLOADS to "Downloads"
+                            ).forEach { (item, label) ->
+                                FilterChip(
+                                    selected = classicOuterAction == item,
+                                    onClick = { viewModel.setClassicOuterAction(item) },
+                                    label = { Text(label) }
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+                        PetalGroup(rowCount = 1) { _, groupPos ->
+                            PetalSettingsToggleRow(
+                                title = "Show Reload / Stop button",
+                                subtitle = "Show refresh and stop button beside the outer action button",
+                                icon = Icons.Rounded.Refresh,
+                                checked = classicShowReload,
+                                position = groupPos,
+                                onCheckedChange = viewModel::setClassicShowReload
+                            )
+                        }
+                    }
+                }
+
+                // ── Bottom Navbar Customization ──────────────────────────────────────
+                PetalSettingsSection(
+                    title = "Bottom Navbar",
+                    icon = Icons.Rounded.SpaceBar,
+                    cardId = "bottom_navbar_custom",
+                    targetHighlightId = targetHighlightItemId
+                ) {
+                    Text(
+                        text = if (position == AddressBarPosition.BOTTOM) "Bottom position automatically uses the Docked navbar layout."
+                        else "Customize the floating pill vs docked bottom navigation bar.",
+                        style = PetalText.caption,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(Modifier.height(8.dp))
+
+                    PetalGroup(rowCount = 4) { index, groupPos ->
+                        when (index) {
+                            0 -> PetalSettingsToggleRow(
+                                title = stringResource(R.string.ui_floating_tab_bar),
+                                subtitle = stringResource(R.string.ui_show_the_bottom_bar_as),
+                                icon = Icons.Rounded.SpaceBar,
+                                checked = floatingTabBar,
+                                position = groupPos,
+                                onCheckedChange = viewModel::setFloatingTabBar
+                            )
+                            1 -> PetalSettingsToggleRow(
+                                title = stringResource(R.string.ui_show_nav_labels),
+                                subtitle = stringResource(R.string.ui_show_nav_labels_desc),
+                                icon = Icons.Rounded.Label,
+                                checked = showNavLabels,
+                                position = groupPos,
+                                onCheckedChange = viewModel::setShowNavLabels
+                            )
+                            2 -> PetalSettingsToggleRow(
+                                title = "Show navbar on web pages",
+                                subtitle = "When off, classic mode shows the bottom navbar only on Home",
+                                icon = Icons.Rounded.Layers,
+                                checked = navShowOnPages,
+                                position = groupPos,
+                                onCheckedChange = viewModel::setNavShowOnPages
+                            )
+                            3 -> PetalSettingsToggleRow(
+                                title = "Swipe navbar to switch tabs",
+                                subtitle = "Swipe horizontally across floating or docked bottom navbar",
+                                icon = Icons.Rounded.Swipe,
+                                checked = navSwipeTabs,
+                                position = groupPos,
+                                onCheckedChange = viewModel::setNavSwipeTabs
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.height(10.dp))
+                    Text("Search Button Placement", style = PetalText.sectionHeader, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(4.dp))
+                    PetalChoiceButtonGroup(
+                        options = listOf(
+                            PetalButtonGroupItem(NavSearchButtonStyle.SEPARATE.pref, "Separate"),
+                            PetalButtonGroupItem(NavSearchButtonStyle.INTEGRATED.pref, "Integrated"),
+                            PetalButtonGroupItem(NavSearchButtonStyle.HIDDEN.pref, "Hidden")
+                        ),
+                        selected = navSearchStyle.pref,
+                        onSelect = { viewModel.setNavSearchStyle(NavSearchButtonStyle.fromPref(it)) }
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+                    Text("Middle Shortcut Slot", style = PetalText.sectionHeader, color = MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.height(4.dp))
+                    ScrollFadeRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        listOf(
+                            NavMidSlot.NEW_TAB to "New Tab",
+                            NavMidSlot.BOOKMARKS to "Bookmarks",
+                            NavMidSlot.HISTORY to "History",
+                            NavMidSlot.DOWNLOADS to "Downloads"
+                        ).forEach { (slot, label) ->
+                            FilterChip(
+                                selected = navMidSlot == slot,
+                                onClick = { viewModel.setNavMidSlot(slot) },
+                                label = { Text(label) }
+                            )
+                        }
                     }
                 }
 
@@ -444,12 +833,7 @@ fun AddressBarSettingsScreen(
                     cardId = "address_bar_gestures",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    val barsSp = remember(context) { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-                    var hideBarsOnScroll by remember { mutableStateOf(barsSp.getBoolean(BarPrefs.KEY_HIDE_BARS_ON_SCROLL, true)) }
-                    var extensionChips by remember { mutableStateOf(barsSp.getBoolean("sp_address_bar_extension_chips", true)) }
-                    var showNavLabels by remember { mutableStateOf(barsSp.getBoolean(BarSettings.KEY_SHOW_NAV_LABELS, true)) }
-
-                    PetalGroup(rowCount = 5) { index, groupPos ->
+                    PetalGroup(rowCount = 4) { index, groupPos ->
                         when (index) {
                             0 -> PetalSettingsToggleRow(
                                 title = stringResource(R.string.ui_address_bar_horizontal_swipe_to),
@@ -474,32 +858,17 @@ fun AddressBarSettingsScreen(
                                 checked = hideBarsOnScroll,
                                 position = groupPos,
                                 onCheckedChange = { on ->
-                                    hideBarsOnScroll = on
-                                    barsSp.edit().putBoolean(BarPrefs.KEY_HIDE_BARS_ON_SCROLL, on).apply()
+                                    viewModel.setHideBarsOnScroll(on)
                                     if (!on) (context as? MainActivity)?.animateAddressBarCollapse(false)
                                 }
                             )
                             3 -> PetalSettingsToggleRow(
                                 title = "Extension buttons in address bar",
-                                subtitle = "Show up to two extension actions for the current page next to the address.",
+                                subtitle = "Show extension actions for the current page next to the address.",
                                 icon = Icons.Rounded.Extension,
                                 checked = extensionChips,
                                 position = groupPos,
-                                onCheckedChange = { on ->
-                                    extensionChips = on
-                                    barsSp.edit().putBoolean("sp_address_bar_extension_chips", on).apply()
-                                }
-                            )
-                            4 -> PetalSettingsToggleRow(
-                                title = stringResource(R.string.ui_show_nav_labels),
-                                subtitle = stringResource(R.string.ui_show_nav_labels_desc),
-                                icon = Icons.Rounded.Label,
-                                checked = showNavLabels,
-                                position = groupPos,
-                                onCheckedChange = { on ->
-                                    showNavLabels = on
-                                    barsSp.edit().putBoolean(BarSettings.KEY_SHOW_NAV_LABELS, on).apply()
-                                }
+                                onCheckedChange = viewModel::setExtensionChips
                             )
                         }
                     }

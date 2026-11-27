@@ -431,17 +431,24 @@ object PetalSettingsSearchIndex {
         // ==================== ADDRESS BAR ====================
         SettingsSearchItem(
             id = "address_bar",
-            title = "Address Bar",
-            subtitle = "Position, compact height, gestures and right-side action",
+            title = "Address Bar & Bottom Navbar",
+            subtitle = "Style, position, height, URL display, classic buttons, merge layout and bottom navbar",
             category = SettingsCategory.ADDRESS_BAR,
-            keywords = listOf("address bar", "omnibox", "url bar", "toolbar", "compact", "bottom", "top", "ai", "bookmark", "swipe", "quick actions")
+            keywords = listOf("address bar", "omnibox", "url bar", "toolbar", "compact", "standard", "height", "bottom", "top", "ai", "bookmark", "swipe", "quick actions", "domain only", "progress bar")
+        ),
+        SettingsSearchItem(
+            id = "bottom_navbar_custom",
+            title = "Bottom Navbar Customization",
+            subtitle = "Floating pill vs docked bar, labels, search button style, shortcut slot and swipe tabs",
+            category = SettingsCategory.ADDRESS_BAR,
+            keywords = listOf("bottom bar", "navbar", "navigation bar", "floating pill", "docked bar", "search button", "nav labels", "swipe tabs", "middle shortcut")
         ),
         SettingsSearchItem(
             id = "address_bar_gestures",
             title = "Address Bar Swipe & Quick Actions",
-            subtitle = "Horizontal swipe across the address bar to switch tabs and long-press quick actions",
+            subtitle = "Horizontal swipe across bars, minimize on scroll, pill/hide style and extension chips",
             category = SettingsCategory.ADDRESS_BAR,
-            keywords = listOf("swipe tabs", "address bar swipe", "switch tabs", "quick actions", "clean copy", "paste and go")
+            keywords = listOf("swipe tabs", "address bar swipe", "switch tabs", "quick actions", "clean copy", "paste and go", "collapse", "minimize on scroll")
         ),
         SettingsSearchItem(
             id = "address_bar_search_engine",

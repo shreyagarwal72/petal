@@ -99,17 +99,7 @@ data class ExtensionChipAction(
 @Composable
 fun rememberExtensionChipActions(pageUrl: String): List<ExtensionChipAction> {
     val context = LocalContext.current
-    val sp = remember { PreferenceManager.getDefaultSharedPreferences(context) }
-    var enabled by remember { mutableStateOf(sp.getBoolean("sp_address_bar_extension_chips", true)) }
-    DisposableEffect(sp) {
-        val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            if (key == "sp_address_bar_extension_chips") {
-                enabled = sp.getBoolean("sp_address_bar_extension_chips", true)
-            }
-        }
-        sp.registerOnSharedPreferenceChangeListener(listener)
-        onDispose { sp.unregisterOnSharedPreferenceChangeListener(listener) }
-    }
+    val enabled = rememberBarSettings().extensionChips
     val states by PetalExtensionManager.activeTabActionStates.collectAsStateWithLifecycle()
     val installed by PetalExtensionManager.extensions.collectAsStateWithLifecycle()
 
