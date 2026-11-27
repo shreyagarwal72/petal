@@ -85,18 +85,48 @@ class PetalParallelFetchClient(
             Settings(false, 1)
         }
         PetalBandwidthLimiter.setLimitKBps(cfg.speedLimitKBps)
-        if (!cfg.enabled || cfg.connections < 2) return delegate.fetch(request)
-        val startOffset = resumeOffset(request) ?: return delegate.fetch(request)
-        if (CapabilityCache.isSingleStreamOnly(request.url)) return delegate.fetch(request)
+        if (!cfg.enabled || cfg.connections < 2) return throttleResponse(delegate.fetch(request))
+        val startOffset = resumeOffset(request) ?: return throttleResponse(delegate.fetch(request))
+        if (CapabilityCache.isSingleStreamOnly(request.url)) return throttleResponse(delegate.fetch(request))
 
         return try {
-            fetchParallel(request, startOffset, cfg.connections) ?: delegate.fetch(request)
+            val parallel = fetchParallel(request, startOffset, cfg.connections)
+            when {
+                parallel == null -> throttleResponse(delegate.fetch(request))
+                parallel.body.stream is PetalParallelRangeStream -> parallel
+                else -> throttleResponse(parallel)
+            }
         } catch (e: Exception) {
             // The probe itself failed. Fall back to the untouched request so the service
             // sees (and reports) the real error, or simply succeeds on a single stream.
             Log.w(TAG, "Parallel probe failed, using single stream: ${e.message}")
-            delegate.fetch(request)
+            throttleResponse(delegate.fetch(request))
         }
+    }
+
+    /** Wraps a single-stream response body with [PetalBandwidthLimiter] so speed caps apply uniformly. */
+    private fun throttleResponse(response: Response): Response {
+        if (response.status !in 200..299) return response
+        val originalBody = response.body
+        val throttledStream = object : java.io.FilterInputStream(originalBody.stream) {
+            override fun read(): Int {
+                PetalBandwidthLimiter.acquire(1)
+                return super.read()
+            }
+
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                if (len <= 0) return 0
+                val chunk = minOf(len, 64 * 1024)
+                PetalBandwidthLimiter.acquire(chunk)
+                return super.read(b, off, chunk)
+            }
+        }
+        return Response(
+            url = response.url,
+            status = response.status,
+            headers = response.headers,
+            body = Response.Body(throttledStream, response.headers.get("Content-Type"))
+        )
     }
 
     /** Byte offset to start from, or null when this request is not eligible for segmenting. */

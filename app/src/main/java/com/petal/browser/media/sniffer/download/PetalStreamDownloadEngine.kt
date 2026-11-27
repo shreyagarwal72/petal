@@ -154,10 +154,33 @@ object PetalStreamDownloadEngine {
                                 builder.header("Range", "bytes=${seg.byteRangeOffset}-${seg.byteRangeOffset + seg.byteRangeLength - 1}")
                             }
 
+                            val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(appContext)
+                            val prefLimitKBps = try {
+                                sp.getInt(com.petal.browser.download.DownloadPrefs.KEY_SPEED_LIMIT_KBPS, 0)
+                            } catch (_: ClassCastException) { 0 }
+                            val reqLimitKBps = (request.speedLimitBytesPerSec / 1024L).toInt().coerceAtLeast(0)
+                            val effectiveLimit = when {
+                                prefLimitKBps > 0 && reqLimitKBps > 0 -> minOf(prefLimitKBps, reqLimitKBps)
+                                prefLimitKBps > 0 -> prefLimitKBps
+                                else -> reqLimitKBps
+                            }
+                            com.petal.browser.download.PetalBandwidthLimiter.setLimitKBps(effectiveLimit)
+
                             okHttpClient.newCall(builder.build()).execute().use { resp ->
                                 if (!resp.isSuccessful) throw IllegalStateException("Segment fetch error: ${resp.code}")
-                                var bytes = resp.body?.bytes() ?: throw IllegalStateException("Empty segment body")
-                                com.petal.browser.download.PetalBandwidthLimiter.acquire(bytes.size)
+                                val body = resp.body ?: throw IllegalStateException("Empty segment body")
+                                var bytes = body.byteStream().use { input ->
+                                    val buffer = ByteArray(32 * 1024)
+                                    val baos = java.io.ByteArrayOutputStream()
+                                    while (true) {
+                                        if (!isActive) throw CancellationException("Segment cancelled")
+                                        com.petal.browser.download.PetalBandwidthLimiter.acquire(buffer.size)
+                                        val read = input.read(buffer)
+                                        if (read < 0) break
+                                        baos.write(buffer, 0, read)
+                                    }
+                                    baos.toByteArray()
+                                }
 
                                 // Decrypt if encrypted with AES-128
                                 if (seg.key != null && PetalHlsAesDecryptor.isSupported(seg.key.method)) {

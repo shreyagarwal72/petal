@@ -305,7 +305,10 @@ object PetalEngineStore {
             applicationContext = appContext,
             downloadServiceClass = com.petal.browser.download.PetalMozillaDownloadService::class.java,
             downloadFileUtils = DefaultDownloadFileUtils(appContext),
-            deleteFileFromStorage = { true }
+            // PetalFetchDownloadBridge.deleteDownload owns physical/MediaStore file deletion according
+            // to the user's per-delete choice and sp_delete_download_file; returning true here would
+            // delete files even on "Remove from list only" or clearCompleted(deleteFile = false).
+            deleteFileFromStorage = { false }
         )
         val uploadCleaner = getFileUploadsDirCleaner(appContext)
         // Closed tabs are recorded only by PetalRecentlyClosedManager (single store, owns the vault UI

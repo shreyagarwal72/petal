@@ -31,7 +31,21 @@ class PetalDownloadBootReceiver : BroadcastReceiver() {
             try {
                 val app = context.applicationContext
                 val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(app)
-                store.dispatch(mozilla.components.browser.state.action.DownloadAction.RestoreDownloadsStateAction)
+                // Wait briefly for RestoreDownloadsStateAction (dispatched async by Room middleware) to populate.
+                val settled = java.util.concurrent.CountDownLatch(1)
+                var subscription: mozilla.components.lib.state.Store.Subscription<
+                    mozilla.components.browser.state.state.BrowserState,
+                    mozilla.components.browser.state.action.BrowserAction
+                >? = null
+                try {
+                    subscription = store.observeManually { state ->
+                        if (state.downloads.isNotEmpty()) settled.countDown()
+                    }.also { it.resume() }
+                    store.dispatch(mozilla.components.browser.state.action.DownloadAction.RestoreDownloadsStateAction)
+                    settled.await(2500L, java.util.concurrent.TimeUnit.MILLISECONDS)
+                } finally {
+                    runCatching { subscription?.unsubscribe() }
+                }
                 val interrupted = store.state.downloads.values.filter {
                     !it.private && (it.status == DownloadState.Status.DOWNLOADING ||
                         it.status == DownloadState.Status.INITIATED ||

@@ -194,8 +194,21 @@ object PetalYtDlpEngine {
                 }
                 row(DownloadStatus.STATUS_RUNNING, progress = 0f)
 
+                val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(app)
+                val wifiOnly = sp.getBoolean(com.petal.browser.download.DownloadPrefs.KEY_WIFI_ONLY, false)
+                val netState = com.petal.browser.download.queue.DownloadNetworkMonitor.state.value
+                if (wifiOnly && netState.online && netState.metered) {
+                    throw IllegalStateException("Waiting for Wi-Fi (Wi-Fi only enabled in Download settings)")
+                }
+                val speedLimitKBps = try {
+                    sp.getInt(com.petal.browser.download.DownloadPrefs.KEY_SPEED_LIMIT_KBPS, 0)
+                } catch (_: ClassCastException) { 0 }.coerceAtLeast(0)
+
                 val request = YoutubeDLRequest(info.pageUrl).apply {
                     applyNetwork(info.pageUrl, userAgent, referer, cookies)
+                    if (speedLimitKBps > 0) {
+                        addOption("--limit-rate", "${speedLimitKBps}K")
+                    }
                     addOption("-f", option.selector)
                     addOption("-o", File(workDir, "%(title).120B.%(ext)s").absolutePath)
                     addOption("--windows-filenames")

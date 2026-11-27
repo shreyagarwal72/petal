@@ -1198,14 +1198,18 @@ class SettingsRepositoryImpl @Inject constructor(
 
     override suspend fun setMaxConcurrentDownloads(count: Int) {
         sp.edit().putInt(DownloadPrefs.KEY_MAX_CONCURRENT, count.coerceIn(1, DownloadPrefs.MAX_CONCURRENT_LIMIT)).apply()
+        com.petal.browser.download.queue.DownloadQueueManager.settingsChanged(application)
     }
 
     override suspend fun setWifiOnlyDownloads(enabled: Boolean) {
         sp.edit().putBoolean(DownloadPrefs.KEY_WIFI_ONLY, enabled).apply()
+        com.petal.browser.download.queue.DownloadQueueManager.settingsChanged(application)
     }
 
     override suspend fun setDownloadSpeedLimitKBps(kbps: Int) {
-        sp.edit().putInt(DownloadPrefs.KEY_SPEED_LIMIT_KBPS, kbps.coerceAtLeast(0)).apply()
+        val clamped = kbps.coerceAtLeast(0)
+        sp.edit().putInt(DownloadPrefs.KEY_SPEED_LIMIT_KBPS, clamped).apply()
+        com.petal.browser.download.PetalBandwidthLimiter.setLimitKBps(clamped)
     }
 
     override suspend fun setVerifyDownloadChecksums(enabled: Boolean) {

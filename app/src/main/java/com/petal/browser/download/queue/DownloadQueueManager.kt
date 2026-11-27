@@ -43,6 +43,7 @@ object DownloadQueueManager {
     private val privateIds = AtomicLong(-1L)
     private val callbacks = ConcurrentHashMap<Long, Pair<((Long) -> Unit)?, (() -> Unit)?>>()
     private val autoPaused: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    private val cancelledWhileStarting: MutableSet<Long> = ConcurrentHashMap.newKeySet()
     @Volatile private var started = false
     @Volatile private var appContext: Context? = null
     @Volatile private var lastNetworkLossAt = 0L
@@ -158,10 +159,25 @@ object DownloadQueueManager {
 
     @JvmStatic
     fun remove(context: Context, id: Long) {
+        val app = context.applicationContext
+        cancelledWhileStarting.add(id)
         scope.launch {
-            mutex.withLock { delete(context, id) }
+            val sid = mutex.withLock {
+                val target = allEntries(app).firstOrNull { it.id == id }
+                delete(app, id)
+                target?.storeId
+            }
+            if (!sid.isNullOrBlank()) {
+                PetalFetchDownloadBridge.cancelAndRemoveByUuid(app, sid)
+            }
             refreshEntries()
         }
+    }
+
+    /** Clears auto-paused tracking when the user manually pauses a download. */
+    @JvmStatic
+    fun clearAutoPaused(uuid: String) {
+        if (uuid.isNotBlank()) autoPaused.remove(uuid)
     }
 
     /** Called when the user changes the concurrency / Wi-Fi settings so waiting items can start. */
@@ -181,7 +197,7 @@ object DownloadQueueManager {
                     .getOrDefault(DownloadPrefs.DEFAULT_MAX_CONCURRENT).coerceIn(1, DownloadPrefs.MAX_CONCURRENT_LIMIT),
                 wifiOnlyGlobal = sp.getBoolean(DownloadPrefs.KEY_WIFI_ONLY, false)
             )
-            val items = PetalFetchDownloadBridge.downloadItems.value
+            val items = PetalFetchDownloadBridge.currentItemsSnapshot(app)
             val running = items.filter { !it.queued && (it.status == DownloadStatus.STATUS_RUNNING || it.status == DownloadStatus.STATUS_PENDING) }
             val entries = allEntries(app)
             val startingCount = entries.count { it.state == QueuedDownload.STATE_STARTING }
@@ -189,7 +205,10 @@ object DownloadQueueManager {
                 entries, running.size + startingCount, limits, DownloadNetworkMonitor.state.value,
                 System.currentTimeMillis(), running.map { it.fileUrl }.toSet()
             )
-            picked.map { save(app, it.copy(state = QueuedDownload.STATE_STARTING)) }
+            picked.map {
+                cancelledWhileStarting.remove(it.id)
+                save(app, it.copy(state = QueuedDownload.STATE_STARTING))
+            }
         }
         if (toStart.isEmpty()) { refreshEntries(); return }
         for (e in toStart) startNow(app, e)
@@ -198,7 +217,7 @@ object DownloadQueueManager {
 
     /** Syncs queue rows with what the download engine reports; drops finished rows, schedules retries. */
     private suspend fun reconcile(app: Context) {
-        val items = PetalFetchDownloadBridge.downloadItems.value.associateBy { it.downloadId }
+        val items = PetalFetchDownloadBridge.currentItemsSnapshot(app).associateBy { it.downloadId }
         for (e in allEntries(app)) {
             if (e.state != QueuedDownload.STATE_RUNNING && e.state != QueuedDownload.STATE_STARTING) continue
             val sid = e.storeId ?: continue
@@ -207,6 +226,10 @@ object DownloadQueueManager {
                 item == null -> delete(app, e.id) // removed by the user
                 item.status == DownloadStatus.STATUS_SUCCESSFUL -> delete(app, e.id)
                 item.status == DownloadStatus.STATUS_FAILED -> {
+                    if (item.failureReason == "Cancelled") {
+                        delete(app, e.id)
+                        continue
+                    }
                     val attempts = e.attempts + 1
                     if (QueueScheduler.canRetry(attempts) && DownloadNetworkMonitor.state.value.online) {
                         save(app, e.copy(
@@ -228,7 +251,13 @@ object DownloadQueueManager {
     }
 
     private fun startNow(app: Context, e: QueuedDownload) {
-        val cb = callbacks[e.id]
+        if (cancelledWhileStarting.remove(e.id)) {
+            scope.launch {
+                mutex.withLock { delete(app, e.id) }
+                refreshEntries()
+            }
+            return
+        }
         if (e.storeId != null) {
             // A retry of a download that already exists in the store: resume it, never duplicate it.
             PetalFetchDownloadBridge.resumeByUuid(app, e.storeId)
@@ -245,26 +274,41 @@ object DownloadQueueManager {
             headers = headers,
             onEnqueued = { stableId ->
                 val sid = PetalFetchDownloadBridge.storeIdForStableId(stableId)
-                scope.launch {
-                    mutex.withLock { save(app, e.copy(state = QueuedDownload.STATE_RUNNING, storeId = sid)) }
-                    refreshEntries()
+                if (cancelledWhileStarting.remove(e.id)) {
+                    if (!sid.isNullOrBlank()) PetalFetchDownloadBridge.cancelAndRemoveByUuid(app, sid)
+                    scope.launch {
+                        mutex.withLock { delete(app, e.id) }
+                        refreshEntries()
+                    }
+                } else {
+                    scope.launch {
+                        mutex.withLock { save(app, e.copy(state = QueuedDownload.STATE_RUNNING, storeId = sid)) }
+                        refreshEntries()
+                    }
+                    callbacks.remove(e.id)?.first?.invoke(stableId)
                 }
-                callbacks.remove(e.id)?.first?.invoke(stableId)
             },
             onFailed = {
-                scope.launch {
-                    mutex.withLock {
-                        val attempts = e.attempts + 1
-                        if (QueueScheduler.canRetry(attempts) && DownloadNetworkMonitor.state.value.online) {
-                            save(app, e.copy(state = QueuedDownload.STATE_QUEUED, attempts = attempts,
-                                nextAttemptAt = System.currentTimeMillis() + QueueScheduler.backoffMs(attempts)))
-                            scheduleWake(app, QueueScheduler.backoffMs(attempts))
-                        } else {
-                            save(app, e.copy(state = QueuedDownload.STATE_FAILED, attempts = attempts))
-                            callbacks.remove(e.id)?.second?.invoke()
-                        }
+                if (cancelledWhileStarting.remove(e.id)) {
+                    scope.launch {
+                        mutex.withLock { delete(app, e.id) }
+                        refreshEntries()
                     }
-                    refreshEntries()
+                } else {
+                    scope.launch {
+                        mutex.withLock {
+                            val attempts = e.attempts + 1
+                            if (QueueScheduler.canRetry(attempts) && DownloadNetworkMonitor.state.value.online) {
+                                save(app, e.copy(state = QueuedDownload.STATE_QUEUED, attempts = attempts,
+                                    nextAttemptAt = System.currentTimeMillis() + QueueScheduler.backoffMs(attempts)))
+                                scheduleWake(app, QueueScheduler.backoffMs(attempts))
+                            } else {
+                                save(app, e.copy(state = QueuedDownload.STATE_FAILED, attempts = attempts))
+                                callbacks.remove(e.id)?.second?.invoke()
+                            }
+                        }
+                        refreshEntries()
+                    }
                 }
             }
         )

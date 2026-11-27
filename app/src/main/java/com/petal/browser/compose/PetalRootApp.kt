@@ -2051,6 +2051,37 @@ fun PetalRootApp(
                 isAutoPrompt = com.petal.browser.feedback.PetalFeedbackManager.isAutoPromptSession.value
             )
         }
+
+        // Offer clipboard link import when Petal opens/resumes with links on the clipboard (opt-in setting).
+        var rootImportLinks by remember { mutableStateOf<List<com.petal.browser.download.PetalLinkImport.ImportLink>?>(null) }
+        var lastAutoOfferedClipboard by remember { mutableStateOf<String?>(null) }
+        val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+        DisposableEffect(lifecycleOwner, context) {
+            val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+                    if (sp.getBoolean(com.petal.browser.download.DownloadPrefs.KEY_OFFER_CLIPBOARD, false)) {
+                        val raw = com.petal.browser.compose.downloads.PetalLinkImportSource.readClipboardText(context)
+                        if (!raw.isNullOrBlank() && raw != lastAutoOfferedClipboard) {
+                            val found = com.petal.browser.download.PetalLinkImport.extract(raw)
+                            if (found.isNotEmpty()) {
+                                lastAutoOfferedClipboard = raw
+                                rootImportLinks = found
+                            }
+                        }
+                    }
+                }
+            }
+            lifecycleOwner.lifecycle.addObserver(observer)
+            onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+        }
+        rootImportLinks?.let { links ->
+            com.petal.browser.compose.downloads.PetalLinkImportSheet(
+                links = links,
+                isPrivate = isIncognito || (activeTab?.content?.private == true),
+                onDismiss = { rootImportLinks = null }
+            )
+        }
     }
 }
 

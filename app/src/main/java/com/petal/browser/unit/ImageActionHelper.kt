@@ -44,7 +44,7 @@ object ImageActionHelper {
 
         try {
             val scheme = Uri.parse(imageUrl).scheme
-            if ("http".equals(scheme, ignoreCase = true) || "https".equals(scheme, ignoreCase = true)) {
+            if (!isPrivate && ("http".equals(scheme, ignoreCase = true) || "https".equals(scheme, ignoreCase = true))) {
                 Thread {
                     val resolvedFileName: String = try {
                         val headBuilder = Request.Builder().url(imageUrl).head()

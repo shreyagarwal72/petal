@@ -438,7 +438,8 @@ object PetalEngineBridge {
                                 finalName = finalName,
                                 sourceUrl = responseUrl,
                                 mimeType = mimeType,
-                                contentLength = contentLength
+                                contentLength = contentLength,
+                                isPrivate = isPrivate
                             )
                         }
                     }
@@ -480,7 +481,8 @@ object PetalEngineBridge {
         finalName: String,
         sourceUrl: String,
         mimeType: String?,
-        contentLength: Long
+        contentLength: Long,
+        isPrivate: Boolean = false
     ) {
         val bridge = com.petal.browser.compose.downloads.PetalFetchDownloadBridge
         val source = com.petal.browser.download.DownloadSource.BLOB
@@ -560,13 +562,15 @@ object PetalEngineBridge {
                     null
                 )
             }
-            targetFile?.let {
-                android.media.MediaScannerConnection.scanFile(
-                    context,
-                    arrayOf(it.absolutePath),
-                    arrayOf(mimeType ?: "application/octet-stream"),
-                    null
-                )
+            if (!isPrivate) {
+                targetFile?.let {
+                    android.media.MediaScannerConnection.scanFile(
+                        context,
+                        arrayOf(it.absolutePath),
+                        arrayOf(mimeType ?: "application/octet-stream"),
+                        null
+                    )
+                }
             }
             report(com.petal.browser.compose.downloads.DownloadStatus.STATUS_SUCCESSFUL, copied, 0L, 0L, uriString, null)
             bridge.setLocalHandlers(key, null, null)

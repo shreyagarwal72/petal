@@ -22,11 +22,17 @@ import java.util.Locale
 object PetalFileOpener {
 
     fun createOpenIntent(context: Context, uri: Uri, fileName: String, rawMime: String? = null): Intent {
-        val ext = MimeTypeMap.getFileExtensionFromUrl(fileName.ifEmpty { uri.toString() }).lowercase(Locale.ROOT)
+        val nameExt = fileName.substringBefore('#').substringBefore('?').substringAfterLast('.', "")
+        val ext = (if (nameExt.isNotBlank() && nameExt.length <= 16 && !nameExt.contains('/')) {
+            nameExt
+        } else {
+            MimeTypeMap.getFileExtensionFromUrl(fileName.ifEmpty { uri.toString() })
+        }).lowercase(Locale.ROOT)
         val detectedMime = if (ext.isNotEmpty()) {
             MimeTypeMap.getSingleton().getMimeTypeFromExtension(ext)
         } else null
         val mime = (rawMime?.takeIf { it.isNotBlank() && it != "*/*" } ?: detectedMime ?: "*/*").lowercase(Locale.ROOT)
+        val newTaskFlag = if (context !is android.app.Activity) Intent.FLAG_ACTIVITY_NEW_TASK else 0
 
         return when {
             // 1. APKs -> System Package Installer
@@ -49,7 +55,7 @@ object PetalFileOpener {
                 Intent(context, PdfViewerActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
                     setDataAndType(uri, "application/pdf")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK or newTaskFlag)
                 }
             }
             // 4. Media (Audio & Video) -> Petal Media Player
@@ -60,7 +66,7 @@ object PetalFileOpener {
                     action = Intent.ACTION_VIEW
                     val targetMime = if (mime != "*/*") mime else if (ext in setOf("mp4", "mkv", "webm", "avi", "mov", "3gp", "flv", "ts", "m4v", "wmv")) "video/*" else "audio/*"
                     setDataAndType(uri, targetMime)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or newTaskFlag)
                 }
             }
             // 5. Images -> Petal Image Viewer
@@ -69,7 +75,7 @@ object PetalFileOpener {
                     action = Intent.ACTION_VIEW
                     val targetMime = if (mime != "*/*") mime else "image/*"
                     setDataAndType(uri, targetMime)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK or newTaskFlag)
                 }
             }
             // 6. Text, Code, Documents, Archives -> Petal File Viewer
@@ -87,7 +93,7 @@ object PetalFileOpener {
                 Intent(context, FileViewerActivity::class.java).apply {
                     action = Intent.ACTION_VIEW
                     setDataAndType(uri, mime)
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_DOCUMENT or Intent.FLAG_ACTIVITY_MULTIPLE_TASK or newTaskFlag)
                 }
             }
             // 7. Generic Fallback
@@ -102,6 +108,25 @@ object PetalFileOpener {
 
     fun openFile(context: Context, uri: Uri, fileName: String, rawMime: String? = null) {
         val intent = createOpenIntent(context, uri, fileName, rawMime)
-        runCatching { context.startActivity(intent) }
+        if (context !is android.app.Activity) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        try {
+            context.startActivity(intent)
+        } catch (_: Throwable) {
+            // Fall back to external system ACTION_VIEW if an internal viewer cannot handle it.
+            val fallback = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(uri, rawMime?.takeIf { it.isNotBlank() } ?: "*/*")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            val opened = runCatching { context.startActivity(fallback) }.isSuccess
+            if (!opened) {
+                android.os.Handler(android.os.Looper.getMainLooper()).post {
+                    runCatching {
+                        com.petal.browser.view.PetalToast.show(context, "No app available to open $fileName")
+                    }
+                }
+            }
+        }
     }
 }

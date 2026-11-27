@@ -372,4 +372,67 @@ class DownloadEngineV2Test {
         assertTrue(PetalLinkImport.extract(null).isEmpty())
         assertTrue(PetalLinkImport.extract("no links here").isEmpty())
     }
+
+    // ── Single-stream bandwidth throttling ────────────────────────────────────
+
+    @Test
+    fun singleStreamFetchAppliesBandwidthLimitWhenEnabled() {
+        var fakeNow = 1_000_000_000L
+        val sleptMs = java.util.concurrent.atomic.AtomicLong(0L)
+        PetalBandwidthLimiter.nanoClock = { fakeNow }
+        PetalBandwidthLimiter.sleeper = { ms ->
+            sleptMs.addAndGet(ms)
+            fakeNow += ms * 1_000_000L
+        }
+        // 192 KB payload at 64 KB/s: initial 1s burst = 64 KB, remaining 128 KB requires ~2000ms simulated wait.
+        val payload = ByteArray(192 * 1024) { 0x5A }
+        val delegate = object : Client() {
+            override fun fetch(request: Request): Response {
+                return Response(
+                    url = request.url,
+                    status = 200,
+                    headers = Headers.EMPTY,
+                    body = Response.Body(payload.inputStream(), "application/octet-stream")
+                )
+            }
+        }
+        val client = PetalParallelFetchClient(delegate) {
+            PetalParallelFetchClient.Settings(enabled = false, connections = 1, speedLimitKBps = 64)
+        }
+        val response = client.fetch(Request(url = "https://example.com/single.bin"))
+        val readBytes = response.body.useStream { it.readBytes() }
+        assertEquals(payload.size, readBytes.size)
+        assertEquals(64 * 1024L, PetalBandwidthLimiter.limitBytesPerSecond())
+        assertTrue("Expected single-stream transfer to throttle, sleptMs=${sleptMs.get()}", sleptMs.get() >= 1000L)
+    }
+
+    @Test
+    fun parallelProbeReturning200AppliesBandwidthLimit() {
+        var fakeNow = 1_000_000_000L
+        val sleptMs = java.util.concurrent.atomic.AtomicLong(0L)
+        PetalBandwidthLimiter.nanoClock = { fakeNow }
+        PetalBandwidthLimiter.sleeper = { ms ->
+            sleptMs.addAndGet(ms)
+            fakeNow += ms * 1_000_000L
+        }
+        val payload = ByteArray(192 * 1024) { 0x2A }
+        val delegate = object : Client() {
+            override fun fetch(request: Request): Response {
+                return Response(
+                    url = request.url,
+                    status = 200,
+                    headers = Headers.EMPTY,
+                    body = Response.Body(payload.inputStream(), "application/octet-stream")
+                )
+            }
+        }
+        val client = PetalParallelFetchClient(delegate) {
+            PetalParallelFetchClient.Settings(enabled = true, connections = 4, speedLimitKBps = 64)
+        }
+        val response = client.fetch(Request(url = "https://example.com/norange.bin"))
+        val readBytes = response.body.useStream { it.readBytes() }
+        assertEquals(payload.size, readBytes.size)
+        assertEquals(64 * 1024L, PetalBandwidthLimiter.limitBytesPerSecond())
+        assertTrue("Expected 200 probe fallback to throttle, sleptMs=${sleptMs.get()}", sleptMs.get() >= 1000L)
+    }
 }

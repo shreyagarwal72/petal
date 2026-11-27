@@ -506,12 +506,20 @@ fun PetalDownloadManagerScreen(
         )
     }
 
-    // Completed images are represented by the preview strip below. Keep active,
-    // failed, and paused image downloads in the file list so their controls remain
-    // available, but do not render a second completed-image row.
-    val listDownloads = remember(sortedDownloadList, autoPreviewDownloadedImages, statusFilter) {
-        val base = if (autoPreviewDownloadedImages) {
-            sortedDownloadList.filterNot { it.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) }
+    // Completed images up to the strip limit are represented by the preview carousel; any
+    // additional completed images (#7+) remain visible in the list below so nothing disappears.
+    val previewImageIds = remember(sortedDownloadList, autoPreviewDownloadedImages) {
+        if (autoPreviewDownloadedImages) {
+            sortedDownloadList
+                .filter { it.status == DownloadStatus.STATUS_SUCCESSFUL && isPreviewImage(it.fileName) && !it.localUri.isNullOrBlank() }
+                .take(6)
+                .map { it.id }
+                .toSet()
+        } else emptySet()
+    }
+    val listDownloads = remember(sortedDownloadList, previewImageIds, statusFilter) {
+        val base = if (previewImageIds.isNotEmpty()) {
+            sortedDownloadList.filterNot { previewImageIds.contains(it.id) }
         } else sortedDownloadList
         when (statusFilter) {
             DownloadStatusFilter.ALL -> base
@@ -548,10 +556,11 @@ fun PetalDownloadManagerScreen(
 
     fun toggleSelectAll() {
         com.petal.browser.haptics.PetalHapticEngine.getInstance(context).selectionChanged(context)
-        if (selectedIds.size == downloadList.size) {
+        val visibleIds = listDownloads.map { it.id }.toSet()
+        if (visibleIds.isNotEmpty() && selectedIds.containsAll(visibleIds)) {
             selectedIds = emptySet()
         } else {
-            selectedIds = downloadList.map { it.id }.toSet()
+            selectedIds = visibleIds
         }
     }
 
@@ -800,7 +809,7 @@ fun PetalDownloadManagerScreen(
                             }
                         }
 
-                        itemsIndexed(items, key = { index, it -> "${it.id}_$index" }) { index, item ->
+                        itemsIndexed(items, key = { _, it -> "${it.downloadId}_${it.queueId}_${it.id}" }) { index, item ->
                             val isSelected = selectedIds.contains(item.id)
                             val rowPosition = petalGroupPositionFor(index, items.size)
                             val confirmDelete = sharedPreferences.getBoolean("sp_confirm_download_delete", true)
@@ -1123,7 +1132,7 @@ private fun DownloadedImagePreviewStrip(
             run {
                 val bitmap by produceState<android.graphics.Bitmap?>(initialValue = null, item.localUri) {
                     value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                        runCatching { BitmapFactory.decodeFile(Uri.parse(item.localUri).path ?: item.localUri) }.getOrNull()
+                        decodeSampledPreviewBitmap(context, item.localUri, 512, 512)
                     }
                 }
                 Box(modifier = Modifier.fillMaxSize().maskClip(MaterialTheme.shapes.extraLarge)) {
@@ -1182,6 +1191,43 @@ private fun DownloadedImagePreviewStrip(
             }
         }
     }
+}
+
+private fun decodeSampledPreviewBitmap(
+    context: Context,
+    localUriString: String?,
+    reqWidth: Int,
+    reqHeight: Int
+): android.graphics.Bitmap? {
+    if (localUriString.isNullOrBlank()) return null
+    return runCatching {
+        val rawUri = Uri.parse(localUriString)
+        val isContent = rawUri.scheme == "content"
+        val filePath = if (!isContent) rawUri.path ?: localUriString.removePrefix("file://") else null
+
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        if (isContent) {
+            context.contentResolver.openInputStream(rawUri)?.use { BitmapFactory.decodeStream(it, null, bounds) }
+        } else if (filePath != null) {
+            BitmapFactory.decodeFile(filePath, bounds)
+        }
+
+        var inSampleSize = 1
+        val (h, w) = bounds.outHeight to bounds.outWidth
+        if (h > reqHeight || w > reqWidth) {
+            val halfH = h / 2
+            val halfW = w / 2
+            while ((halfH / inSampleSize) >= reqHeight && (halfW / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2
+            }
+        }
+        val decodeOpts = BitmapFactory.Options().apply { this.inSampleSize = inSampleSize }
+        if (isContent) {
+            context.contentResolver.openInputStream(rawUri)?.use { BitmapFactory.decodeStream(it, null, decodeOpts) }
+        } else if (filePath != null) {
+            BitmapFactory.decodeFile(filePath, decodeOpts)
+        } else null
+    }.getOrNull()
 }
 
 private fun isPreviewImage(name: String): Boolean = name.substringAfterLast('.', "").lowercase(Locale.US) in setOf("jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "avif")
@@ -1679,49 +1725,58 @@ private fun DownloadProgressRing(
     }
 }
 
-internal fun openDownloadedFile(context: Context, item: DownloadItem) {
-    try {
-        var contentUri: Uri? = null
-        var mimeType: String? = null
+internal fun resolveDownloadContentUri(context: Context, item: DownloadItem): Uri? {
+    fun fileProviderUri(file: java.io.File): Uri? = if (file.exists()) {
+        runCatching {
+            androidx.core.content.FileProvider.getUriForFile(context, context.packageName + ".fileprovider", file)
+        }.getOrNull()
+    } else null
 
-        val localUriString = item.localUri
-        if (!localUriString.isNullOrEmpty()) {
-            val rawUri = Uri.parse(localUriString)
-            if (rawUri.scheme == "file" || rawUri.scheme == null) {
-                val filePath = rawUri.path ?: localUriString.removePrefix("file://")
-                val file = java.io.File(filePath)
-                if (file.exists()) {
-                    try {
-                        contentUri = androidx.core.content.FileProvider.getUriForFile(
-                            context,
-                            context.packageName + ".fileprovider",
-                            file
-                        )
-                    } catch (e: Exception) {
-                        e.printStackTrace()
+    val localUriString = item.localUri
+    if (!localUriString.isNullOrEmpty()) {
+        val rawUri = Uri.parse(localUriString)
+        if (rawUri.scheme == "file" || rawUri.scheme == null) {
+            val filePath = rawUri.path ?: localUriString.removePrefix("file://")
+            fileProviderUri(java.io.File(filePath))?.let { return it }
+        } else {
+            return rawUri
+        }
+    }
+
+    if (item.fileName.isNotBlank()) {
+        val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        fileProviderUri(java.io.File(downloadsDir, item.fileName))?.let { return it }
+
+        // Check smart-routed category subfolder (Download/Petal/<Category>/).
+        val category = com.petal.browser.download.PetalSmartDownloadRouter.getCategory(item.fileName, null)
+        val smartFile = java.io.File(java.io.File(downloadsDir, category.subfolder), item.fileName)
+        fileProviderUri(smartFile)?.let { return it }
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+            runCatching {
+                val collection = android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI
+                context.contentResolver.query(
+                    collection,
+                    arrayOf(android.provider.MediaStore.MediaColumns._ID),
+                    "${android.provider.MediaStore.MediaColumns.DISPLAY_NAME} = ?",
+                    arrayOf(item.fileName),
+                    "${android.provider.MediaStore.MediaColumns._ID} DESC"
+                )?.use { c ->
+                    if (c.moveToFirst()) {
+                        return android.content.ContentUris.withAppendedId(collection, c.getLong(0))
                     }
                 }
-            } else {
-                contentUri = rawUri
             }
         }
+    }
+    return null
+}
 
-        if (contentUri == null && item.fileName.isNotBlank()) {
-            try {
-                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val file = java.io.File(downloadsDir, item.fileName)
-                if (file.exists()) {
-                    contentUri = androidx.core.content.FileProvider.getUriForFile(
-                        context,
-                        context.packageName + ".fileprovider",
-                        file
-                    )
-                }
-            } catch (e: Exception) { e.printStackTrace() }
-        }
-
+internal fun openDownloadedFile(context: Context, item: DownloadItem) {
+    try {
+        val contentUri = resolveDownloadContentUri(context, item)
         if (contentUri != null) {
-            com.petal.browser.download.PetalFileOpener.openFile(context, contentUri, item.fileName, mimeType)
+            com.petal.browser.download.PetalFileOpener.openFile(context, contentUri, item.fileName, null)
         } else {
             PetalToast.show(context, context.getString(R.string.ui_download_file_not_found, item.fileName), android.widget.Toast.LENGTH_SHORT)
         }
@@ -1742,16 +1797,10 @@ private fun deleteDownloadedFile(context: Context, item: DownloadItem) {
 
 private fun renameDownloadedFile(context: Context, item: DownloadItem, newName: String) {
     try {
-        if (item.localUri != null) {
-            val uri = Uri.parse(item.localUri)
-            val oldFile = java.io.File(uri.path ?: "")
-            if (oldFile.exists()) {
-                val newFile = java.io.File(oldFile.parent, newName)
-                if (oldFile.renameTo(newFile)) {
-                    android.media.MediaScannerConnection.scanFile(context, arrayOf(newFile.absolutePath), null, null)
-                    com.petal.browser.view.PetalToast.show(context, context.getString(R.string.ui_download_renamed, newName))
-                }
-            }
+        if (PetalFetchDownloadBridge.renameDownload(context, item, newName)) {
+            com.petal.browser.view.PetalToast.show(context, context.getString(R.string.ui_download_renamed, newName))
+        } else {
+            com.petal.browser.view.PetalToast.show(context, context.getString(R.string.ui_download_file_not_found, item.fileName))
         }
     } catch (e: Exception) {
         e.printStackTrace()
@@ -1771,42 +1820,7 @@ private fun copyDownloadLink(context: Context, url: String) {
 
 internal fun shareDownloadedFile(context: Context, item: DownloadItem) {
     try {
-        var contentUri: Uri? = null
-        val localUriString = item.localUri
-        if (!localUriString.isNullOrEmpty()) {
-            val rawUri = Uri.parse(localUriString)
-            if (rawUri.scheme == "file" || rawUri.scheme == null) {
-                val filePath = rawUri.path ?: localUriString.removePrefix("file://")
-                val file = java.io.File(filePath)
-                if (file.exists()) {
-                    try {
-                        contentUri = androidx.core.content.FileProvider.getUriForFile(
-                            context,
-                            context.packageName + ".fileprovider",
-                            file
-                        )
-                    } catch (e: Exception) {
-                        e.printStackTrace()
-                    }
-                }
-            } else {
-                contentUri = rawUri
-            }
-        }
-        if (contentUri == null && item.fileName.isNotBlank()) {
-            try {
-                val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val file = java.io.File(downloadsDir, item.fileName)
-                if (file.exists()) {
-                    contentUri = androidx.core.content.FileProvider.getUriForFile(
-                        context,
-                        context.packageName + ".fileprovider",
-                        file
-                    )
-                }
-            } catch (e: Exception) { e.printStackTrace() }
-        }
-
+        val contentUri = resolveDownloadContentUri(context, item)
         val intent = Intent(Intent.ACTION_SEND).apply {
             if (contentUri != null) {
                 putExtra(Intent.EXTRA_STREAM, contentUri)
@@ -1835,44 +1849,7 @@ private fun shareMultipleFiles(context: Context, items: List<DownloadItem>) {
     try {
         val uris = ArrayList<Uri>()
         items.forEach { item ->
-            var contentUri: Uri? = null
-            val localUriString = item.localUri
-            if (!localUriString.isNullOrEmpty()) {
-                val rawUri = Uri.parse(localUriString)
-                if (rawUri.scheme == "file" || rawUri.scheme == null) {
-                    val filePath = rawUri.path ?: localUriString.removePrefix("file://")
-                    val file = java.io.File(filePath)
-                    if (file.exists()) {
-                        try {
-                            contentUri = androidx.core.content.FileProvider.getUriForFile(
-                                context,
-                                context.packageName + ".fileprovider",
-                                file
-                            )
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
-                } else {
-                    contentUri = rawUri
-                }
-            }
-            if (contentUri == null && item.fileName.isNotBlank()) {
-                try {
-                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                    val file = java.io.File(downloadsDir, item.fileName)
-                    if (file.exists()) {
-                        contentUri = androidx.core.content.FileProvider.getUriForFile(
-                            context,
-                            context.packageName + ".fileprovider",
-                            file
-                        )
-                    }
-                } catch (e: Exception) { e.printStackTrace() }
-            }
-            if (contentUri != null) {
-                uris.add(contentUri)
-            }
+            resolveDownloadContentUri(context, item)?.let { uris.add(it) }
         }
         if (uris.isNotEmpty()) {
             val intent = Intent(Intent.ACTION_SEND_MULTIPLE).apply {

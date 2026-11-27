@@ -109,6 +109,12 @@ object PetalFetchDownloadBridge {
     // meter per download gives a steady readout that also decays when the transfer stalls.
     private val mozillaMeters = ConcurrentHashMap<String, com.petal.browser.download.PetalSpeedMeter>()
     private val releasedHeaderIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    private val completedHandledIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
+    private val resolvedUriById = ConcurrentHashMap<String, String>()
+    private const val PREF_BRIDGE = "petal_download_bridge"
+    private const val KEY_COMPLETED_HANDLED = "completed_handled_ids"
+    @Volatile
+    private var completedPrefsInitialized = false
     private val tickerScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var tickerJob: Job? = null
     @Volatile
@@ -142,6 +148,7 @@ object PetalFetchDownloadBridge {
             applicationContext = appContext
 
             try {
+                loadCompletedHandled(appContext)
                 // BrowserStore emits on every tab/title/progress change; only react to downloads.
                 var lastDownloads: Any? = null
                 com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext).observeManually { state ->
@@ -403,7 +410,10 @@ object PetalFetchDownloadBridge {
                     private = isPrivate
                 )
             )
-            if (id.isNullOrBlank()) return StartResult(null, DownloadFailure.START_FAILED)
+            if (id.isNullOrBlank()) {
+                com.petal.browser.download.PetalDownloadHeaderRegistry.release(null, url)
+                return StartResult(null, DownloadFailure.START_FAILED)
+            }
             sourceById[id] = source
             com.petal.browser.download.PetalDownloadHeaderRegistry.put(
                 url = url,
@@ -577,12 +587,21 @@ object PetalFetchDownloadBridge {
         publish()
     }
 
+    /** Returns an up-to-date snapshot of all download items (bypasses the 250ms UI debounce). */
+    @JvmStatic
+    fun currentItemsSnapshot(context: Context): List<DownloadItem> {
+        ensureInitialized(context)
+        publishNow()
+        return _downloadItems.value
+    }
+
     @JvmStatic
     fun pause(context: Context, id: Long) {
         ensureInitialized(context)
         val item = findItem(id) ?: return
         if (!item.source.isMozillaOwned) return // yt-dlp / page-data rows cannot be paused
         val appContext = context.applicationContext
+        com.petal.browser.download.queue.DownloadQueueManager.clearAutoPaused(item.downloadId)
         if (com.petal.browser.download.PetalDownloadServiceState.isRunning(appContext)) {
             sendMozillaDownloadAction(appContext, item.downloadId, mozilla.components.feature.downloads.AbstractFetchDownloadService.ACTION_PAUSE)
         } else {
@@ -641,10 +660,14 @@ object PetalFetchDownloadBridge {
         downloadRepository.values.filter { it.status == DownloadStatus.STATUS_RUNNING }.map { it.downloadId }
     }
 
-    /** Store ids of Mozilla downloads that failed (candidates for an automatic retry once back online). */
+    /** Store ids of Mozilla downloads that failed due to transport/network errors (never user cancellations). */
     @JvmStatic
     fun failedNetworkMozillaIds(): List<String> = synchronized(downloadRepository) {
-        downloadRepository.values.filter { it.status == DownloadStatus.STATUS_FAILED && it.source.isMozillaOwned }.map { it.downloadId }
+        downloadRepository.values.filter {
+            it.status == DownloadStatus.STATUS_FAILED &&
+                it.source.isMozillaOwned &&
+                it.failureReason != "Cancelled"
+        }.map { it.downloadId }
     }
 
     @JvmStatic
@@ -758,8 +781,23 @@ object PetalFetchDownloadBridge {
         publish()
     }
 
-    /** Cancels the service job, dismisses Mozilla's notification and drops the download from the store. */
-    private fun removeMozillaDownload(appContext: Context, uuid: String) {
+    @JvmStatic
+    fun cancelAndRemoveByUuid(context: Context, uuid: String) {
+        ensureInitialized(context)
+        val appContext = context.applicationContext
+        val uriString = findItem(stableId(uuid))?.localUri ?: resolvedUriById[uuid]
+        removeMozillaDownload(appContext, uuid, uriString, deleteFile = true, inFlight = true)
+        publish()
+    }
+
+    /** Cancels the service job, dismisses Mozilla's notification, drops the store row, and removes files only after stopping. */
+    private fun removeMozillaDownload(
+        appContext: Context,
+        uuid: String,
+        uriString: String? = null,
+        deleteFile: Boolean = false,
+        inFlight: Boolean = false
+    ) {
         if (uuid.isBlank()) return
         // Read Mozilla's real notification id while the download still exists in the store.
         cancelMozillaNotification(appContext, uuid)
@@ -773,14 +811,18 @@ object PetalFetchDownloadBridge {
                     .dispatch(DownloadAction.RemoveDownloadAction(uuid))
             } catch (_: Throwable) {
             }
+            if (deleteFile || inFlight) {
+                deletePhysicalTargets(appContext, uriString, deleteFile, inFlight)
+            }
             synchronized(downloadRepository) { downloadRepository.remove(uuid) }
             mozillaMeters.remove(uuid)
+            resolvedUriById.remove(uuid)
             com.petal.browser.download.PetalDownloadHeaderRegistry.release(uuid)
             sourceById.remove(uuid)
             publish()
         }
         if (alive) {
-            // Give the service a moment to process the cancel so it cannot write the row back.
+            // Give the service a moment to close its output stream before unlinking the file and store row.
             tickerScope.launch {
                 delay(400L)
                 removeFromStore()
@@ -834,9 +876,11 @@ object PetalFetchDownloadBridge {
             PetalLiveAlertManager.stopTracking(appContext, row.id)
         } catch (_: Throwable) {}
 
+        val inFlight = row.status == DownloadStatus.STATUS_RUNNING || row.status == DownloadStatus.STATUS_PENDING
+
         // 2. Cancel the transfer and remove the row from whichever owner holds it.
         if (row.source.isMozillaOwned) {
-            removeMozillaDownload(appContext, row.downloadId)
+            removeMozillaDownload(appContext, row.downloadId, row.localUri, deleteFile, inFlight)
             PetalDownloadFailureLog.clear(row.fileUrl)
         } else {
             try { localCancel.remove(row.downloadId)?.invoke() } catch (_: Throwable) {}
@@ -845,33 +889,111 @@ object PetalFetchDownloadBridge {
             try {
                 NotificationManagerCompat.from(appContext).cancel(row.id.toInt())
             } catch (_: Throwable) {}
+            deletePhysicalTargets(appContext, row.localUri, deleteFile, inFlight)
         }
+        publish()
+    }
 
-        // 3. Delete local file and any temporary/partial download file
-        val inFlight = row.status == DownloadStatus.STATUS_RUNNING || row.status == DownloadStatus.STATUS_PENDING
+    private fun deletePhysicalTargets(appContext: Context, uriString: String?, deleteFile: Boolean, inFlight: Boolean) {
+        if (uriString.isNullOrEmpty()) return
         try {
-            val uriString = row.localUri
-            if (!uriString.isNullOrEmpty()) {
-                if (uriString.startsWith("content://")) {
-                    if (deleteFile || inFlight) {
-                        appContext.contentResolver.delete(android.net.Uri.parse(uriString), null, null)
-                    }
-                } else {
-                    val path = uriString.removePrefix("file://")
-                    val file = File(path)
-                    if (file.exists() && (deleteFile || inFlight)) {
-                        file.delete()
-                    }
-                    val partFile = File("$path.part")
-                    if (partFile.exists()) partFile.delete()
-                    val tempFile = File("$path.download")
-                    if (tempFile.exists()) tempFile.delete()
+            if (uriString.startsWith("content://")) {
+                if (deleteFile || inFlight) {
+                    appContext.contentResolver.delete(android.net.Uri.parse(uriString), null, null)
                 }
+            } else {
+                val path = uriString.removePrefix("file://")
+                val file = File(path)
+                val deletedDirect = if (file.exists() && (deleteFile || inFlight)) file.delete() else false
+                if (!deletedDirect && (deleteFile || inFlight) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    resolveMediaStoreDownloadUri(appContext, file.name, path)?.let { msUri ->
+                        runCatching { appContext.contentResolver.delete(msUri, null, null) }
+                    }
+                }
+                val partFile = File("$path.part")
+                if (partFile.exists()) partFile.delete()
+                val tempFile = File("$path.download")
+                if (tempFile.exists()) tempFile.delete()
             }
         } catch (e: Exception) {
             e.printStackTrace()
         }
-        publish()
+    }
+
+    /** Renames both the underlying file/MediaStore entry and the tracked download row. */
+    @JvmStatic
+    fun renameDownload(context: Context, item: DownloadItem, rawNewName: String): Boolean {
+        ensureInitialized(context)
+        val appContext = context.applicationContext
+        val cleanName = rawNewName.replace(Regex("[\\\\/:*?\"<>|\\p{Cntrl}]"), "_").trim()
+        if (cleanName.isBlank()) return false
+
+        var updatedUriString: String? = item.localUri
+        var renamed = false
+
+        val localUriStr = item.localUri
+        if (!localUriStr.isNullOrBlank()) {
+            val uri = android.net.Uri.parse(localUriStr)
+            if (uri.scheme == "content") {
+                try {
+                    val values = android.content.ContentValues().apply {
+                        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, cleanName)
+                    }
+                    if (appContext.contentResolver.update(uri, values, null, null) > 0) {
+                        renamed = true
+                        updatedUriString = uri.toString()
+                    }
+                } catch (_: Throwable) {
+                }
+            } else {
+                val oldPath = uri.path ?: localUriStr.removePrefix("file://")
+                val oldFile = File(oldPath)
+                if (oldFile.exists()) {
+                    val newFile = File(oldFile.parent, cleanName)
+                    if (!newFile.exists() && oldFile.renameTo(newFile)) {
+                        renamed = true
+                        updatedUriString = "file://${newFile.absolutePath}"
+                        android.media.MediaScannerConnection.scanFile(
+                            appContext, arrayOf(newFile.absolutePath), null, null
+                        )
+                    }
+                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    resolveMediaStoreDownloadUri(appContext, item.fileName, oldPath)?.let { msUri ->
+                        runCatching {
+                            val values = android.content.ContentValues().apply {
+                                put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, cleanName)
+                            }
+                            if (appContext.contentResolver.update(msUri, values, null, null) > 0) {
+                                renamed = true
+                                updatedUriString = msUri.toString()
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (!renamed) return false
+
+        if (item.downloadId.isNotBlank()) {
+            updatedUriString?.let { resolvedUriById[item.downloadId] = it }
+            if (item.source.isMozillaOwned) {
+                try {
+                    val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(appContext)
+                    store.state.downloads[item.downloadId]?.let { dl ->
+                        store.dispatch(DownloadAction.UpdateDownloadAction(dl.copy(fileName = cleanName)))
+                    }
+                } catch (_: Throwable) {
+                }
+            } else {
+                synchronized(localRows) {
+                    localRows[item.downloadId]?.let { prev ->
+                        localRows[item.downloadId] = prev.copy(fileName = cleanName, localUri = updatedUriString)
+                    }
+                }
+            }
+            publishNow()
+        }
+        return true
     }
 
     @JvmStatic
@@ -1005,6 +1127,69 @@ object PetalFetchDownloadBridge {
         return DownloadSource.HTTP_MOZILLA
     }
 
+    private fun loadCompletedHandled(context: Context) {
+        if (completedPrefsInitialized) return
+        completedPrefsInitialized = true
+        try {
+            val prefs = context.getSharedPreferences(PREF_BRIDGE, Context.MODE_PRIVATE)
+            if (prefs.contains(KEY_COMPLETED_HANDLED)) {
+                prefs.getStringSet(KEY_COMPLETED_HANDLED, emptySet())?.let {
+                    completedHandledIds.addAll(it)
+                }
+            } else {
+                // First migration: seed existing already-completed store entries so upgrade doesn't re-run actions.
+                val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
+                val existingDone = store.state.downloads.values
+                    .filter { it.status == DownloadState.Status.COMPLETED }
+                    .map { it.id }
+                if (existingDone.isNotEmpty()) {
+                    completedHandledIds.addAll(existingDone)
+                    prefs.edit().putStringSet(KEY_COMPLETED_HANDLED, existingDone.takeLast(256).toSet()).apply()
+                }
+            }
+        } catch (_: Throwable) {
+        }
+    }
+
+    private fun markCompletedHandledIfNew(context: Context, downloadId: String): Boolean {
+        loadCompletedHandled(context)
+        if (!completedHandledIds.add(downloadId)) return false
+        try {
+            val prefs = context.getSharedPreferences(PREF_BRIDGE, Context.MODE_PRIVATE)
+            val snapshot = completedHandledIds.toList().takeLast(256).toSet()
+            prefs.edit().putStringSet(KEY_COMPLETED_HANDLED, snapshot).apply()
+        } catch (_: Throwable) {
+        }
+        return true
+    }
+
+    private fun resolveMediaStoreDownloadUri(context: Context, fileName: String, filePath: String?): android.net.Uri? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return null
+        return try {
+            val resolver = context.contentResolver
+            val collection = android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI
+            val selection = if (!filePath.isNullOrBlank()) {
+                "${android.provider.MediaStore.MediaColumns.DATA} = ? OR ${android.provider.MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+            } else {
+                "${android.provider.MediaStore.MediaColumns.DISPLAY_NAME} = ?"
+            }
+            val args = if (!filePath.isNullOrBlank()) arrayOf(filePath, fileName) else arrayOf(fileName)
+            resolver.query(
+                collection,
+                arrayOf(android.provider.MediaStore.MediaColumns._ID),
+                selection,
+                args,
+                "${android.provider.MediaStore.MediaColumns._ID} DESC"
+            )?.use { c ->
+                if (c.moveToFirst()) {
+                    android.content.ContentUris.withAppendedId(collection, c.getLong(0))
+                } else null
+            }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
     /**
      * Runs once per finished Mozilla download, off the main thread: checksum check first (the file
      * is still where Mozilla wrote it), then the user's post-download rules, then smart routing.
@@ -1014,14 +1199,25 @@ object PetalFetchDownloadBridge {
             val name = download.fileName ?: return@launch
             val path = download.filePath
             val file = path?.let { File(it) }?.takeIf { it.exists() && it.canRead() }
+            var resolvedUri = resolvedUriById[download.id]?.let { android.net.Uri.parse(it) }
+                ?: file?.let { android.net.Uri.fromFile(it) }
+                ?: resolveMediaStoreDownloadUri(context, name, path)
             val sp = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
 
             try {
-                if (file != null && sp.getBoolean(com.petal.browser.download.DownloadPrefs.KEY_VERIFY_CHECKSUM, true)) {
+                if (sp.getBoolean(com.petal.browser.download.DownloadPrefs.KEY_VERIFY_CHECKSUM, true)) {
                     com.petal.browser.download.PetalChecksumStore.expectedFor(download.url, download.id)?.let { expected ->
-                        val result = file.inputStream().use { com.petal.browser.download.PetalChecksum.verify(it, expected) }
-                        com.petal.browser.download.PetalChecksumStore.setResult(download.id, result)
-                        publish()
+                        val result = when {
+                            file != null -> file.inputStream().use { com.petal.browser.download.PetalChecksum.verify(it, expected) }
+                            resolvedUri != null -> context.contentResolver.openInputStream(resolvedUri)?.use {
+                                com.petal.browser.download.PetalChecksum.verify(it, expected)
+                            }
+                            else -> null
+                        }
+                        if (result != null) {
+                            com.petal.browser.download.PetalChecksumStore.setResult(download.id, result)
+                            publish()
+                        }
                     }
                 }
             } catch (t: Throwable) {
@@ -1033,7 +1229,7 @@ object PetalFetchDownloadBridge {
                     sp.getString(com.petal.browser.download.DownloadPrefs.KEY_POST_ACTIONS, "")
                 )
                 com.petal.browser.download.PetalPostDownload.run(
-                    context, file, file?.let { android.net.Uri.fromFile(it) }, name, download.contentType, rules, path
+                    context, file, resolvedUri, name, download.contentType, rules, path
                 )
             } catch (t: Throwable) {
                 android.util.Log.w(TAG, "Post-download actions failed: ${t.message}")
@@ -1042,13 +1238,22 @@ object PetalFetchDownloadBridge {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !download.private) {
                 val newDir = com.petal.browser.download.PetalDownloadStorage.relocateCompleted(
                     context, name, download.contentType, path
-                ) ?: return@launch
-                try {
-                    val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
-                    store.state.downloads[download.id]?.let {
-                        store.dispatch(DownloadAction.UpdateDownloadAction(it.copy(directoryPath = newDir)))
+                )
+                if (newDir != null) {
+                    val newPath = "$newDir/$name"
+                    resolvedUri = resolveMediaStoreDownloadUri(context, name, newPath)
+                        ?: android.net.Uri.fromFile(File(newPath))
+                    resolvedUriById[download.id] = resolvedUri.toString()
+                    try {
+                        val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(context)
+                        store.state.downloads[download.id]?.let {
+                            store.dispatch(DownloadAction.UpdateDownloadAction(it.copy(directoryPath = newDir)))
+                        }
+                    } catch (_: Throwable) {
                     }
-                } catch (_: Throwable) {
+                    publish()
+                } else if (resolvedUri != null) {
+                    resolvedUriById[download.id] = resolvedUri.toString()
                 }
             }
         }
@@ -1073,9 +1278,9 @@ object PetalFetchDownloadBridge {
                     ) {
                         // Header lifetime == download lifetime: nothing left to resume.
                         com.petal.browser.download.PetalDownloadHeaderRegistry.release(download.id, download.url)
-                        if (download.status == DownloadState.Status.COMPLETED) {
-                            onMozillaCompleted(context, download)
-                        }
+                    }
+                    if (download.status == DownloadState.Status.COMPLETED && markCompletedHandledIfNew(context, download.id)) {
+                        onMozillaCompleted(context, download)
                     }
                     val id = stableId(download.id)
                     val status = PetalDownloadStatusMapper.toStatus(download.status, serviceAlive, graceActive)
@@ -1118,7 +1323,8 @@ object PetalFetchDownloadBridge {
                         totalSize = total,
                         speedBytesPerSec = speed,
                         etaSeconds = etaSec,
-                        localUri = download.filePath?.let { path -> if (path.startsWith("/")) "file://$path" else path },
+                        localUri = resolvedUriById[download.id]
+                            ?: download.filePath?.let { path -> if (path.startsWith("/")) "file://$path" else path },
                         timestampMs = download.createdTime,
                         connections = connections,
                         downloadId = download.id,
@@ -1131,6 +1337,7 @@ object PetalFetchDownloadBridge {
                 val toRemove = downloadRepository.keys.filter { key -> !currentMozillaIds.contains(key) }
                 toRemove.forEach {
                     downloadRepository.remove(it)
+                    resolvedUriById.remove(it)
                     com.petal.browser.download.PetalDownloadHeaderRegistry.release(it)
                 }
                 releasedHeaderIds.retainAll(currentMozillaIds)

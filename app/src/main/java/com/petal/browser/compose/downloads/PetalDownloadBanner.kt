@@ -131,7 +131,10 @@ object PetalDownloadBannerBridge {
                 val downloadItems by PetalFetchDownloadBridge.downloadItems.collectAsStateWithLifecycle()
 
                 LaunchedEffect(downloadItems) {
-                    val activeItem: DownloadItem? = downloadItems.maxByOrNull { it.timestampMs }
+                    val activeItem: DownloadItem? = downloadItems
+                        .filter { it.status == DownloadStatus.STATUS_RUNNING || it.status == DownloadStatus.STATUS_PENDING }
+                        .maxByOrNull { it.timestampMs }
+                        ?: downloadItems.maxByOrNull { it.timestampMs }
                     if (activeItem != null) {
                         val host = try {
                             if (!activeItem.fileUrl.isNullOrBlank()) URI(activeItem.fileUrl).host ?: "" else ""

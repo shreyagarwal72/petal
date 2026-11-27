@@ -101,6 +101,7 @@ fun DownloadSettingsScreenContent(
     val wifiOnly by viewModel.wifiOnlyDownloads.collectAsStateWithLifecycle()
     val speedLimit by viewModel.downloadSpeedLimitKBps.collectAsStateWithLifecycle()
     val verify by viewModel.verifyDownloadChecksums.collectAsStateWithLifecycle()
+    val postActionsJson by viewModel.postDownloadActionsJson.collectAsStateWithLifecycle()
     val offerClipboard by viewModel.offerClipboardImport.collectAsStateWithLifecycle()
 
     Box(modifier = modifier.fillMaxSize()) {
@@ -169,7 +170,6 @@ fun DownloadSettingsScreenContent(
                     targetHighlightId = targetHighlightItemId
                 ) {
 
-                    var showPermissionDialog by remember { mutableStateOf(false) }
                     var showPromotedSettingsDialog by remember { mutableStateOf(false) }
 
                     if (showPromotedSettingsDialog) {
@@ -294,6 +294,7 @@ fun DownloadSettingsScreenContent(
                             )
                             1 -> com.petal.browser.ui.containment.PetalGroupListRow(
                                 position = rowPosition,
+                                modifier = Modifier.graphicsLayer { alpha = if (parallelEnabled) 1f else 0.55f },
                                 onClick = {
                                     if (parallelEnabled) {
                                         val options = listOf(2, 4, 6, 8)
@@ -313,7 +314,11 @@ fun DownloadSettingsScreenContent(
                                         color = MaterialTheme.colorScheme.onSurface
                                     )
                                     Text(
-                                        text = "Tap to change. More is faster on slow servers, but some hosts limit it (Petal backs off automatically). Applies to new downloads.",
+                                        text = if (parallelEnabled) {
+                                            "Tap to change. More is faster on slow servers, but some hosts limit it (Petal backs off automatically). Applies to new downloads."
+                                        } else {
+                                            "Enable Parallel downloads above to adjust connections per download."
+                                        },
                                         style = PetalText.rowSubtitle,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -322,7 +327,7 @@ fun DownloadSettingsScreenContent(
                                     Text(
                                         text = if (parallelEnabled) "$connections" else "Off",
                                         style = PetalText.value,
-                                        color = MaterialTheme.colorScheme.primary
+                                        color = if (parallelEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             )
@@ -361,7 +366,74 @@ fun DownloadSettingsScreenContent(
                     cardId = "misc_download_queue",
                     targetHighlightId = targetHighlightItemId
                 ) {
-                    com.petal.browser.ui.containment.PetalGroup(rowCount = 5) { rowIndex, rowPosition ->
+                    var showPostActionsDialog by remember { mutableStateOf(false) }
+                    val parsedRules = remember(postActionsJson) {
+                        com.petal.browser.download.PetalPostDownload.parseRules(postActionsJson)
+                    }
+                    val enabledPostActions = remember(parsedRules) {
+                        parsedRules.firstOrNull { it.category == "ANY" }?.actions.orEmpty().toSet()
+                    }
+                    if (showPostActionsDialog) {
+                        var draftActions by remember(postActionsJson) { mutableStateOf(enabledPostActions) }
+                        val allActions = listOf(
+                            com.petal.browser.download.PetalPostDownload.Action.UNZIP to "Unzip archives (.zip)",
+                            com.petal.browser.download.PetalPostDownload.Action.MOVE_TO_CATEGORY to "Move to category folder",
+                            com.petal.browser.download.PetalPostDownload.Action.MEDIA_SCAN to "Scan into media library",
+                            com.petal.browser.download.PetalPostDownload.Action.OPEN to "Open automatically when done"
+                        )
+                        com.petal.browser.ui.containment.PetalMaterialAlertDialog(
+                            onDismissRequest = { showPostActionsDialog = false },
+                            icon = { Icon(Icons.Rounded.AutoFixHigh, contentDescription = null) },
+                            title = { Text("Post-download actions") },
+                            text = {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    allActions.forEach { (act, label) ->
+                                        val checked = draftActions.contains(act)
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .clip(RoundedCornerShape(12.dp))
+                                                .clickable {
+                                                    draftActions = if (checked) draftActions - act else draftActions + act
+                                                }
+                                                .padding(vertical = 8.dp, horizontal = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Checkbox(
+                                                checked = checked,
+                                                onCheckedChange = { on ->
+                                                    draftActions = if (on) draftActions + act else draftActions - act
+                                                }
+                                            )
+                                            Spacer(Modifier.width(8.dp))
+                                            Text(label, style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                                        }
+                                    }
+                                }
+                            },
+                            confirmButton = {
+                                Button(onClick = {
+                                    val otherRules = parsedRules.filterNot { it.category == "ANY" }
+                                    val newRules = listOf(
+                                        com.petal.browser.download.PetalPostDownload.Rule("ANY", draftActions.toList())
+                                    ) + otherRules
+                                    viewModel.setPostDownloadActionsJson(
+                                        com.petal.browser.download.PetalPostDownload.rulesToJson(newRules)
+                                    )
+                                    showPostActionsDialog = false
+                                }) {
+                                    Text(stringResource(R.string.ui_save))
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showPostActionsDialog = false }) {
+                                    Text(stringResource(R.string.ui_cancel))
+                                }
+                            }
+                        )
+                    }
+
+                    com.petal.browser.ui.containment.PetalGroup(rowCount = 6) { rowIndex, rowPosition ->
                         when (rowIndex) {
                             0 -> com.petal.browser.ui.containment.PetalGroupListRow(
                                 position = rowPosition,
@@ -417,6 +489,35 @@ fun DownloadSettingsScreenContent(
                                 checked = verify,
                                 position = rowPosition,
                                 onCheckedChange = { viewModel.setVerifyDownloadChecksums(it) }
+                            )
+                            4 -> com.petal.browser.ui.containment.PetalGroupListRow(
+                                position = rowPosition,
+                                onClick = { showPostActionsDialog = true },
+                                leading = {
+                                    com.petal.browser.ui.containment.PetalGroupIconBadge(
+                                        icon = Icons.Rounded.AutoFixHigh,
+                                        variant = com.petal.browser.ui.containment.PetalBadgeVariant.SURFACE_TONAL
+                                    )
+                                },
+                                content = {
+                                    Text("Post-download actions", style = PetalText.rowTitle, color = MaterialTheme.colorScheme.onSurface)
+                                    val summary = if (enabledPostActions.isEmpty()) {
+                                        "None"
+                                    } else {
+                                        enabledPostActions.joinToString(", ") {
+                                            when (it) {
+                                                com.petal.browser.download.PetalPostDownload.Action.UNZIP -> "Unzip"
+                                                com.petal.browser.download.PetalPostDownload.Action.MOVE_TO_CATEGORY -> "Organize"
+                                                com.petal.browser.download.PetalPostDownload.Action.MEDIA_SCAN -> "Media scan"
+                                                com.petal.browser.download.PetalPostDownload.Action.OPEN -> "Auto-open"
+                                            }
+                                        }
+                                    }
+                                    Text("Actions run automatically when a download finishes ($summary).", style = PetalText.rowSubtitle, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                },
+                                trailing = {
+                                    Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
                             )
                             else -> com.petal.browser.ui.containment.PetalSettingsToggleRow(
                                 title = "Offer to import copied links",

@@ -105,14 +105,45 @@ object PetalDownloadResumer {
         try {
             PetalFetchDownloadBridge.ensureInitialized(app)
             val store = com.petal.browser.engine.gecko.PetalEngineStore.getStore(app)
-            for (id in ids) {
-                val dl = store.state.downloads[id]
-                clear(app, id)
-                if (dl == null || !isResumable(dl.status)) continue
-                Log.i(TAG, "Resuming interrupted download $id")
-                PetalFetchDownloadBridge.resumeByUuid(app, id)
+            fun processPending(): Int {
+                var handled = 0
+                for (id in pendingIds(app)) {
+                    val dl = store.state.downloads[id] ?: continue
+                    clear(app, id)
+                    handled++
+                    if (!isResumable(dl.status)) continue
+                    Log.i(TAG, "Resuming interrupted download $id")
+                    PetalFetchDownloadBridge.resumeByUuid(app, id)
+                }
+                return handled
             }
-            (app.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.cancel(NOTIF_ID)
+            if (store.state.downloads.isNotEmpty()) {
+                processPending()
+                (app.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.cancel(NOTIF_ID)
+            } else {
+                // RestoreDownloadsStateAction is async; wait for restored downloads before consuming IDs.
+                var sub: mozilla.components.lib.state.Store.Subscription<
+                    mozilla.components.browser.state.state.BrowserState,
+                    mozilla.components.browser.state.action.BrowserAction
+                >? = null
+                sub = store.observeManually { state ->
+                    if (state.downloads.isNotEmpty()) {
+                        processPending()
+                        (app.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.cancel(NOTIF_ID)
+                        runCatching { sub?.unsubscribe() }
+                    }
+                }.also { it.resume() }
+                // Failsafe: if the store legitimately has zero downloads after 4s, prune stale IDs.
+                android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    runCatching { sub.unsubscribe() }
+                    if (store.state.downloads.isEmpty()) {
+                        pendingIds(app).forEach { clear(app, it) }
+                        (app.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)?.cancel(NOTIF_ID)
+                    } else {
+                        processPending()
+                    }
+                }, 4000L)
+            }
         } catch (t: Throwable) {
             Log.w(TAG, "resumePending failed", t)
         }
