@@ -5,6 +5,7 @@ import com.petal.browser.ui.theme.PetalText
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -156,9 +157,12 @@ fun AddressBarSettingsScreen(
                     )
                     Spacer(Modifier.height(8.dp))
 
-                    ScrollFadeRow(
+                    val previewChipsScroll = rememberScrollState()
+                    Row(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(previewChipsScroll)
                     ) {
                         FilterChip(
                             selected = previewIsHome,
@@ -706,9 +710,12 @@ fun AddressBarSettingsScreen(
                         Text("Far-Right Utility Button", style = PetalText.sectionHeader, color = MaterialTheme.colorScheme.onSurface)
                         Text("Customize the rightmost icon beside the URL pill.", style = PetalText.caption, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(4.dp))
-                        ScrollFadeRow(
+                        val outerActionScroll = rememberScrollState()
+                        Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(outerActionScroll)
                         ) {
                             listOf(
                                 ClassicOuterAction.SHARE to "Share",
@@ -807,9 +814,12 @@ fun AddressBarSettingsScreen(
                     Spacer(Modifier.height(10.dp))
                     Text("Middle Shortcut Slot", style = PetalText.sectionHeader, color = MaterialTheme.colorScheme.onSurface)
                     Spacer(Modifier.height(4.dp))
-                    ScrollFadeRow(
+                    val midSlotScroll = rememberScrollState()
+                    Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(midSlotScroll)
                     ) {
                         listOf(
                             NavMidSlot.NEW_TAB to "New Tab",
