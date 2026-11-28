@@ -34,7 +34,8 @@ open class HistoryBookmarkRepository(context: Context?) {
         helper.close()
     }
 
-    fun addBookmark(record: HistoryBookmarkItem?) {
+    @JvmOverloads
+    fun addBookmark(record: HistoryBookmarkItem?, countProgress: Boolean = true) {
         if (record == null ||
             record.title.trim().isEmpty() ||
             record.url.trim().isEmpty() ||
@@ -45,8 +46,9 @@ open class HistoryBookmarkRepository(context: Context?) {
         val ctx = context ?: com.petal.browser.PetalApplication.instance
         if (ctx != null) {
             PetalPlacesProvider.addBookmark(ctx, record)
+            if (record.isReadingList) PetalReadingList.set(ctx, record.url, true)
             com.petal.browser.ui.components.BookmarkChanges.notifyChanged()
-            try {
+            if (countProgress) try {
                 com.petal.browser.account.progress.PetalProgressStore.bump(
                     ctx,
                     com.petal.browser.account.progress.PetalCounter.BOOKMARKS,
@@ -69,23 +71,18 @@ open class HistoryBookmarkRepository(context: Context?) {
         if (url.isNullOrBlank()) {
             return false
         }
-        val db = database ?: helper.writableDatabase
-        val values = ContentValues().apply {
-            put(HistoryBookmarkContract.COLUMN_IS_READING_LIST, if (isReadingList) 1 else 0)
-        }
-        val updated = db.update(
-            HistoryBookmarkContract.TABLE_BOOKMARK,
-            values,
-            HistoryBookmarkContract.COLUMN_URL + "=?",
-            arrayOf(url.trim())
-        )
-        return updated > 0
+        // Bookmarks live in Places now; the reading-list flag is kept beside them.
+        val ctx = context ?: com.petal.browser.PetalApplication.instance ?: return false
+        PetalReadingList.set(ctx, url, isReadingList)
+        com.petal.browser.ui.components.BookmarkChanges.notifyChanged()
+        return true
     }
 
     fun deleteBookmark(url: String?) {
         val ctx = context ?: com.petal.browser.PetalApplication.instance
         if (ctx != null && !url.isNullOrBlank()) {
             PetalPlacesProvider.deleteBookmark(ctx, url)
+            PetalReadingList.set(ctx, url, false)
             com.petal.browser.ui.components.BookmarkChanges.notifyChanged()
         }
     }
@@ -159,7 +156,7 @@ open class HistoryBookmarkRepository(context: Context?) {
     fun deleteDomain(domain: String?, table: String) {
         if (domain.isNullOrBlank()) return
         val db = database ?: helper.writableDatabase
-        db.execSQL("DELETE FROM $table WHERE ${HistoryBookmarkContract.COLUMN_DOMAIN} = \"${domain.trim()}\"")
+        db.delete(table, "${HistoryBookmarkContract.COLUMN_DOMAIN} = ?", arrayOf(domain.trim()))
     }
 
     fun listDomains(table: String): List<String> {
@@ -264,6 +261,7 @@ open class HistoryBookmarkRepository(context: Context?) {
         val ctx = context ?: com.petal.browser.PetalApplication.instance
         if (table == HistoryBookmarkContract.TABLE_BOOKMARK && ctx != null) {
             PetalPlacesProvider.deleteBookmark(ctx, domain)
+            PetalReadingList.set(ctx, domain, false)
             com.petal.browser.ui.components.BookmarkChanges.notifyChanged()
             return
         }
@@ -272,7 +270,7 @@ open class HistoryBookmarkRepository(context: Context?) {
             return
         }
         val db = database ?: helper.writableDatabase
-        db.execSQL("DELETE FROM $table WHERE ${HistoryBookmarkContract.COLUMN_URL} = \"${domain.trim()}\"")
+        db.delete(table, "${HistoryBookmarkContract.COLUMN_URL} = ?", arrayOf(domain.trim()))
     }
 
     fun deleteHistoryByTitle(title: String?) {
@@ -294,6 +292,7 @@ open class HistoryBookmarkRepository(context: Context?) {
         val ctx = context ?: com.petal.browser.PetalApplication.instance
         if (table == HistoryBookmarkContract.TABLE_BOOKMARK && ctx != null) {
             PetalPlacesProvider.clearBookmarks(ctx)
+            PetalReadingList.clear(ctx)
             com.petal.browser.ui.components.BookmarkChanges.notifyChanged()
             return
         }

@@ -849,6 +849,10 @@ object PetalBackupManager {
         fun usable(url: String) = url.isNotEmpty() && !url.equals("about:blank", ignoreCase = true)
 
         val repo = HistoryBookmarkRepository(context)
+        // One read of the existing bookmarks instead of one tree read per imported item.
+        val existingBookmarks: MutableSet<String> = if (restoreBookmarks && backupJson.has("bookmarks")) {
+            com.petal.browser.database.PetalPlacesProvider.getAllBookmarks(context).mapNotNull { it.url?.trim() }.toHashSet()
+        } else HashSet()
         try {
             repo.open(true)
 
@@ -860,14 +864,14 @@ object PetalBackupManager {
                         if (!usable(url)) continue
                         val time = o.optLong("time", System.currentTimeMillis())
                         val reading = o.optBoolean("readingList", false)
-                        if (!repo.checkUrl(url, HistoryBookmarkContract.TABLE_BOOKMARK)) {
+                        if (existingBookmarks.add(url)) {
                             val rec = Record()
                             rec.title = pick(o, "title", "name").ifEmpty { url }
                             rec.url = url
                             rec.time = time
                             val ic = o.optLong("iconColor", if (time > 0) time else 1L)
                             rec.iconColor = if (ic > 0) ic else (if (time > 0) time else 1L)
-                            repo.addBookmark(rec)
+                            repo.addBookmark(rec, countProgress = false)
                             if (reading) { repo.setBookmarkReadingList(url, true); readingAdded++ } else bookmarksAdded++
                         } else if (reading) {
                             repo.setBookmarkReadingList(url, true)
@@ -878,12 +882,22 @@ object PetalBackupManager {
 
             if (restoreHistory) backupJson.optJSONArray("history")?.let { arr ->
                 try {
+                    val seenUrls = HashSet<String>()
+                    val candidates = ArrayList<JSONObject>()
                     for (i in 0 until arr.length()) {
                         val o = arr.optJSONObject(i) ?: continue
                         val url = pick(o, "url", "href", "link").trim()
-                        if (!usable(url) || repo.checkUrl(url, HistoryBookmarkContract.TABLE_HISTORY)) continue
-                        repo.addHistory(Record(pick(o, "title", "name").ifEmpty { url }, url, o.optLong("time", System.currentTimeMillis()), 0L))
-                        historyAdded++
+                        if (usable(url) && seenUrls.add(url)) candidates.add(o)
+                    }
+                    for (chunk in candidates.chunked(500)) {
+                        val urlsInChunk = chunk.map { pick(it, "url", "href", "link").trim() }
+                        val visited = com.petal.browser.database.PetalPlacesProvider.getVisited(context, urlsInChunk)
+                        chunk.forEachIndexed { idx, o ->
+                            if (visited.getOrNull(idx) == true) return@forEachIndexed
+                            val url = urlsInChunk[idx]
+                            repo.addHistory(Record(pick(o, "title", "name").ifEmpty { url }, url, o.optLong("time", System.currentTimeMillis()), 0L))
+                            historyAdded++
+                        }
                     }
                 } catch (e: Exception) { Log.e("Petal", "restore history", e); problems.add("history") }
             }

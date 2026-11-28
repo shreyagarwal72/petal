@@ -3,8 +3,18 @@
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="petal_vault.enc" />
+        <exclude domain="sharedpref" path="petal_sync_vault.xml" />
+        <exclude domain="sharedpref" path="petal_folder_sync.xml" />
+        <exclude domain="sharedpref" path="petal_fxa_logins.xml" />
+        <exclude domain="file" path="petal_sync_base.json" />
+        <exclude domain="file" path="petal_sync_state.json" />
     </cloud-backup>
     <device-transfer>
         <exclude domain="file" path="petal_vault.enc" />
+        <exclude domain="sharedpref" path="petal_sync_vault.xml" />
+        <exclude domain="sharedpref" path="petal_folder_sync.xml" />
+        <exclude domain="sharedpref" path="petal_fxa_logins.xml" />
+        <exclude domain="file" path="petal_sync_base.json" />
+        <exclude domain="file" path="petal_sync_state.json" />
     </device-transfer>
 </data-extraction-rules>

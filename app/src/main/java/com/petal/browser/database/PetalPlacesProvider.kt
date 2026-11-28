@@ -157,6 +157,7 @@ object PetalPlacesProvider {
 
     fun getAllBookmarks(context: Context): List<Record> {
         val bm = getBookmarksStorage(context)
+        val readingList = PetalReadingList.all(context)
         return runBlocking(Dispatchers.IO) {
             val root = bm.getTree(BOOKMARK_ROOT_GUID, true).getOrNull() ?: return@runBlocking emptyList<Record>()
             val result = mutableListOf<Record>()
@@ -165,7 +166,7 @@ object PetalPlacesProvider {
                 if (node.type == BookmarkNodeType.ITEM && !url.isNullOrBlank()) {
                     val title = node.title?.ifBlank { url } ?: url
                     val timestamp = System.currentTimeMillis()
-                    result.add(Record(title, url, timestamp, timestamp))
+                    result.add(Record(title, url, timestamp, timestamp).also { it.isReadingList = readingList.contains(url.trim()) })
                 }
                 node.children?.forEach { traverse(it) }
             }
@@ -236,6 +237,25 @@ object PetalPlacesProvider {
                 bm.deleteNode(existing.guid)
             } catch (_: Throwable) {}
         }
+    }
+
+    /** Deletes several bookmarks with one read of the bookmark tree. */
+    fun deleteBookmarks(context: Context, urls: Collection<String>) {
+        if (urls.isEmpty()) return
+        val want = urls.map { it.trim() }.toHashSet()
+        val bm = getBookmarksStorage(context)
+        runBlocking(Dispatchers.IO) {
+            val root = bm.getTree(BOOKMARK_ROOT_GUID, true).getOrNull() ?: return@runBlocking
+            val guids = ArrayList<String>()
+            fun walk(node: BookmarkNode) {
+                val u = node.url
+                if (node.type == BookmarkNodeType.ITEM && u != null && u.trim() in want) guids.add(node.guid)
+                node.children?.forEach { walk(it) }
+            }
+            walk(root)
+            for (g in guids) { try { bm.deleteNode(g) } catch (_: Throwable) {} }
+        }
+        for (u in want) PetalReadingList.set(context, u, false)
     }
 
     fun checkBookmark(context: Context, url: String?): Boolean {

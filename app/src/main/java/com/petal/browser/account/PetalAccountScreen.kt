@@ -145,6 +145,7 @@ fun PetalAccountScreen(
     var showAvatarSheet by remember { mutableStateOf(false) }
     var showSetup by remember { mutableStateOf(false) }
     var showPassphrase by remember { mutableStateOf(false) }
+    var showResetSync by remember { mutableStateOf(false) }
     var showDisconnect by remember { mutableStateOf(false) }
     var showReset by remember { mutableStateOf(false) }
     var showClearData by remember { mutableStateOf(false) }
@@ -783,6 +784,7 @@ fun PetalAccountScreen(
     if (showPassphrase) {
         var pass by remember { mutableStateOf("") }
         var confirm by remember { mutableStateOf("") }
+        var old by remember { mutableStateOf("") }
         val valid = pass.length >= 8 && pass == confirm
         PetalMaterialAlertDialog(
             onDismissRequest = { showPassphrase = false },
@@ -790,9 +792,17 @@ fun PetalAccountScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
-                        "Enter the passphrase your other devices use. If you're choosing a new one, the existing synced file " +
-                            "can't be read with it, so sync will stop with an error until it matches.",
+                        "To switch to a new passphrase, fill in the current one too: Petal re-encrypts the synced file, then your " +
+                            "other devices need the new passphrase. To just enter the passphrase your other devices already use, " +
+                            "leave the current one empty.",
                         style = PetalText.caption
+                    )
+                    OutlinedTextField(
+                        value = old, onValueChange = { old = it }, singleLine = true,
+                        label = { Text("Current passphrase (optional)") },
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = pass, onValueChange = { pass = it }, singleLine = true,
@@ -815,15 +825,36 @@ fun PetalAccountScreen(
                 Button(
                     enabled = valid,
                     onClick = {
-                        PetalFolderSync.setPassphrase(context, pass)
                         showPassphrase = false
-                        PetalFolderSync.syncNow(context)
+                        if (old.isNotBlank()) {
+                            PetalFolderSync.reencrypt(context, old, pass)
+                        } else {
+                            PetalFolderSync.setPassphrase(context, pass)
+                            PetalFolderSync.syncNow(context)
+                        }
                     },
                     shape = petalConnectedShape(1, 2)
                 ) { Text("Save") }
             },
             dismissButton = {
-                FilledTonalButton(onClick = { showPassphrase = false }, shape = petalConnectedShape(0, 2)) { Text("Cancel") }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilledTonalButton(onClick = { showPassphrase = false; showResetSync = true }, shape = petalConnectedShape(0, 2)) { Text("Forgot it") }
+                    FilledTonalButton(onClick = { showPassphrase = false }, shape = petalConnectedShape(1, 2)) { Text("Cancel") }
+                }
+            }
+        )
+    }
+
+    if (showResetSync) {
+        PetalMaterialAlertDialog(
+            onDismissRequest = { showResetSync = false },
+            title = { Text("Delete synced data?", fontWeight = FontWeight.Bold) },
+            text = { Text("This deletes the sync file in your folder. Bookmarks, history and passwords on your devices stay. Pick a new passphrase afterwards and sync again; your other devices must use the same new one.") },
+            confirmButton = {
+                Button(onClick = { showResetSync = false; PetalFolderSync.resetRemote(context) }, shape = petalConnectedShape(1, 2)) { Text("Delete") }
+            },
+            dismissButton = {
+                FilledTonalButton(onClick = { showResetSync = false }, shape = petalConnectedShape(0, 2)) { Text("Cancel") }
             }
         )
     }

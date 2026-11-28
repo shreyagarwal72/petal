@@ -53,7 +53,12 @@ internal object PetalSyncPasswords {
     /** Deletes logins another device removed. Returns how many were removed. */
     fun applyDeletes(context: Context, local: List<SyncPassword>, state: SyncCategoryState): Int {
         var n = 0
-        for (p in local) if (state.isDeleted(p.key)) { PetalLoginsProvider.delete(context, p.id); n++ }
+        for (p in local) if (state.isDeleted(p.key)) {
+            val deletedAt = state.map[p.key]?.first ?: 0L
+            // Edited here after the other device deleted it: keep it and mark it present again.
+            if (p.changedAt > deletedAt) { state.put(p.key, p.changedAt, true); continue }
+            PetalLoginsProvider.delete(context, p.id); n++
+        }
         return n
     }
 

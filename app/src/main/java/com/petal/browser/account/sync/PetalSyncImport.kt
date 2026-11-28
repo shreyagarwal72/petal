@@ -171,6 +171,17 @@ object PetalSyncImport {
 
     /** @return a message, and whether it succeeded */
     private fun apply(context: Context, json: JSONObject, includePasswords: Boolean, replace: Boolean): Pair<String, Boolean> {
+        // Restoring empties the local lists first, so keep a copy and put it back if the restore fails halfway.
+        val snapshot = if (replace) runCatching { PetalBackupManager.buildBackupJson(context, true, true, true, false, true, false) }.getOrNull() else null
+        return try {
+            applyUnsafe(context, json, includePasswords, replace)
+        } catch (e: Exception) {
+            if (snapshot != null) runCatching { PetalBackupManager.mergeSyncSnapshot(context, snapshot, true, true, true, true) }
+            throw e
+        }
+    }
+
+    private fun applyUnsafe(context: Context, json: JSONObject, includePasswords: Boolean, replace: Boolean): Pair<String, Boolean> {
         val additions = JSONObject()
         for (k in LISTS) json.opt(k)?.let { additions.put(k, it) }
 
